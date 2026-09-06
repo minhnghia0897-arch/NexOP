@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* Nguồn màu/chữ duy nhất. Không viết hex ở bất kỳ file nào khác — scripts/check-tokens.mjs canh việc này. */
+@import "../design/tokens.css";
+
+/* Bắc cầu token sang tiện ích Tailwind: bg-surface, text-text-2, border-border-light, rounded-box…
+   "inline" để Tailwind giữ nguyên var() thay vì tự chốt giá trị lúc build. */
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-selected: var(--primary-selected);
+
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-ink: var(--ink);
+
+  --color-surface: var(--surface);
+  --color-hover: var(--hover);
+  --color-field: var(--field);
+  --color-border: var(--border);
+  --color-border-light: var(--border-light);
+
+  --color-st-red: var(--st-red);
+  --color-st-orange: var(--st-orange);
+  --color-st-yellow: var(--st-yellow);
+  --color-st-green: var(--st-green);
+  --color-st-blue: var(--st-blue);
+  --color-st-indigo: var(--st-indigo);
+  --color-st-purple: var(--st-purple);
+
+  --radius-s: var(--r-s);
+  --radius-m: var(--r-m);
+  --radius-l: var(--r-l);
+  --radius-box: var(--r-box);
+  --radius-pill: var(--r-pill);
+
+  --font-display: var(--font-be-vietnam-pro), Inter, system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    /* line-height ≥ 1.5 cho tiếng Việt có dấu — dấu mũ/nặng cần chỗ thở. */
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Tiêu đề, nút, nhãn, số hiển thị dùng Be Vietnam Pro; số thẳng cột. */
+  h1, h2, h3, h4, h5, button, label {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: var(--r-s);
+  }
+}

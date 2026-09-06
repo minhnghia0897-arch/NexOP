@@ -89,11 +89,18 @@ Mọi query lọc `tenant_id`; bảng theo lớp lọc thêm `class_id`.
 Thứ tự theo README: Tenant/Auth → Class → Exam/OCR → Assignment/Submission → Draft/Review → Profile → Growth.
 Ước lượng theo tuần-người, giả định 1 người làm full-time.
 
-### Chặng 0 — Nền móng · ~1 tuần
-Next.js 15 App Router + TypeScript strict · Tailwind đọc biến từ `tokens.css` (không hex trong class) ·
-Be Vietnam Pro + Inter qua `next/font` · Supabase project + client server-only ·
-`pnpm dev|test|lint|db:migrate` · CI chạy 3 lệnh sau · dọn 3 việc ở §0.
-**Xong khi:** trang trắng deploy được lên Vercel qua subdomain wildcard, CI xanh.
+### Chặng 0 — Nền móng · ✅ xong
+Next.js 15 App Router + TypeScript strict (`noUncheckedIndexedAccess`) · Tailwind v4 bắc cầu
+`@theme inline` sang `design/tokens.css` (tiện ích trỏ `var(--ink)`, không hex trong class) ·
+Be Vietnam Pro + Inter qua `next/font` (tự lưu, không phụ thuộc Google lúc chạy) ·
+`lib/db/server.ts` là nơi duy nhất gọi Supabase · `pnpm dev|build|lint|typecheck|test|db:migrate` ·
+CI chạy `lint → typecheck → test → build`.
+
+`pnpm lint` gọi kèm `scripts/check-tokens.mjs` — quét hex ngoài `design/tokens.css` và fail nếu có.
+Test đầu tiên kiểm mọi `var()` trong `globals.css` đều có định nghĩa; gõ sai tên biến thì CSS im lặng
+bỏ qua và màu biến mất, bắt bằng test rẻ hơn bắt bằng mắt.
+
+**Còn nợ:** chưa nối Supabase thật (chưa có project) · chưa deploy Vercel với wildcard subdomain.
 
 ### Chặng 1 — Xương sống quyền & sự kiện · ~1 tuần
 `events` + `accounts` + `tenants` + `memberships` (migration 001) · `lib/events/write.ts` ·
