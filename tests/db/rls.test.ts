@@ -7,10 +7,10 @@
  *
  * Bỏ qua khi không có DATABASE_URL, để `pnpm test` trên máy trống vẫn chạy được.
  */
-import { readFileSync } from 'node:fs'
-
 import { Client } from 'pg'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
+import { dungLaiSchema } from './schema'
 
 const DATABASE_URL = process.env.DATABASE_URL
 const maybe = DATABASE_URL ? describe : describe.skip
@@ -45,25 +45,15 @@ maybe('RLS và nhật ký trên Postgres thật', () => {
     db = new Client({ connectionString: DATABASE_URL })
     await db.connect()
 
-    await db.query('drop schema if exists public cascade')
-    await db.query('drop schema if exists app cascade')
-    await db.query('create schema public')
-
-    for (const file of [
-      'tests/db/local-auth-stub.sql',
-      'supabase/migrations/0001_foundation.sql',
-      'tests/db/local-grants.sql',
-    ]) {
-      await db.query(readFileSync(file, 'utf8'))
-    }
+    await dungLaiSchema(db)
 
     await db.query(
       `insert into accounts (id, email, phone, name) values
          ($1, 'co.thao@example.com', null,          'Cô Thảo'),
-         ($2, null,                  '0901000002',  'Nguyễn Minh Anh'),
-         ($3, null,                  '0901000003',  'Trần Thu Hà'),
-         ($4, null,                  '0901000004',  'Phạm Lan'),
-         ($5, null,                  '0901000009',  'Người lạ')`,
+         ($2, null,                  '+84901000002', 'Nguyễn Minh Anh'),
+         ($3, null,                  '+84901000003', 'Trần Thu Hà'),
+         ($4, null,                  '+84901000004', 'Phạm Lan'),
+         ($5, null,                  '+84901000009', 'Người lạ')`,
       [CO, EM, EM_KHAC, TRO_GIANG, NGUOI_LA],
     )
     await db.query('insert into tenants (id, subdomain, owner_account_id) values ($1, $2, $3)', [

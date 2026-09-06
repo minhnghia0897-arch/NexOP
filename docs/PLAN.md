@@ -120,7 +120,16 @@ tính nguyên tử của mutation). CI có service Postgres nên nhóm này ch�
 
 **Còn nợ:** middleware giải subdomain → `tenant_id` (làm cùng chặng 2, nơi có phiên đăng nhập thật).
 
-### Chặng 2 — Tenant & đăng nhập · ~1.5 tuần · UC-18, UC-02
+### Chặng 2 — Tenant & đăng nhập · 🔨 phần logic xong, còn giao diện · UC-18, UC-02
+
+**Đã có (migration 0002 + `lib/domain/tenant/`):** chuẩn hoá SĐT (gồm quy đổi đầu số 11 chữ số
+trước 2018) · dán danh sách từ Excel/Zalo · vòng đời lời mời đủ 5 nhánh · đăng ký học thử ·
+xác định tư cách từ `memberships` · sinh và băm mã OTP. 82 test, 31 chạy trên Postgres thật.
+
+**Chưa có:** 10 màn trong `oblue-auth-demo.html`, middleware giải subdomain, và nhà cung cấp OTP
+thật (đang sau interface `GuiOtp`; `taoKenhGui()` ném lỗi ở production để không âm thầm không gửi).
+
+Mô tả gốc:
 Một ô SĐT, **không chọn vai** — vai tra từ `memberships`. Owner vào bằng email.
 Link mời `/m/<token>`: 1 lần, 7 ngày, hiện tên cô + tên lớp + vai **trước khi** nhập gì.
 SĐT lệch `invited_phone` → từ chối + sinh event cho owner. SĐT không có membership → không tạo account,
