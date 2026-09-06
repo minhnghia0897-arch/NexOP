@@ -13,6 +13,16 @@ Thứ tự dựng khuyến nghị: Tenant/Auth (§6) → Class + Membership → 
 `index.html` ở gốc là khung xem 3 bản mẫu đã duyệt — chuyển qua lại giữa vai giáo viên,
 học viên và luồng đăng nhập, có nút xem ở bề ngang 375px cho màn học viên.
 
+**Cách nhanh nhất — không cần cài gì:** bật GitHub Pages cho kho này
+(Settings → Pages → Source: *Deploy from a branch* → `main` → thư mục `/ (root)`),
+rồi mở `https://<tài-khoản>.github.io/NexOP/`.
+
+File `.nojekyll` ở gốc là bắt buộc cho việc đó: GitHub Pages mặc định chạy qua Jekyll,
+mà Jekyll bỏ qua mọi thư mục bắt đầu bằng dấu gạch dưới — tức là `design/_reference/`
+sẽ không được xuất bản và khung xem sẽ trống. Đừng xóa file đó.
+
+**Hoặc chạy tại máy:**
+
 ```
 python3 -m http.server    # rồi mở http://localhost:8000
 ```
