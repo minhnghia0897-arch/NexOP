@@ -18,6 +18,7 @@ const maybe = DATABASE_URL ? describe : describe.skip
 const CO = '11111111-1111-1111-1111-111111111111'
 const TENANT = '55555555-5555-5555-5555-555555555555'
 const LOP = '77777777-7777-7777-7777-777777777777'
+const LOP_KHAC = '88888888-8888-8888-8888-888888888888'
 
 /** SĐT cô lưu cho em, ở dạng đã chuẩn hoá. */
 const SO_CUA_EM = chuanHoaSoDienThoai('0901234567')!
@@ -86,6 +87,14 @@ maybe('lời mời trên Postgres thật', () => {
       `insert into memberships (account_id, tenant_id, role, status)
        values ($1, $2, 'owner', 'active')`,
       [CO, TENANT],
+    )
+    // Lớp phải có thật: memberships_class_same_tenant (0004) chặn gắn tư cách vào
+    // một lớp không tồn tại hoặc thuộc tên miền khác.
+    await db.query(
+      `insert into classes (id, tenant_id, name, status) values
+         ($1, $3, 'IELTS 6.5 · Tối T3/T5', 'running'),
+         ($2, $3, 'IELTS 5.5 · Sáng T7/CN', 'running')`,
+      [LOP, LOP_KHAC, TENANT],
     )
   })
 
@@ -359,11 +368,10 @@ maybe('lời mời trên Postgres thật', () => {
 
     it('cùng số nhưng khác lớp thì mời được', async () => {
       const so = chuanHoaSoDienThoai('0901234567')!
-      const lopKhac = '88888888-8888-8888-8888-888888888888'
       await db.query(`select app.create_invite($1, $2, 'student', $3, 'tk-a', $4, 'Em')`,
         [TENANT, CO, so, LOP])
       await db.query(`select app.create_invite($1, $2, 'student', $3, 'tk-b', $4, 'Em')`,
-        [TENANT, CO, so, lopKhac])
+        [TENANT, CO, so, LOP_KHAC])
       const { rows } = await db.query<{ n: number }>(
         `select count(*)::int as n from memberships where status = 'pending'`)
       expect(rows[0]!.n).toBe(2)
@@ -375,7 +383,7 @@ maybe('lời mời trên Postgres thật', () => {
         [TENANT, CO, so, LOP])
       await nhanLoiMoi('tk-a', so)
       await db.query(`select app.create_invite($1, $2, 'student', $3, 'tk-b', $4, 'Em')`,
-        [TENANT, CO, so, '88888888-8888-8888-8888-888888888888'])
+        [TENANT, CO, so, LOP_KHAC])
       expect((await nhanLoiMoi('tk-b', so)).outcome).toBe('accepted')
     })
   })

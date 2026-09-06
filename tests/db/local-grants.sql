@@ -6,3 +6,4 @@
 grant select on all tables in schema public to anon, authenticated;
 grant usage  on schema app to anon, authenticated;
 grant execute on function app.is_active_member(uuid), app.is_tenant_owner(uuid) to anon, authenticated;
+grant execute on function app.is_class_member(uuid), app.owns_class(uuid) to anon, authenticated;

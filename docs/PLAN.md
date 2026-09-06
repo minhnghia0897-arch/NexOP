@@ -143,7 +143,19 @@ Nhập học viên hàng loạt: dán từ Excel/Zalo.
 **Xong khi:** 10 bước của `oblue-auth-demo.html` chạy thật; e2e phủ 3 nhánh từ chối.
 **Chặn ngoài:** cần chốt nhà cung cấp OTP (Zalo ZNS / SMS) — xem §7.
 
-### Chặng 3 — Lớp học · ~2 tuần · UC-10, UC-15, UC-14
+### Chặng 3 — Lớp học · 🔨 nền dữ liệu xong, còn giao diện · UC-10, UC-15, UC-14
+
+**Đã có (migration 0004):** `paths` · `classes` · `posts` · `attendance`, RLS theo lớp cho cả bốn.
+Khoá ngoại `memberships.class_id` hoãn từ 0001 nay đã gắn, kèm ràng buộc lớp và tư cách phải
+cùng tên miền — thiếu nó thì "quyền đi theo lớp" mất nghĩa.
+
+**Đã kiểm bằng chạy thật:** em lớp A không đọc được gì của lớp B qua bất kỳ bảng nào; em nghỉ
+là mất quyền ngay; lộ trình chỉ cô thấy; điểm danh em chỉ thấy dòng của mình. Đã thử nới một
+chính sách RLS để chắc test biết đỏ.
+
+**Chưa có:** trang lớp 5 tab, quyền trợ giảng theo lớp × theo việc, dải cam vai trợ giảng.
+
+Mô tả gốc:
 `classes` · `memberships(class_id)` · `posts` · `attendance`.
 Trang lớp 5 tab (Bảng tin mặc định · Bài tập · Học viên · Điểm · Chấm bài) — **mọi tab xử lý trong phạm vi lớp**,
 không màn nào điều hướng ra ngoài. Panel 260 = danh sách lớp = bộ lọc chung cho mọi màn.
