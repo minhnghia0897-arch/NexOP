@@ -10,5 +10,9 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',
+    // Test DB cùng dựng lại schema trên một cơ sở dữ liệu, nên chạy song song thì
+    // tranh nhau ("schema public already exists"). Cả bộ chạy dưới một giây, đổi
+    // sang tuần tự rẻ hơn nhiều so với việc mỗi file phải tự tách schema riêng.
+    fileParallelism: false,
   },
 })
