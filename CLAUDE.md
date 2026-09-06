@@ -34,6 +34,8 @@ Trước khi báo xong: `pnpm test` xanh + `pnpm lint` sạch + không có hex m
 ## Đọc thêm khi cần
 - `docs/SRS.md` — vai trò, use case, tiêu chí chấp nhận, không-làm. **Đọc trước khi làm feature mới.**
 - `docs/ARCHITECTURE.md` — thực thể, 3 lớp dữ liệu, sự kiện, quyền, đăng nhập, điểm tích hợp AI. **Đọc trước khi thêm bảng/API.**
+- `docs/LOGIC.md` — vòng đời, sự kiện sinh việc, thuật toán `can()`, công thức, bất biến.
+  **Đọc trước khi viết logic nghiệp vụ hay job nền.**
 - `docs/DECISIONS.md` — vì sao chọn cách này. **Đọc trước khi định đổi cách làm.**
 - `design/DESIGN.md` — token, bố cục, thành phần. `design/_reference/*.html` là bản mẫu đã duyệt.
 - `docs/OPERATIONS.md` — vòng vận hành tuần, việc máy tự làm / cô quyết / dính tiền.
