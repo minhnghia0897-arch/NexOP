@@ -126,8 +126,13 @@ tính nguyên tử của mutation). CI có service Postgres nên nhóm này ch�
 trước 2018) · dán danh sách từ Excel/Zalo · vòng đời lời mời đủ 5 nhánh · đăng ký học thử ·
 xác định tư cách từ `memberships` · sinh và băm mã OTP. 82 test, 31 chạy trên Postgres thật.
 
-**Chưa có:** 10 màn trong `oblue-auth-demo.html`, middleware giải subdomain, và nhà cung cấp OTP
-thật (đang sau interface `GuiOtp`; `taoKenhGui()` ném lỗi ở production để không âm thầm không gửi).
+**Đã thêm:** middleware giải subdomain (chặn cả `cothao.oblue.vn.ke-gian.com` lẫn header giả) ·
+màn `/dang-nhap`, `/hoc-thu`, `/m/<token>` · `app.peek_invite` cho trang công khai đọc lời mời mà
+không cần khoá service.
+
+**Chưa có:** màn nhập OTP và màn chọn tư cách · các server action xử lý form (cần Supabase thật) ·
+nhà cung cấp OTP (đang sau interface `GuiOtp`; `taoKenhGui()` ném lỗi ở production để không âm thầm
+không gửi).
 
 Mô tả gốc:
 Một ô SĐT, **không chọn vai** — vai tra từ `memberships`. Owner vào bằng email.

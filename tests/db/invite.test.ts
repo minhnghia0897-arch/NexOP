@@ -8,7 +8,7 @@
 import { Client } from 'pg'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
-import { chuanHoaSoDienThoai } from '@/lib/domain/tenant/phone'
+import { cheSoDienThoai, chuanHoaSoDienThoai } from '@/lib/domain/tenant/phone'
 
 import { dungLaiSchema } from './schema'
 
@@ -239,6 +239,144 @@ maybe('lời mời trên Postgres thật', () => {
           [TENANT],
         ),
       ).rejects.toThrow(/memberships_invited_phone_normalised/)
+    })
+  })
+
+  describe('xem trước lời mời khi chưa đăng nhập', () => {
+    interface Peek {
+      found: boolean
+      status: string | null
+      subdomain: string | null
+      teacher_name: string | null
+      role: string | null
+      phone_masked: string | null
+    }
+
+    async function xemTruoc(token: string): Promise<Peek> {
+      // Gọi đúng như trang công khai gọi: vai anon, không phiên đăng nhập.
+      await db.query('begin')
+      try {
+        await db.query('set local role anon')
+        const { rows } = await db.query<Peek>('select * from app.peek_invite($1)', [token])
+        return rows[0]!
+      } finally {
+        await db.query('rollback')
+      }
+    }
+
+    it('người chưa đăng nhập thấy đủ để biết mình được mời vào đâu', async () => {
+      const token = await moiEm()
+      const peek = await xemTruoc(token)
+
+      expect(peek.found).toBe(true)
+      expect(peek.status).toBe('pending')
+      expect(peek.subdomain).toBe('cothao')
+      expect(peek.teacher_name).toBe('Cô Thảo')
+      expect(peek.role).toBe('student')
+    })
+
+    it('SĐT trả về đã che — số đầy đủ không rời khỏi DB', async () => {
+      const peek = await xemTruoc(await moiEm())
+
+      expect(peek.phone_masked).toBe('0901 ••• 567')
+      // Chốt chặn: không đâu trong kết quả có số đầy đủ.
+      expect(JSON.stringify(peek)).not.toContain('901234567')
+    })
+
+    it('không lộ gì thêm ngoài bảy trường đã định', async () => {
+      const peek = await xemTruoc(await moiEm())
+      expect(Object.keys(peek).sort()).toEqual([
+        'class_id', 'found', 'phone_masked', 'role', 'status', 'subdomain', 'teacher_name',
+      ])
+    })
+
+    it('cách che trong SQL và trong TS ra cùng một kết quả', async () => {
+      // Che ở hai nơi: SQL che để số đầy đủ không rời DB, TS che cho màn của cô.
+      // Hai bản cài đặt thì có ngày lệch nhau, nên chốt lại ở đây.
+      for (const so of ['0901234567', '0332345678', '0779876543']) {
+        const chuan = chuanHoaSoDienThoai(so)!
+        soThuTuToken += 1
+        const token = `token-che-${soThuTuToken}`
+        await db.query(
+          `select app.create_invite($1, $2, 'student', $3, $4, null, 'Em')`,
+          [TENANT, CO, chuan, token],
+        )
+        expect((await xemTruoc(token)).phone_masked, so).toBe(cheSoDienThoai(chuan))
+      }
+    })
+
+    it('token bịa ra thì không lộ gì cả', async () => {
+      const peek = await xemTruoc('token-bia-ra')
+      expect(peek.found).toBe(false)
+      expect(peek.subdomain).toBeNull()
+      expect(peek.teacher_name).toBeNull()
+      expect(peek.phone_masked).toBeNull()
+    })
+
+    it('link đã dùng vẫn xem được, nhưng thấy rõ là đã dùng', async () => {
+      const token = await moiEm()
+      await nhanLoiMoi(token, SO_CUA_EM)
+      expect((await xemTruoc(token)).status).toBe('active')
+    })
+
+    it('vai anon không đọc thẳng memberships được — chỉ qua hàm này', async () => {
+      await moiEm()
+      await db.query('begin')
+      try {
+        await db.query('set local role anon')
+        const { rows } = await db.query('select id from memberships')
+        expect(rows).toHaveLength(0)
+      } finally {
+        await db.query('rollback')
+      }
+    })
+  })
+
+  describe('mời cả lớp — UC-02 dán danh sách từ Excel/Zalo', () => {
+    it('cô mời được nhiều em vào cùng một lớp', async () => {
+      const soCacEm = ['0901234567', '0332345678', '0779876543', '0912345678']
+      for (const [i, so] of soCacEm.entries()) {
+        await db.query(
+          `select app.create_invite($1, $2, 'student', $3, $4, $5, 'Em ' || $6)`,
+          [TENANT, CO, chuanHoaSoDienThoai(so)!, `tk-lop-${i}`, LOP, String(i)],
+        )
+      }
+      const { rows } = await db.query<{ n: number }>(
+        `select count(*)::int as n from memberships where status = 'pending'`,
+      )
+      expect(rows[0]!.n).toBe(soCacEm.length)
+    })
+
+    it('nhưng không mời trùng một số hai lần cho cùng lớp', async () => {
+      const so = chuanHoaSoDienThoai('0901234567')!
+      await db.query(`select app.create_invite($1, $2, 'student', $3, 'tk-a', $4, 'Em')`,
+        [TENANT, CO, so, LOP])
+      await expect(
+        db.query(`select app.create_invite($1, $2, 'student', $3, 'tk-b', $4, 'Em')`,
+          [TENANT, CO, so, LOP]),
+      ).rejects.toThrow(/memberships_one_pending_invite/)
+    })
+
+    it('cùng số nhưng khác lớp thì mời được', async () => {
+      const so = chuanHoaSoDienThoai('0901234567')!
+      const lopKhac = '88888888-8888-8888-8888-888888888888'
+      await db.query(`select app.create_invite($1, $2, 'student', $3, 'tk-a', $4, 'Em')`,
+        [TENANT, CO, so, LOP])
+      await db.query(`select app.create_invite($1, $2, 'student', $3, 'tk-b', $4, 'Em')`,
+        [TENANT, CO, so, lopKhac])
+      const { rows } = await db.query<{ n: number }>(
+        `select count(*)::int as n from memberships where status = 'pending'`)
+      expect(rows[0]!.n).toBe(2)
+    })
+
+    it('em nhận lời mời rồi thì số đó mời lại được cho lớp khác', async () => {
+      const so = chuanHoaSoDienThoai('0901234567')!
+      await db.query(`select app.create_invite($1, $2, 'student', $3, 'tk-a', $4, 'Em')`,
+        [TENANT, CO, so, LOP])
+      await nhanLoiMoi('tk-a', so)
+      await db.query(`select app.create_invite($1, $2, 'student', $3, 'tk-b', $4, 'Em')`,
+        [TENANT, CO, so, '88888888-8888-8888-8888-888888888888'])
+      expect((await nhanLoiMoi('tk-b', so)).outcome).toBe('accepted')
     })
   })
 })
