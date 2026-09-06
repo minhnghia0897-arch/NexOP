@@ -15,12 +15,12 @@ học viên và luồng đăng nhập, có nút xem ở bề ngang 375px cho mà
 
 **Cách nhanh nhất — không cần cài gì:** mở `https://minhnghia0897-arch.github.io/NexOP/`.
 
-Trang đó do `.github/workflows/pages.yml` tự xuất bản mỗi lần đẩy lên `main`.
-Lần chạy đầu tự bật Pages luôn (`configure-pages` với `enablement: true`), không phải vào Settings bấm tay.
+Kho bật GitHub Pages theo kiểu *Deploy from a branch* — nhánh `main`, thư mục `/ (root)`.
+Đẩy lên `main` là trang tự cập nhật sau một hai phút.
 
-File `.nojekyll` ở gốc giữ lại để phòng khi ai đó chuyển Pages sang kiểu xuất bản
-thẳng từ nhánh: kiểu đó chạy qua Jekyll, mà Jekyll bỏ qua mọi thư mục bắt đầu bằng
-dấu gạch dưới — tức là `design/_reference/` sẽ không lên và khung xem sẽ trống.
+**Đừng xóa `.nojekyll` ở gốc.** Kiểu xuất bản này chạy file qua Jekyll, mà Jekyll bỏ qua
+mọi thư mục có tên bắt đầu bằng dấu gạch dưới — tức là `design/_reference/` sẽ không được
+xuất bản, khung xem vẫn lên nhưng cả 3 tab đều trống.
 
 **Hoặc chạy tại máy:**
 
