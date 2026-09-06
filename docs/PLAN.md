@@ -102,11 +102,23 @@ bỏ qua và màu biến mất, bắt bằng test rẻ hơn bắt bằng mắt.
 
 **Còn nợ:** chưa nối Supabase thật (chưa có project) · chưa deploy Vercel với wildcard subdomain.
 
-### Chặng 1 — Xương sống quyền & sự kiện · ~1 tuần
-`events` + `accounts` + `tenants` + `memberships` (migration 001) · `lib/events/write.ts` ·
-`lib/auth/can.ts` sinh từ `permissions.json` · RLS policy mẫu · middleware giải subdomain → `tenant_id`.
-**Xong khi:** bảng test quyền chạy hết ma trận `permissions.json` (5 vai × 13 object × 6 mức) xanh;
-mutation giả không ghi được nếu chặn `events`.
+### Chặng 1 — Xương sống quyền & sự kiện · ✅ phần lớn xong
+`migration 0001`: `accounts` · `tenants` · `memberships` · `events`, RLS bật cho cả bốn.
+`lib/auth/can.ts` + `permissions.ts` sinh từ `permissions.json` · `lib/events/write.ts` +
+`visibility.ts`.
+
+Ba luật ép ở tầng DB chứ không chỉ ở mã: máy chỉ `draft`/`propose`/`auto:*`, "gửi" chỉ do `owner`,
+nhật ký chỉ được thêm (trigger chặn update/delete). Hành vi bị cấm không có hiệu lực kể cả khi
+mã ứng dụng sai.
+
+`app.record_event()` là câu lệnh đầu tiên của mọi hàm mutation về sau — Supabase JS không mở được
+transaction nhiều câu lệnh, nên chỗ duy nhất giữ được "ghi sự kiện trước" là bên trong Postgres.
+
+**Đã kiểm bằng chạy thật:** 39 test, trong đó 17 test chạy trên Postgres 16 thật (RLS, ràng buộc,
+tính nguyên tử của mutation). CI có service Postgres nên nhóm này chạy cả trên runner.
+Đã đột biến từng cửa chặn của `can()` để chắc test biết đỏ.
+
+**Còn nợ:** middleware giải subdomain → `tenant_id` (làm cùng chặng 2, nơi có phiên đăng nhập thật).
 
 ### Chặng 2 — Tenant & đăng nhập · ~1.5 tuần · UC-18, UC-02
 Một ô SĐT, **không chọn vai** — vai tra từ `memberships`. Owner vào bằng email.
