@@ -1,5 +1,7 @@
 # PLAN — dựng website OBLUE
 
+Hành vi chi tiết (vòng đời, `can()`, công thức, bất biến) nằm ở `LOGIC.md` — đọc kèm file này.
+
 Nguồn: `SRS.md` (use case), `ARCHITECTURE.md` (thực thể, sự kiện, quyền), `DECISIONS.md` (vì sao),
 `DESIGN.md` + `tokens.css` + 3 bản mẫu HTML, `OPERATIONS.md` (vòng tuần), `permissions.json` (ma trận quyền).
 Kế hoạch này **không đổi** quyết định nào trong `DECISIONS.md`. Muốn đổi → thêm mục mới ở đó trước.
