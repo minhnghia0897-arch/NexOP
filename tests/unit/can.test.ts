@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { can, type Actor } from '@/lib/auth/can'
 import {
   ASSISTANT_GRANTABLE,
+  OWN_IS_READ_ONLY,
   DEFAULTS,
   HARD_CEILING,
   LEVELS,
@@ -64,7 +65,9 @@ describe('ma trận quyền', () => {
           const expected =
             blockedBySystemGate || blockedByCeiling || blockedBySend
               ? false
-              : levelAllows(level, verb)
+              // Truyền cả object: với object mà người đó chỉ LÀ CHỦ ĐỀ (nhận xét,
+              // học phí, hồ sơ), mức `own` chỉ là quyền xem.
+              : levelAllows(level, verb, type)
 
           expect(can(a, action, object), `${role} · ${action} · mức ${level}`).toBe(expected)
         }
@@ -210,6 +213,55 @@ describe('mức quyền không phải thang bậc', () => {
   it('auto:* chỉ tới được từ auto và full', () => {
     for (const level of LEVELS) {
       expect(levelAllows(level, 'auto:recompute'), level).toBe(level === 'auto' || level === 'full')
+    }
+  })
+})
+
+
+describe('`own` là chủ đề, không phải người viết', () => {
+  // ownerId gộp hai quan hệ: người VIẾT RA object, và người object NÓI VỀ. Không tách
+  // thì em sửa được nhận xét cô đã gửi và sửa được dòng học phí của mình.
+  const em = actor({ role: 'student', accountId: EM, classIds: [CLASS] })
+  const cuaEm = (type: string) => ({ type, tenantId: TENANT, classId: CLASS, ownerId: EM })
+
+  it('em sửa được thứ em viết ra', () => {
+    expect(can(em, 'submission.update', cuaEm('submission'))).toBe(true)
+    expect(can(em, 'post.update', cuaEm('post'))).toBe(true)
+  })
+
+  it('em KHÔNG sửa được thứ chỉ nói về em', () => {
+    for (const type of OWN_IS_READ_ONLY) {
+      expect(can(em, `${type}.update`, cuaEm(type)), type).toBe(false)
+      expect(can(em, `${type}.create`, cuaEm(type)), type).toBe(false)
+    }
+  })
+
+  it('nhưng vẫn xem được, vì đó là chuyện của em', () => {
+    for (const type of OWN_IS_READ_ONLY) {
+      const mucCuaEm = DEFAULTS[type]?.student
+      if (mucCuaEm === 'own') {
+        expect(can(em, `${type}.view`, cuaEm(type)), type).toBe(true)
+      }
+    }
+  })
+
+  it('em xuất được dữ liệu của chính mình (permissions.json: export/student = own)', () => {
+    expect(can(em, 'export.export', cuaEm('export'))).toBe(true)
+    expect(can(em, 'export.export', { type: 'export', tenantId: TENANT, ownerId: 'em-khac' })).toBe(false)
+  })
+})
+
+describe('action ba đoạn', () => {
+  // permissions.json có `fee.message.send`. Tách verb kiểu "mọi thứ sau dấu chấm đầu"
+  // cho ra "message.send" — không khớp mức nào, nên đến cô cũng không gửi được.
+  it('verb là đoạn cuối, nên cô gửi được tin học phí', () => {
+    expect(can(actor(), 'fee.message.send', { type: 'fee', tenantId: TENANT })).toBe(true)
+  })
+
+  it('vẫn chỉ cô, không ai khác', () => {
+    for (const role of ['assistant', 'student', 'parent', 'system'] as const) {
+      const ai = actor({ role, accountId: TRO_GIANG })
+      expect(can(ai, 'fee.message.send', { type: 'fee', tenantId: TENANT }), role).toBe(false)
     }
   })
 })

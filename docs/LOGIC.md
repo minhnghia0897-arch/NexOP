@@ -278,3 +278,18 @@ Lớp mới chỉ mở khi đủ N người (cô đặt N). Học phí còn lạ
 | 3 | Phụ huynh thấy **tiến bộ + việc**, không thấy điểm — vậy có thấy band mục tiêu không? | 9 |
 | 4 | Bài luyện sinh ra mà em không làm trong 7 ngày: nhắc lại, hay lặng lẽ hết hạn? | 7 |
 | 5 | Em học 2 lớp của cùng một cô: một hồ sơ hay hai? (`SRS` nói hồ sơ xuyên lớp → một; xác nhận) | 7 |
+| 6 | **`permissions.json` thiếu 5 thực thể**: `proposal` · `draft` · `practice_set` · `attendance` · `path`. `can()` mặc định đóng nên máy bị chặn ở đúng việc `OPERATIONS.md` giao cho nó — bước 3, 5, 7, 8 đứng im. Thêm một dòng vào file đó là đặt ra chính sách quyền, nên cần cô chốt. Đề xuất bên dưới. | 3, 5, 7 |
+
+### §8.1 Đề xuất cho câu 6 — năm dòng còn thiếu
+
+Suy từ `ARCHITECTURE` §3 (lớp dữ liệu) và `OPERATIONS.md` (cột "Ai"), chưa áp dụng:
+
+| object | owner | assistant | student | parent | system | vì sao |
+|---|---|---|---|---|---|---|
+| `proposal` | `full` | `none` | `none` | `none` | `propose` | lớp 3, cô quyết; trợ giảng không thấy vì đề xuất hay dính tiền |
+| `draft` | `full` | `propose` | `none` | `none` | `propose` | `DECISIONS`: em **không** thấy band nháp của máy |
+| `practice_set` | `full` | `read` | `own` | `none` | `propose` | bài luyện là của em, em làm được |
+| `attendance` | `full` | `auto` | `own` | `own` | `none` | trợ giảng điểm danh được (bản mẫu lời mời ghi thế) |
+| `path` | `full` | `none` | `none` | `none` | `none` | lộ trình là tài sản của cô — RLS ở 0004 đã theo luật này |
+
+Chốt xong thì `tests/unit/van-hanh.test.ts` sẽ báo đỏ ở danh sách `CHO_CHOT`, nhắc cập nhật.

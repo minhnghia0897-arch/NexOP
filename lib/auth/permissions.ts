@@ -13,7 +13,10 @@ export type Level = (typeof LEVELS)[number]
 export const ROLES = ['owner', 'assistant', 'student', 'parent', 'system'] as const
 export type Role = (typeof ROLES)[number]
 
-/** ARCHITECTURE §4: action theo mẫu <object>.<verb>. */
+/**
+ * ARCHITECTURE §4: action theo mẫu <object>.<verb>.
+ * `fee.message.send` trong permissions.json có ba đoạn — verb vẫn là đoạn cuối.
+ */
 export const VERBS = [
   'create', 'update', 'draft', 'propose', 'send', 'approve', 'reject', 'view', 'export',
 ] as const
@@ -69,6 +72,16 @@ export const SEND_ACTIONS: ReadonlySet<string> = new Set(matrix.send_actions_own
 /** Trần cứng vai trợ giảng — bỏ qua mọi quyền cô đã cấp. */
 export const HARD_CEILING: ReadonlySet<string> = new Set(matrix.assistant_hard_ceiling)
 
+/**
+ * Object mà `own` chỉ là quyền XEM.
+ *
+ * `ownerId` gộp hai quan hệ rất khác nhau: người VIẾT RA object, và người object NÓI VỀ.
+ * Em viết bài nộp của em nên sửa được; nhưng em chỉ là chủ đề của nhận xét và dòng học
+ * phí — hai thứ đó của cô. Không tách ra thì `own` cho em sửa nhận xét cô đã gửi.
+ * ARCHITECTURE §3: lớp 1 chỉ thêm, lớp 2 máy ghi và cô sửa.
+ */
+export const OWN_IS_READ_ONLY: ReadonlySet<string> = new Set(matrix.own_is_subject_not_author)
+
 /** Bốn mức cô cấp được cho trợ giảng: Không · Chỉ xem · Đề xuất · Tự làm. */
 export const ASSISTANT_GRANTABLE: ReadonlySet<Level> = new Set(
   matrix.assistant_grantable_levels.map((level) => {
@@ -85,16 +98,22 @@ export const ASSISTANT_GRANTABLE: ReadonlySet<Level> = new Set(
 const VERBS_BY_LEVEL: Record<Level, ReadonlySet<string>> = {
   none: new Set(),
   read: new Set(['view']),
-  own: new Set(['view', 'create', 'update']),
+  own: new Set(['view', 'create', 'update', 'export']),
   propose: new Set(['view', 'draft', 'propose']),
   // "Tự làm": làm thẳng, không phải xin. Vẫn không vượt được trần cứng và SEND_ACTIONS.
   auto: new Set(['view', 'draft', 'propose', 'create', 'update', 'approve', 'reject']),
   full: new Set(VERBS),
 }
 
-export function levelAllows(level: Level, verb: Verb): boolean {
+export function levelAllows(level: Level, verb: Verb, objectType?: ObjectType): boolean {
   // auto:* là nhánh riêng: chỉ mức `auto` và `full` chạm tới.
   if (verb.startsWith('auto:')) return level === 'auto' || level === 'full'
+
+  // Chủ đề thì chỉ được xem, không được sửa.
+  if (level === 'own' && objectType && OWN_IS_READ_ONLY.has(objectType)) {
+    return verb === 'view' || verb === 'export'
+  }
+
   return VERBS_BY_LEVEL[level].has(verb)
 }
 
