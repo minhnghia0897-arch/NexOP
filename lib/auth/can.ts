@@ -43,8 +43,14 @@ function systemMayAttempt(verb: Verb): boolean {
 }
 
 export function can(actor: Actor, action: string, object: TargetObject): boolean {
-  const verb = action.slice(action.indexOf('.') + 1) as Verb
-  if (!action.includes('.') || verb.length === 0) return false
+  // Verb là đoạn CUỐI, không phải "mọi thứ sau dấu chấm đầu tiên".
+  // permissions.json có `fee.message.send` — ba đoạn — và cách tách cũ cho ra
+  // verb "message.send", không khớp mức nào, nên đến cô cũng không gửi được tin
+  // học phí. Bước 7 của vòng vận hành đứng im mà không ai báo gì.
+  const doan = action.split('.')
+  if (doan.length < 2) return false
+  const verb = doan[doan.length - 1] as Verb
+  if (verb.length === 0) return false
 
   // 1. Máy: đọc thì được, nhưng ghi thì chỉ nháp/đề xuất/tự chạy.
   //    Chặn trước mọi thứ khác để không mức nào cấp ngược lại được.
@@ -77,5 +83,5 @@ export function can(actor: Actor, action: string, object: TargetObject): boolean
   // 7. `own` chỉ áp lên đồ của chính mình. Không biết chủ là ai thì không cho.
   if (level === 'own' && object.ownerId !== actor.accountId) return false
 
-  return levelAllows(level, verb)
+  return levelAllows(level, verb, object.type)
 }
