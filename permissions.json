@@ -1,0 +1,24 @@
+{
+  "levels": ["none","read","own","propose","full","auto"],
+  "objects": {
+    "class":        {"owner":"full","assistant":"read","student":"read","parent":"none","system":"none"},
+    "membership":   {"owner":"full","assistant":"none","student":"none","parent":"none","system":"propose"},
+    "profile":      {"owner":"full","assistant":"read","student":"own","parent":"own","system":"auto",
+                     "notes":{"student":"hidden teacher_notes, class_rank","parent":"progress+tasks only, no scores"}},
+    "exam":         {"owner":"full","assistant":"read","student":"none","parent":"none","system":"propose"},
+    "assignment":   {"owner":"full","assistant":"propose","student":"read","parent":"none","system":"propose"},
+    "submission":   {"owner":"full","assistant":"read","student":"own","parent":"none","system":"read"},
+    "review":       {"owner":"full","assistant":"propose","student":"own","parent":"none","system":"propose",
+                     "notes":{"student":"only after sent","system":"auto for mcq confidence>=0.97 if enabled"}},
+    "gradebook":    {"owner":"full","assistant":"read","student":"none","parent":"none","system":"auto"},
+    "post":         {"owner":"full","assistant":"own","student":"own","parent":"none","system":"auto",
+                     "notes":{"student":"no pin/delete"}},
+    "fee":          {"owner":"full","assistant":"none","student":"own","parent":"own","system":"propose"},
+    "rubric":       {"owner":"full","assistant":"none","student":"none","parent":"none","system":"auto"},
+    "export":       {"owner":"full","assistant":"none","student":"own","parent":"none","system":"none"},
+    "events":       {"owner":"full(class)","assistant":"own","student":"own","parent":"none","system":"none"}
+  },
+  "assistant_hard_ceiling": ["fee","rubric","teacher_notes","export"],
+  "assistant_grantable_levels": ["none","read","propose","auto"],
+  "send_actions_owner_only": ["review.send","message.send","fee.message.send"]
+}

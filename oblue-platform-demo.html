@@ -1,0 +1,1401 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OBLUE — Lớp IELTS của cô Thảo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#0073ea;--primary-hover:#0060b9;--primary-selected:#cce5ff;--primary-selected-hover:#b3d7ff;
+  --text:#323338;--text-2:#676879;--text-3:#9699a6;--ink:#1f2534;
+  --surface:#fff;--hover:#f5f6f8;--field:#f0f1f4;--send-bg:#eceef3;
+  --border:#d0d4e4;--border-light:#e6e9ef;
+  --st-red:#e2445c;--st-orange:#fdab3d;--st-warm:#ff9f43;--st-yellow:#ffcb00;
+  --st-green:#00c875;--st-blue:#579bfc;--st-indigo:#5b6bff;--st-purple:#a25ddc;--st-brand-red:#ff3d57;
+  --grad-a:#00d2d3;--grad-b:#6c6cff;--grad-c:#a25ddc;
+  --grad-avatar:linear-gradient(135deg,#c9b6ff,#8f7bff);
+  --grad-me:linear-gradient(135deg,#8f9bb3,#6b7590);
+  --r-s:4px;--r-m:8px;--r-l:16px;--r-box:10px;--r-art:26px;--r-pill:20px;--r-full:50%;
+  --sh-s:0 6px 20px rgba(0,0,0,.08);--sh-prompt:0 10px 34px rgba(90,90,190,.14);
+  --rail:104px;--panel:260px;--topbar:56px;--content-max:1180px;
+  --t-fast:.1s ease;--t-mid:.12s ease;--t-slow:.15s ease;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:21px;color:var(--text);
+     background:var(--surface);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none;padding:0}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:var(--r-s)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ico{width:20px;height:20px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico.s{width:16px;height:16px}
+
+.topbar{height:var(--topbar);display:flex;align-items:center;gap:16px;padding:0 20px;
+        border-bottom:1px solid var(--border-light)}
+.logo{display:flex;gap:3px;align-items:flex-end;flex:none}
+.logo i{width:9px;height:22px;border-radius:6px;display:block}
+.logo i:nth-child(1){background:var(--st-brand-red)}
+.logo i:nth-child(2){background:var(--st-yellow);height:26px}
+.logo i:nth-child(3){background:var(--st-green)}
+.shopname{font-weight:600;border-left:1px solid var(--border-light);margin-left:6px;padding-left:16px}
+.search{flex:1;max-width:520px;margin:0 auto;height:36px;border-radius:18px;background:var(--field);
+        display:flex;align-items:center;gap:10px;padding:0 16px;color:var(--text-3)}
+.tb-right{display:flex;align-items:center;gap:18px;flex:none}
+.badge{position:relative;display:grid;place-items:center}
+.badge span{position:absolute;top:-6px;right:-7px;background:var(--primary);color:#fff;font-size:10px;
+            font-weight:700;line-height:15px;min-width:15px;text-align:center;border-radius:8px;padding:0 3px}
+.avatar-me{width:32px;height:32px;border-radius:var(--r-full);background:var(--grad-me)}
+
+.shell{display:flex;height:calc(100vh - var(--topbar));overflow:hidden}
+.rail{width:var(--rail);flex:none;border-right:1px solid var(--border-light);padding:16px 0;
+      display:flex;flex-direction:column;align-items:center;gap:4px;overflow:auto}
+.rail button{width:76px;padding:8px 0;border-radius:var(--r-m);display:flex;flex-direction:column;
+             align-items:center;gap:6px;font-size:12px;line-height:16px;transition:background var(--t-fast)}
+.rail button:hover{background:var(--hover)}
+.rail button.on{color:var(--primary);font-weight:600}
+.rail button.on .box{background:var(--primary-selected);box-shadow:inset 0 0 0 1px rgba(0,115,234,.35)}
+.rail .box{width:44px;height:36px;border-radius:var(--r-box);display:grid;place-items:center}
+.rail hr{width:44px;border:none;border-top:1px solid var(--border-light);margin:10px 0}
+
+.panel{width:var(--panel);flex:none;border-right:1px solid var(--border-light);padding:18px 14px;
+       display:flex;flex-direction:column;gap:4px;overflow:auto}
+.panel h2{font-size:18px;line-height:24px;font-weight:600;margin:0 0 12px;
+          display:flex;align-items:center;justify-content:space-between}
+.panel h2 button{color:var(--text-2);display:grid;place-items:center}
+.new{height:40px;border-radius:var(--r-s);background:var(--primary-selected);color:var(--primary);
+     font-weight:600;display:flex;align-items:center;gap:10px;padding:0 12px;margin-bottom:6px}
+.new:hover{background:var(--primary-selected-hover)}
+.item{height:36px;border-radius:var(--r-s);display:flex;align-items:center;gap:12px;padding:0 12px;width:100%}
+.item:hover{background:var(--hover)}
+.group{margin:22px 0 6px;padding:0 12px;font-weight:700}
+.agent{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:var(--r-s);width:100%;text-align:left}
+.agent:hover{background:var(--hover)}
+.agent.on{background:var(--primary-selected)}
+.agent.on b{color:var(--primary)}
+.agent .pic{width:32px;height:32px;border-radius:var(--r-box);flex:none;background:var(--grad-avatar)}
+.agent .pic.b{background:linear-gradient(135deg,#b6d9ff,#6b8fe0)}
+.agent .pic.c{background:linear-gradient(135deg,#ffd9a8,#f0913e)}
+.agent .pic.off{background:linear-gradient(135deg,#dfe1e8,#c2c5d0)}
+.agent b{display:block;font-weight:600}
+.agent small{color:var(--text-2);font-size:13px;line-height:18px;display:block}
+.agent .n{margin-left:auto;font-size:11px;font-weight:700;color:#fff;background:var(--primary);
+          border-radius:8px;min-width:18px;height:18px;display:grid;place-items:center;padding:0 5px}
+.agent .soon{margin-left:auto;font-size:11px;color:var(--text-3)}
+.panel .foot{margin-top:auto;padding-top:16px}
+
+.canvas{flex:1;overflow:auto;
+  background:radial-gradient(900px 420px at 12% 100%,rgba(190,225,255,.26),transparent 70%),
+             radial-gradient(900px 460px at 88% 95%,rgba(200,185,255,.26),transparent 70%),
+             linear-gradient(#fff 0%,#fbfbff 55%,#f2f4ff 100%)}
+.chead{display:flex;align-items:center;gap:14px;padding:20px 32px 0}
+.chead .pic{width:44px;height:44px;border-radius:12px;background:var(--grad-avatar)}
+.chead h1{font-family:'Be Vietnam Pro',sans-serif;font-size:24px;line-height:30px;font-weight:600;margin:0}
+.chead .sub{color:var(--text-2);font-size:13px}
+.chead .right{margin-left:auto;display:flex;align-items:center;gap:20px;font-weight:500}
+.chead .right button{display:flex;align-items:center;gap:8px}
+.chead .right button:hover{color:var(--primary)}
+.live{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-2);font-weight:400}
+.live i{width:8px;height:8px;border-radius:var(--r-full);background:var(--st-green)}
+
+.tabs{display:flex;gap:26px;padding:18px 32px 0;border-bottom:1px solid var(--border-light)}
+.tabs button{padding:0 0 12px;font-weight:600;color:var(--text-2);border-bottom:2px solid transparent;
+             display:flex;align-items:center;gap:8px;transition:var(--t-fast)}
+.tabs button:hover{color:var(--text)}
+.tabs button.on{color:var(--primary);border-bottom-color:var(--primary)}
+.tabs .cnt{background:var(--field);border-radius:8px;font-size:11px;font-weight:700;padding:1px 6px;color:var(--text-2)}
+.tabs button.on .cnt{background:var(--primary-selected);color:var(--primary)}
+
+.wrap{max-width:var(--content-max);margin:0 auto;padding:24px 32px 64px}
+.view{display:none}.view.on{display:block}
+
+.routes{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.route{height:40px;padding:0 18px;border-radius:var(--r-pill);border:1px solid var(--border);background:#fff;
+       font-weight:500;display:flex;align-items:center;gap:9px;transition:var(--t-mid)}
+.route:hover{border-color:var(--text-3)}
+.route.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.route .c{font-size:12px;font-weight:700;opacity:.7}
+
+.prog{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.prog .track{flex:1;height:6px;border-radius:3px;background:var(--field);overflow:hidden}
+.prog .track i{display:block;height:100%;background:var(--st-green);width:0;transition:width var(--t-slow)}
+.prog .txt{font-size:13px;color:var(--text-2);white-space:nowrap}
+.prog .all{font-weight:600;color:var(--primary);white-space:nowrap}
+
+/* ── paper row ── */
+.paper{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);margin-bottom:14px;
+       overflow:hidden;transition:var(--t-slow)}
+.paper:hover{box-shadow:var(--sh-s)}
+.paper.gone{opacity:0;height:0;margin:0;border-width:0;overflow:hidden;transform:translateY(-6px)}
+.paper.flag{border-color:#f6cfd6}
+.phd{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--border-light)}
+.phd .av{width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;
+         color:#fff;font-weight:700;font-size:14px;background:var(--grad-avatar)}
+.phd .av.b{background:linear-gradient(135deg,#b6d9ff,#6b8fe0)}
+.phd .av.c{background:linear-gradient(135deg,#ffd9a8,#f0913e)}
+.phd .av.d{background:linear-gradient(135deg,#b7f3d8,#2eb67d)}
+.phd .who b{font-weight:600;display:block}
+.phd .who small{color:var(--text-2);font-size:13px}
+.phd .sp{flex:1}
+.score{display:flex;align-items:center;gap:10px}
+.score .num{font-family:'Be Vietnam Pro',sans-serif;font-size:26px;line-height:32px;font-weight:600}
+.score .of{color:var(--text-3);font-size:13px}
+.score .adj{display:flex;flex-direction:column;gap:2px}
+.score .adj button{width:22px;height:16px;display:grid;place-items:center;color:var(--text-3);
+                   border:1px solid var(--border-light);border-radius:3px}
+.score .adj button:hover{color:var(--primary);border-color:var(--primary)}
+.conf{width:150px}
+.conf .lab{font-size:11px;color:var(--text-2);display:flex;justify-content:space-between;margin-bottom:4px}
+.conf .bar{height:5px;border-radius:3px;background:var(--field);overflow:hidden}
+.conf .bar i{display:block;height:100%;background:var(--st-green)}
+.conf.low .bar i{background:var(--st-orange)}
+.conf.low .lab b{color:#d87f16}
+
+.pbody{padding:18px 20px;display:grid;grid-template-columns:1.25fr 1fr;gap:24px}
+.blk h5{font-size:12px;font-weight:700;color:var(--text-2);margin:0 0 10px;
+        display:flex;align-items:center;gap:7px}
+.fix{border-left:3px solid var(--border-light);padding:0 0 0 12px;margin-bottom:14px}
+.fix.g{border-left-color:var(--st-red)}
+.fix.v{border-left-color:var(--st-orange)}
+.fix.s{border-left-color:var(--st-purple)}
+.fix .was{color:var(--text-2);font-size:13px;line-height:20px}
+.fix .was s{text-decoration-color:var(--st-red);text-decoration-thickness:2px}
+.fix .now{font-size:13px;line-height:20px;margin-top:3px}
+.fix .now b{color:#00925a;font-weight:600}
+.fix .tip{font-size:12px;color:var(--text-3);margin-top:4px}
+.crit{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+.crit .cr{display:flex;align-items:center;gap:12px;font-size:13px}
+.crit .cr span{width:104px;flex:none;color:var(--text-2)}
+.crit .cr .b{flex:1;height:8px;border-radius:4px;background:var(--field);overflow:hidden}
+.crit .cr .b i{display:block;height:100%;background:var(--primary);opacity:.85}
+.crit .cr b{width:30px;text-align:right;font-weight:600}
+.note{border:1px solid var(--border);border-radius:var(--r-m);background:#fcfcfd}
+.note textarea{width:100%;border:none;outline:none;resize:vertical;font:inherit;font-size:13px;
+               line-height:21px;padding:12px 14px;background:transparent;min-height:118px;border-radius:var(--r-m)}
+.note .nb{padding:0 14px 10px;font-size:12px;color:var(--text-3);display:flex;justify-content:space-between}
+.pfoot{display:flex;align-items:center;gap:12px;padding:0 20px 18px}
+.pfoot .warnmsg{font-size:13px;color:#d87f16;display:flex;align-items:center;gap:7px}
+.pfoot .sp{flex:1}
+.btn{height:36px;padding:0 18px;border-radius:var(--r-s);font-weight:600;display:flex;align-items:center;
+     justify-content:center;gap:8px;transition:var(--t-mid)}
+.btn.pri{background:var(--primary);color:#fff}
+.btn.pri:hover{background:var(--primary-hover)}
+.btn.gho{border:1px solid var(--border);color:var(--text-2)}
+.btn.gho:hover{border-color:var(--text-3);color:var(--text)}
+
+.tag{font-size:11px;font-weight:600;border-radius:var(--r-s);padding:2px 8px;line-height:18px}
+.tag.red{background:#fdeaed;color:var(--st-red)}
+.tag.org{background:#fff2e0;color:#d87f16}
+.tag.grn{background:#e3f9ef;color:#00925a}
+.tag.blu{background:var(--primary-selected);color:var(--primary)}
+.tag.pur{background:#f3e8fb;color:#7b3fb0}
+
+/* MCQ batch table */
+.tbl{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);overflow:hidden}
+.tbl .th,.tbl .tr{display:grid;grid-template-columns:2fr 90px 90px 1.6fr 96px;gap:14px;
+                  align-items:center;padding:13px 20px}
+.tbl .th{background:#fbfbfd;border-bottom:1px solid var(--border-light);font-size:12px;
+         font-weight:700;color:var(--text-2)}
+.tbl .tr{border-bottom:1px solid var(--border-light)}
+.tbl .tr:last-child{border-bottom:none}
+.tbl .tr:hover{background:var(--hover)}
+.tbl .nm{display:flex;align-items:center;gap:10px;font-weight:600}
+.tbl .nm i{width:28px;height:28px;border-radius:9px;background:var(--grad-avatar);display:block;flex:none}
+.tbl .sc{font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:16px}
+.tbl .sc.low{color:var(--st-red)}
+.tbl .miss{font-size:13px;color:var(--text-2)}
+.tbl .st{font-size:12px}
+
+/* parent msg */
+.msg{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:18px 20px;
+     margin-bottom:12px;display:flex;gap:16px;transition:var(--t-slow)}
+.msg:hover{box-shadow:var(--sh-s)}
+.msg.gone{opacity:0;height:0;padding:0;margin:0;border-width:0;overflow:hidden}
+.msg .av{width:38px;height:38px;border-radius:12px;flex:none;background:linear-gradient(135deg,#b6d9ff,#6b8fe0);
+         display:grid;place-items:center;color:#fff;font-weight:700}
+.msg .bd{flex:1;min-width:0}
+.msg .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.msg .acts{display:flex;flex-direction:column;gap:8px;width:118px;flex:none}
+
+/* KPI + health */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:18px 20px}
+.kpi .lab{font-size:13px;color:var(--text-2)}
+.kpi .val{font-family:'Be Vietnam Pro',sans-serif;font-size:28px;line-height:38px;font-weight:600;margin-top:6px}
+.kpi .val.warn{color:var(--st-red)}
+.kpi .val.good{color:var(--st-green)}
+.kpi .d{font-size:12px;color:var(--text-3)}
+.blkc{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:24px;margin-top:20px}
+.blkc h3{font-size:18px;font-weight:600;margin:0 0 4px}
+.blkc .sub{color:var(--text-2);font-size:13px;margin:0 0 20px}
+.erow{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.erow .nm{width:230px;flex:none;font-size:13px}
+.erow .bar{flex:1;height:32px;border-radius:var(--r-m);background:var(--field);overflow:hidden;position:relative}
+.erow .bar i{display:block;height:100%;background:var(--st-red);opacity:.78;border-radius:var(--r-m)}
+.erow .bar b{position:absolute;left:12px;top:0;line-height:32px;color:#fff;font-size:12px;font-weight:600}
+.erow .act{width:130px;text-align:right;color:var(--primary);font-weight:600;font-size:13px}
+.lk{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border-light)}
+.lk:first-of-type{border-top:none}
+.lk .dot{width:10px;height:10px;border-radius:var(--r-full);flex:none}
+.lk .t{flex:1}.lk .t b{display:block;font-weight:600}
+.lk .t small{color:var(--text-2);font-size:13px}
+.lk .n{font-weight:700;font-family:'Be Vietnam Pro',sans-serif;font-size:15px;width:78px;text-align:right}
+.lk .go{color:var(--primary);font-weight:600;font-size:13px;white-space:nowrap;width:140px;text-align:right}
+
+.empty{text-align:center;padding:56px 24px}
+.empty .art{width:96px;height:96px;border-radius:var(--r-art);margin:0 auto 20px;
+            background:linear-gradient(135deg,#b7f3d8,#2eb67d);display:grid;place-items:center;color:#fff}
+.empty h3{font-family:'Be Vietnam Pro',sans-serif;font-size:22px;font-weight:600;margin:0 0 8px}
+.empty p{color:var(--text-2);margin:0}
+
+.log{position:relative;padding-left:26px}
+.log::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:1px;background:var(--border-light)}
+.logi{position:relative;padding:0 0 20px}
+.logi::before{content:"";position:absolute;left:-25px;top:5px;width:11px;height:11px;border-radius:var(--r-full);
+              background:#fff;box-shadow:inset 0 0 0 2px var(--primary)}
+.logi.g::before{box-shadow:inset 0 0 0 2px var(--st-green)}
+.logi.m::before{box-shadow:inset 0 0 0 2px var(--text-3)}
+.logi .tm{font-size:12px;color:var(--text-3)}
+.logi b{display:block;font-weight:600;margin:2px 0}
+.logi small{color:var(--text-2);font-size:13px}
+
+.steer{border-radius:var(--r-l);padding:2px;margin-top:24px;
+       background:linear-gradient(120deg,var(--grad-a),var(--grad-b) 55%,var(--grad-c));box-shadow:var(--sh-prompt)}
+.steer-in{background:#fff;border-radius:14px;padding:16px 18px 12px}
+.steer-in textarea{width:100%;border:none;outline:none;resize:none;font:inherit;font-size:15px;
+                   line-height:24px;color:var(--text-2);min-height:48px;background:transparent}
+.steer-bar{display:flex;align-items:center;justify-content:space-between;color:var(--text-2)}
+.steer-bar .l{display:flex;gap:8px;flex-wrap:wrap}
+.hint{font-size:12px;border:1px solid var(--border);border-radius:var(--r-pill);padding:4px 12px;color:var(--text-2)}
+.hint:hover{border-color:var(--text-3);color:var(--text)}
+.send{width:36px;height:36px;border-radius:var(--r-m);background:var(--send-bg);display:grid;
+      place-items:center;color:var(--text-3);flex:none}
+.rulebox{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.rule{font-size:12px;background:var(--field);border-radius:var(--r-pill);padding:5px 10px 5px 12px;
+      display:flex;align-items:center;gap:8px;color:var(--text-2)}
+.rule button{color:var(--text-3);display:grid;place-items:center}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);
+       color:#fff;padding:12px 20px;border-radius:var(--r-m);font-weight:500;box-shadow:var(--sh-s);
+       transition:transform .18s ease;z-index:40}
+.toast.on{transform:translateX(-50%) translateY(0)}
+
+@media(max-width:1199px){.pbody{grid-template-columns:1fr}}
+@media(max-width:1099px){.panel{display:none}.kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:767px){.rail{display:none}.tbl .th,.tbl .tr{grid-template-columns:1.4fr 60px 1fr}
+  .tbl .th span:nth-child(3),.tbl .tr .st{display:none}.erow .nm{width:120px}.erow .act{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
+
+/* ── additions ── */
+.screen{display:none}.screen.on{display:block}
+.panel .cls{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--r-s);width:100%;text-align:left}
+.panel .cls:hover{background:var(--hover)}
+.panel .cls.on{background:var(--primary-selected)}.panel .cls.on b{color:var(--primary)}
+.panel .cls i{width:10px;height:10px;border-radius:3px;flex:none}
+.panel .cls b{display:block;font-weight:600;font-size:13px}
+.panel .cls small{display:block;color:var(--text-2);font-size:12px}
+.panel .cls .n{margin-left:auto;font-size:12px;color:var(--text-3)}
+.panel .setup{margin-top:auto;padding:14px 12px;border:1px solid var(--border-light);border-radius:var(--r-m);font-size:12px;color:var(--text-2)}
+.panel .setup b{display:block;color:var(--text);font-size:13px;margin-bottom:6px}
+.panel .setup .bar{height:6px;border-radius:3px;background:var(--field);overflow:hidden;margin:4px 0 6px}
+.panel .setup .bar i{display:block;height:100%;width:66%;background:var(--primary)}
+.grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;margin-top:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.card{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:20px 22px;transition:var(--t-slow)}
+.card:hover{box-shadow:var(--sh-s)}
+.card .ch{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.card .ch i{width:10px;height:22px;border-radius:3px;flex:none}
+.card .ch b{font-weight:600;font-size:15px;flex:1}
+.card .row{display:flex;justify-content:space-between;font-size:13px;color:var(--text-2);padding:5px 0;border-top:1px solid var(--border-light)}
+.card .row b{color:var(--text);font-weight:600}
+.card .pb{height:6px;border-radius:3px;background:var(--field);overflow:hidden;margin:10px 0 4px}
+.card .pb i{display:block;height:100%;background:var(--primary)}
+.card .cf{display:flex;gap:8px;margin-top:14px}
+.todo{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border-light)}
+.todo:first-of-type{border-top:0}
+.todo .who{width:36px;height:36px;border-radius:11px;background:var(--grad-avatar);flex:none;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:700}
+.todo .who.b{background:linear-gradient(135deg,#b6d9ff,#6b8fe0)}.todo .who.c{background:linear-gradient(135deg,#ffd9a8,#f0913e)}.todo .who.d{background:linear-gradient(135deg,#b7f3d8,#2eb67d)}
+.todo .t{flex:1}.todo .t b{display:block;font-weight:600}.todo .t small{color:var(--text-2);font-size:13px}
+.todo .go{color:var(--primary);font-weight:600;font-size:13px;white-space:nowrap}
+.tbl.stu .th,.tbl.stu .tr{grid-template-columns:2fr 1.2fr 80px 80px 110px 1.2fr 110px}
+.tbl.exam .th,.tbl.exam .tr{grid-template-columns:2.2fr 110px 110px 1.4fr 110px}
+.tbl.fee .th,.tbl.fee .tr{grid-template-columns:2fr 1.2fr 110px 110px 1.2fr 120px}
+.tbl.path .th,.tbl.path .tr{grid-template-columns:90px 2.2fr 1.4fr 130px}
+.band{font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:15px}
+.band.up{color:#00925a}.band.dn{color:var(--st-red)}
+.drop{border:2px dashed var(--border);border-radius:var(--r-l);padding:28px;text-align:center;color:var(--text-2);background:#fff;margin-bottom:20px}
+.drop b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px}
+.day{background:var(--field);border-radius:var(--r-m);padding:10px;min-height:96px;font-size:12px;color:var(--text-2)}
+.day b{display:block;color:var(--text);margin-bottom:6px}
+.day .ev{background:#fff;border-left:3px solid var(--st-blue);border-radius:4px;padding:4px 6px;margin-bottom:4px;font-size:11px;line-height:15px;color:var(--text)}
+.day .ev.o{border-left-color:var(--st-orange)}.day .ev.p{border-left-color:var(--st-purple)}
+.post{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:18px 20px;margin-bottom:12px;display:flex;gap:14px}
+.post .av{width:36px;height:36px;border-radius:11px;flex:none;background:var(--grad-avatar);display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px}
+.post .av.b{background:linear-gradient(135deg,#b6d9ff,#6b8fe0)}.post .av.me{background:var(--grad-me)}
+.post .bd{flex:1}.post .hd{display:flex;gap:8px;align-items:center;margin-bottom:6px}.post .hd b{font-weight:600}.post .hd small{color:var(--text-3);font-size:12px}
+.post p{margin:0 0 8px;font-size:13px;line-height:21px}
+.post .re{display:flex;gap:14px;font-size:12px;color:var(--text-2)}
+.post .att{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border-light);border-radius:var(--r-m);padding:6px 10px;font-size:12px;margin:4px 0 8px}
+.ai{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#7b3fb0;background:#f3e8fb;border-radius:var(--r-s);padding:2px 8px}
+@media(max-width:1099px){.grid2,.grid3{grid-template-columns:1fr}.week{grid-template-columns:repeat(2,1fr)}.tier{flex-wrap:wrap}}
+.tier{display:flex;gap:8px;margin-top:8px}
+.tier div{flex:1;border-radius:var(--r-m);padding:12px 12px 10px;border:1px solid var(--border-light);font-size:12px;color:var(--text-2)}
+.tier div b{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
+.tier div.done{background:#e3f9ef;border-color:#c9f0dd}
+.tier div.now{background:var(--primary-selected);border-color:#b3d7ff}.tier div.now b{color:var(--primary)}
+.funnel{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:8px}
+.fs{background:var(--field);border-radius:var(--r-m);padding:14px 14px 12px;position:relative}
+.fs b{font-family:'Be Vietnam Pro',sans-serif;font-size:24px;line-height:30px;display:block}
+.fs small{color:var(--text-2);font-size:12px;display:block}
+.fs .dl{position:absolute;right:10px;top:10px;font-size:11px;font-weight:700;color:#00925a}.fs .dl.w{color:#d87f16}
+
+/* ── type roles: Be Vietnam Pro = tiêu đề/nút/nhãn · Inter = nội dung/bảng ── */
+h1,h2,h3,h5,.shopname,.rail button,.new,.panel .group,.panel .cls b,.tabs button,.route,.btn,.tag,.hint,.rule,.chead .right button,
+.kpi .lab,.tbl .th,.prog .all,.erow .act,.lk .go,.todo .go,.card .ch b,.day b,.ai,.setup b,.pfoot .warnmsg{font-family:'Be Vietnam Pro',Inter,sans-serif}
+.tbl,.tbl .tr,.note textarea,.post p,.msg p,.fix,.crit,.logi small,.lk .t small,.todo .t small,.card .row,.kpi .d,.sub{font-family:Inter,system-ui,sans-serif}
+.tbl .sc,.kpi .val,.score .num,.band,.fs b,.lk .n{font-family:'Be Vietnam Pro',sans-serif;font-variant-numeric:tabular-nums}
+.tbl .tr,.card .row,.tbl .miss{font-variant-numeric:tabular-nums}
+.panel .cls small,.who small,.logi small{line-height:19px}
+
+/* ── drawer ── */
+.ov{position:fixed;inset:0;background:rgba(31,37,52,.32);opacity:0;pointer-events:none;transition:opacity .15s;z-index:50}
+.ov.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:520px;max-width:100vw;background:#fff;box-shadow:-12px 0 40px rgba(0,0,0,.12);transform:translateX(100%);transition:transform .18s ease;z-index:51;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.drawer .dh{padding:20px 24px 14px;border-bottom:1px solid var(--border-light);display:flex;align-items:flex-start;gap:12px}
+.drawer .dh h2{font-size:18px;margin:0;flex:1}
+.drawer .dh p{margin:4px 0 0;color:var(--text-2);font-size:13px}
+.drawer .dh button{color:var(--text-3);font-size:20px;line-height:1}
+.drawer .db{padding:18px 24px;overflow:auto;flex:1}
+.drawer .df{padding:14px 24px;border-top:1px solid var(--border-light);display:flex;gap:8px;justify-content:flex-end;background:#fbfbfd}
+.step{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--border-light)}
+.step:first-child{border-top:0;padding-top:0}
+.step i{width:26px;height:26px;border-radius:50%;background:var(--primary-selected);color:var(--primary);font-family:'Be Vietnam Pro',sans-serif;font-weight:700;font-size:12px;display:grid;place-items:center;flex:none}
+.step .sb{flex:1}.step .sb b{display:block;font-weight:600;margin-bottom:6px}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:12px;color:var(--text-2);margin-bottom:4px;font-family:'Be Vietnam Pro',sans-serif;font-weight:600}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--border);border-radius:var(--r-m);padding:9px 12px;font:inherit;font-size:14px;color:var(--text);background:#fff}
+.field textarea{min-height:88px;resize:vertical;line-height:21px}
+.pick{display:grid;gap:6px}
+.pick label{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-light);border-radius:var(--r-m);font-size:13px;cursor:pointer}
+.pick label:hover{border-color:var(--text-3)}
+.pick input{accent-color:var(--primary)}
+.pick small{margin-left:auto;color:var(--text-3);font-size:12px}
+.pre{background:var(--field);border-radius:var(--r-m);padding:12px 14px;font-size:13px;line-height:21px;white-space:pre-line}
+.pre b{font-family:'Be Vietnam Pro',sans-serif}
+.sumrow{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:1px solid var(--border-light)}
+.sumrow:first-child{border-top:0}.sumrow b{font-family:'Be Vietnam Pro',sans-serif}
+.profile .top{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.profile .top .av{width:52px;height:52px;border-radius:16px;background:var(--grad-avatar);display:grid;place-items:center;color:#fff;font-weight:700;font-family:'Be Vietnam Pro',sans-serif}
+.profile .top h3{margin:0;font-size:17px}.profile .top small{color:var(--text-2);font-size:13px}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.mini div{background:var(--field);border-radius:var(--r-m);padding:10px 12px}
+.mini b{font-family:'Be Vietnam Pro',sans-serif;font-size:18px;display:block;line-height:1.1}
+.mini small{color:var(--text-2);font-size:12px}
+.loop{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:8px}
+.ln{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:16px 18px;position:relative}
+.ln .no{font-family:'Be Vietnam Pro',sans-serif;font-weight:700;font-size:12px;color:var(--primary);margin-bottom:6px}
+.ln b{display:block;font-weight:600;margin-bottom:4px}
+.ln p{margin:0;font-size:13px;color:var(--text-2);line-height:19px}
+.ln .who{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.ln.auto{border-color:#c9f0dd;background:#f4fdf8}
+.ln.human{border-color:#b3d7ff;background:#f3f8ff}
+.ln.money{border-color:#ffe2b8;background:#fff9f0}
+.leg{display:flex;gap:16px;font-size:12px;color:var(--text-2);margin-top:14px}
+.leg i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.cfgrow{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border-light)}
+.cfgrow:first-of-type{border-top:0}
+.cfgrow .t{flex:1}.cfgrow .t b{display:block;font-weight:600}.cfgrow .t small{color:var(--text-2);font-size:13px}
+.sw{width:42px;height:24px;border-radius:12px;background:var(--border);position:relative;flex:none;transition:var(--t-mid)}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:var(--t-mid)}
+.sw.on{background:var(--st-green)}.sw.on::after{left:21px}
+@media(max-width:1099px){.loop{grid-template-columns:1fr 1fr}}
+@media(max-width:767px){.loop{grid-template-columns:1fr}.drawer{width:100vw}}
+
+/* ── class detail ── */
+.crumb{font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.crumb button{color:var(--text-2);font-family:'Be Vietnam Pro',sans-serif;font-weight:600}
+.crumb button:hover{color:var(--primary)}
+.matrix{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);overflow:auto}
+.matrix table{border-collapse:collapse;min-width:100%;font-size:13px}
+.matrix th,.matrix td{padding:10px 14px;border-bottom:1px solid var(--border-light);border-right:1px solid var(--border-light);text-align:center;white-space:nowrap}
+.matrix th{background:#fbfbfd;font-weight:600;vertical-align:top;font-family:'Be Vietnam Pro',sans-serif}
+.matrix th small{display:block;font-weight:400;color:var(--text-3);font-size:11px;margin-top:2px}
+.matrix th .wt{color:#7b3fb0;font-size:11px;font-weight:600}
+.matrix th:first-child,.matrix td:first-child{text-align:left;position:sticky;left:0;background:#fff;min-width:200px;z-index:1}
+.matrix th:first-child{background:#fbfbfd;z-index:2}
+.matrix tr.avg td{background:#fbfbfd;font-weight:600}
+.matrix td.b{font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:14px}
+.matrix td.up{color:#00925a}.matrix td.dn{color:var(--st-red)}
+.matrix td small{display:block;font-weight:400;color:var(--text-3);font-size:11px}
+.matrix td.miss{color:var(--text-3)}
+.matrix td.late{background:#fff7f8}
+.matrix .nm{display:flex;align-items:center;gap:10px;font-weight:600}
+.matrix .nm i{width:26px;height:26px;border-radius:8px;background:var(--grad-avatar);flex:none}
+.matrix td:first-child .tag{margin-left:6px}
+.asg{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:16px 20px;margin-bottom:12px;display:grid;grid-template-columns:1fr 150px 130px 110px;gap:14px;align-items:center}
+.asg .t b{display:block;font-weight:600}.asg .t small{color:var(--text-2);font-size:13px}
+.asg .pbar{height:8px;border-radius:4px;background:var(--field);overflow:hidden}
+.asg .pbar i{display:block;height:100%;background:var(--st-green)}
+.asg .pl{font-size:12px;color:var(--text-2);margin-top:4px}
+.asg .h{display:grid;grid-template-columns:1fr 150px 130px 110px;gap:14px;padding:0 20px 6px;font-size:12px;color:var(--text-2);font-family:'Be Vietnam Pro',sans-serif;font-weight:600}
+.ppl{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);overflow:hidden}
+.ppl .pr{display:grid;grid-template-columns:2fr 90px 110px 110px 1.2fr 100px;gap:12px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--border-light)}
+.ppl .pr:last-child{border-bottom:0}.ppl .pr:hover{background:var(--hover)}
+.ppl .ph{background:#fbfbfd;font-size:12px;font-weight:600;color:var(--text-2);font-family:'Be Vietnam Pro',sans-serif}
+@media(max-width:900px){.asg,.asg .h{grid-template-columns:1fr 100px}.asg>*:nth-child(3),.asg>*:nth-child(4),.asg .h>*:nth-child(3),.asg .h>*:nth-child(4){display:none}}
+
+/* ── exam wizard modal ── */
+.modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:24px}
+.modal.on{display:flex}
+.modal .box{background:#fff;border-radius:var(--r-l);width:1040px;max-width:100%;max-height:calc(100vh - 48px);display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.2)}
+.mh{display:flex;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid var(--border-light)}
+.mh h2{margin:0;font-size:18px;flex:1}.mh button{color:var(--text-3);font-size:22px}
+.steps{display:flex;align-items:center;gap:10px;padding:14px 24px;border-bottom:1px solid var(--border-light);font-size:13px}
+.steps .sp{display:flex;align-items:center;gap:8px;color:var(--text-2);font-family:'Be Vietnam Pro',sans-serif;font-weight:600}
+.steps .sp i{width:26px;height:26px;border-radius:50%;background:var(--field);color:var(--text-2);display:grid;place-items:center;font-size:12px;font-style:normal}
+.steps .sp.on{color:var(--text)}.steps .sp.on i{background:var(--primary);color:#fff}
+.steps .sp.done i{background:var(--st-green);color:#fff}
+.steps .ln{flex:1;height:1px;background:var(--border-light)}.steps .ln.done{background:var(--st-green)}
+.mb{padding:20px 24px;overflow:auto;flex:1}
+.mf{display:flex;align-items:center;gap:8px;padding:14px 24px;border-top:1px solid var(--border-light);background:#fbfbfd}
+.mf .sp{flex:1}
+.wstep{display:none}.wstep.on{display:block}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--border);border-radius:var(--r-m);padding:9px 16px;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:13px;color:var(--text-2);background:#fff}
+.chip.on{background:var(--primary-selected);border-color:#b3d7ff;color:var(--primary)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.upl{border:2px dashed var(--border);border-radius:var(--r-l);padding:44px 24px;text-align:center;background:#fbfbfd;cursor:pointer}
+.upl .uic{width:56px;height:56px;border-radius:16px;background:#fff;border:1px solid var(--border-light);display:grid;place-items:center;margin:0 auto 14px;color:var(--primary)}
+.upl b{display:block;font-size:16px;margin-bottom:4px}.upl p{margin:0;color:var(--text-2);font-size:13px}
+.ocr{display:none;margin-top:16px}.ocr.on{display:block}
+.ocr .file{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border-light);border-radius:var(--r-m);margin-bottom:10px}
+.ocr .file i{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#ffd9a8,#f0913e);flex:none}
+.ocr .file b{display:block;font-weight:600}.ocr .file small{color:var(--text-2);font-size:12px}
+.ocr .file .pb{width:160px;height:6px;border-radius:3px;background:var(--field);overflow:hidden;margin-left:auto}
+.ocr .file .pb i{display:block;height:100%;width:0;background:var(--primary);border-radius:0;transition:width .4s}
+.ocrlog{font-size:13px;color:var(--text-2);line-height:22px}
+.ocrlog div{opacity:0;transition:opacity .3s}.ocrlog div.on{opacity:1}
+.ocrlog b{color:var(--text);font-family:'Be Vietnam Pro',sans-serif}
+.qlist{display:flex;flex-direction:column;gap:12px}
+.qc{border:1px solid var(--border-light);border-radius:var(--r-l);background:#fff}
+.qc.warn{border-color:#f6cfd6}
+.qh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border-light)}
+.qh .no{font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:var(--primary)}
+.qh .sp{flex:1}
+.qh .ic{color:var(--text-3);width:28px;height:28px;border-radius:6px;display:grid;place-items:center}.qh .ic:hover{background:var(--hover);color:var(--text)}
+.qb{padding:14px 16px}
+.qtext{background:var(--field);border-radius:var(--r-m);padding:10px 12px;font-size:14px;line-height:22px;margin-bottom:10px;outline:none}
+.qtext:focus{background:#fff;box-shadow:inset 0 0 0 1px var(--primary)}
+.ins{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.ins button{border:1px dashed var(--border);border-radius:var(--r-m);padding:6px 12px;font-size:12px;color:var(--text-2);display:inline-flex;gap:6px;align-items:center}
+.ins button:hover{border-color:var(--text-3);color:var(--text)}
+.opts2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.op{border:1px solid var(--border-light);border-radius:var(--r-m);padding:9px 12px;display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer}
+.op i{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex:none}
+.op.on{background:#e3f9ef;border-color:#c9f0dd}.op.on i{border-color:var(--st-green);background:var(--st-green);box-shadow:inset 0 0 0 3px #fff}
+.op b{font-family:'Be Vietnam Pro',sans-serif;color:var(--text-2);font-size:12px}
+.op span[contenteditable]{flex:1;outline:none}
+.expl{margin-top:10px}
+.expl label{font-size:12px;color:#b26a00;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;display:block;margin-bottom:4px}
+.expl div{background:#fff9e6;border:1px solid #ffe8a3;border-radius:var(--r-m);padding:9px 12px;font-size:13px;line-height:20px;outline:none}
+.passage{background:#f3f8ff;border:1px solid #b3d7ff;border-radius:var(--r-m);padding:10px 12px;font-size:13px;line-height:20px;margin-bottom:10px;color:var(--text)}
+.passage b{font-family:'Be Vietnam Pro',sans-serif;display:block;margin-bottom:2px;color:var(--primary)}
+.qhint{font-size:12px;color:var(--text-3);margin:0 0 8px}
+.wr{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:var(--r-m);background:#fff2e0;color:#8a4b00;font-size:13px;margin-bottom:12px}
+.wr b{font-family:'Be Vietnam Pro',sans-serif}
+.pv{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+.pv .sumbox{border:1px solid var(--border-light);border-radius:var(--r-l);padding:16px 18px}
+.pv h4{margin:0 0 10px;font-size:14px}
+.qmini{display:flex;gap:8px;flex-wrap:wrap}
+.qmini i{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-style:normal;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;background:var(--field);color:var(--text-2)}
+.qmini i.ok{background:#e3f9ef;color:#00925a}.qmini i.w{background:#fff2e0;color:#d87f16}.qmini i.h{background:#f3e8fb;color:#7b3fb0}
+@media(max-width:900px){.frow,.opts2,.pv{grid-template-columns:1fr}.steps .sp span{display:none}}
+
+/* ── permissions & audit ── */
+.perm{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);overflow:auto}
+.perm table{border-collapse:collapse;width:100%;font-size:13px;min-width:820px}
+.perm th,.perm td{padding:10px 12px;border-bottom:1px solid var(--border-light);text-align:center;vertical-align:middle}
+.perm th{background:#fbfbfd;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:12px}
+.perm th small{display:block;font-weight:400;color:var(--text-3)}
+.perm td:first-child,.perm th:first-child{text-align:left;min-width:220px}
+.perm td:first-child b{display:block;font-weight:600}.perm td:first-child small{color:var(--text-3);font-size:12px}
+.pm{display:inline-flex;align-items:center;justify-content:center;min-width:68px;height:26px;border-radius:13px;font-size:11px;font-weight:600;font-family:'Be Vietnam Pro',sans-serif;padding:0 10px}
+.pm.full{background:#e3f9ef;color:#00925a}.pm.own{background:var(--primary-selected);color:var(--primary)}.pm.read{background:var(--field);color:var(--text-2)}.pm.none{background:#fdeaed;color:var(--st-red)}.pm.ask{background:#fff2e0;color:#d87f16}.pm.auto{background:#f3e8fb;color:#7b3fb0}
+.pmleg{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.role{display:flex;gap:8px;margin-bottom:14px}
+.role button{border:1px solid var(--border);border-radius:var(--r-pill);padding:8px 16px;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:13px;color:var(--text-2);background:#fff}
+.role button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.obj{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:16px 18px}
+.obj h4{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px}
+.obj .kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--border-light);font-size:13px}
+.obj .kv:first-of-type{border-top:0}
+.obj .kv span:first-child{color:var(--text-2)}
+.obj .kv.hide{opacity:.35;text-decoration:line-through}
+.obj .kv.hide::after{content:"ẩn với vai này";color:var(--st-red);font-size:11px;text-decoration:none;font-family:'Be Vietnam Pro',sans-serif;font-weight:600}
+.audit{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);overflow:hidden}
+.au{display:grid;grid-template-columns:70px 130px 1fr 140px 120px;gap:12px;padding:11px 16px;border-bottom:1px solid var(--border-light);font-size:13px;align-items:center}
+.au.h{background:#fbfbfd;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:12px;color:var(--text-2)}
+.au:last-child{border-bottom:0}
+.au .tm{color:var(--text-3);font-variant-numeric:tabular-nums}
+.au .who{display:flex;align-items:center;gap:8px;font-weight:600}
+.au .who i{width:8px;height:8px;border-radius:50%;flex:none}
+.au .what b{font-weight:600}.au .what small{display:block;color:var(--text-2);font-size:12px}
+.au .vis{font-size:12px;color:var(--text-2)}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:8px;align-items:stretch}
+.fnode{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-m);padding:12px;font-size:12px;position:relative}
+.fnode b{display:block;font-size:13px;font-weight:600;margin-bottom:3px}
+.fnode .r{display:inline-block;margin-bottom:6px;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:11px;padding:1px 8px;border-radius:10px}
+.fnode .r.t{background:var(--primary-selected);color:var(--primary)}.fnode .r.s{background:#e3f9ef;color:#00925a}.fnode .r.m{background:#f3e8fb;color:#7b3fb0}
+.fnode small{color:var(--text-2);line-height:17px;display:block}
+.fnode::after{content:"›";position:absolute;right:-9px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:18px;background:transparent}
+.fnode:last-child::after{content:""}
+.rulecard{border:1px solid var(--border-light);border-radius:var(--r-m);padding:12px 14px;font-size:13px;line-height:20px;margin-bottom:8px;background:#fff}
+.rulecard b{font-family:'Be Vietnam Pro',sans-serif}
+@media(max-width:1099px){.flow{grid-template-columns:repeat(3,1fr)}.au{grid-template-columns:60px 110px 1fr}.au>*:nth-child(4),.au>*:nth-child(5){display:none}}
+
+
+/* ── assistant (trợ giảng) mode ── */
+body.ta .rail button[data-s="stu"],body.ta .rail button[data-s="path"],body.ta .rail button[data-s="bank"],body.ta .rail button[data-s="fee"],body.ta .rail button[data-s="cfg"],body.ta .rail button[data-s="home"]{display:none}
+body.ta .rail button[data-s="tahome"]{display:flex}
+.rail button[data-s="tahome"]{display:none}
+body.ta .panel .cls[data-cls="c2"],body.ta .panel .cls[data-cls="c3"],body.ta .panel .cls[data-cls="c4"],body.ta .panel .cls:not([data-cls]),body.ta .panel .new,body.ta .panel .setup,body.ta .panel .group:last-of-type{display:none}
+body.ta .tabanner{display:flex}
+.tabanner{display:none;align-items:center;gap:12px;background:#fff2e0;color:#8a4b00;padding:8px 20px;font-size:13px;border-bottom:1px solid #ffe2b8}
+.tabanner b{font-family:'Be Vietnam Pro',sans-serif}
+.tabanner button{margin-left:auto;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;color:var(--primary)}
+body.ta .avatar-me{background:linear-gradient(135deg,#ffd9a8,#f0913e)}
+body.ta [data-ta-hide]{display:none!important}
+body.ta .paper .pfoot .btn.pri::after{content:" cho cô duyệt"}
+body.ta .paper .score .adj{display:none}
+body.ta #s-class .tabs [data-tab="cl4"],body.ta #s-class .chead .right{display:none}
+body.ta .matrix,body.ta .kpi .val.warn{filter:none}
+.talvl{display:grid;grid-template-columns:1fr repeat(4,84px);gap:6px;align-items:center;padding:9px 0;border-top:1px solid var(--border-light);font-size:13px}
+.talvl:first-child{border-top:0}
+.talvl.h{font-size:11px;color:var(--text-2);font-family:'Be Vietnam Pro',sans-serif;font-weight:600;text-align:center}
+.talvl.h span:first-child{text-align:left}
+.talvl .nm b{display:block;font-weight:600}.talvl .nm small{color:var(--text-3);font-size:11px}
+.talvl .lv{height:28px;border-radius:6px;background:var(--field);font-size:11px;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;color:var(--text-3);display:grid;place-items:center;cursor:pointer}
+.talvl .lv.on{background:var(--primary);color:#fff}
+.talvl .lv.on.n{background:#fdeaed;color:var(--st-red)}.talvl .lv.on.r{background:var(--field);color:var(--text)}.talvl .lv.on.a{background:#fff2e0;color:#d87f16}.talvl .lv.on.f{background:#e3f9ef;color:#00925a}
+.tacard{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border-light)}
+.tacard:first-of-type{border-top:0}
+.tacard .av{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#ffd9a8,#f0913e);display:grid;place-items:center;color:#fff;font-weight:700;font-family:'Be Vietnam Pro',sans-serif;flex:none}
+.tacard .t{flex:1}.tacard .t b{display:block;font-weight:600}.tacard .t small{color:var(--text-2);font-size:13px}
+
+</style>
+<div class="topbar">
+  <span class="logo"><i></i><i></i><i></i></span>
+  <span class="shopname">Lớp IELTS của cô Thảo</span>
+  <div class="search"><svg class="ico s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Tìm học viên, lớp, đề, bài nộp…</div>
+  <div class="tb-right">
+    <span class="tag grn">Tuần này tiết kiệm 6h20</span>
+    <button class="badge" aria-label="Thông báo"><svg class="ico" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span>7</span></button>
+    <button class="avatar-me" aria-label="Tài khoản" id="rolebtn" title="Đổi vai"></button>
+  </div>
+</div>
+<div class="tabanner"><b>Đang xem như trợ giảng Lan</b> — chỉ lớp IELTS 6.5 · nháp nhận xét, không gửi · không thấy học phí, rubric, ghi chú của cô <button id="roleback">Về vai cô Thảo</button></div>
+
+<div class="shell">
+  <nav class="rail">
+    <button data-s="home" class=on><span class="box"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span>Tổng quan</button>
+    <button data-s="tahome"><span class="box"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span>Việc của tôi</button>
+    <button data-s="grade"><span class="box"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M13 7l3 3"/></svg></span>Chấm bài</button>
+    <button data-s="stu"><span class="box"><svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 20a5 5 0 0 1 6-4.5"/></svg></span>Học viên</button>
+    <button data-s="cls"><span class="box"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg></span>Lớp học</button>
+    <hr>
+    <button data-s="path"><span class="box"><svg class="ico" viewBox="0 0 24 24"><path d="M4 18h5l3-12h4l3 12h1"/></svg></span>Lộ trình</button>
+    <button data-s="bank"><span class="box"><svg class="ico" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg></span>Ngân hàng đề</button>
+    <button data-s="fee"><span class="box"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></span>Học phí</button>
+    <button data-s="feed"><span class="box"><svg class="ico" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></svg></span>Bảng tin</button>
+    <hr>
+    <button data-s="cfg"><span class="box"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>Cấu hình</button>
+  </nav>
+
+  <aside class="panel">
+    <h2>Lớp của cô <button aria-label="Thu gọn"><svg class="ico s" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button></h2>
+    <button class="new"><svg class="ico s" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>Mở lớp mới từ lộ trình</button>
+    <div class="group">Đang chạy</div>
+    <button class="cls on" data-cls="all"><i style="background:var(--ink)"></i><span><b>Tất cả</b><small>4 lớp · 58 học viên</small></span></button>
+    <button class="cls" data-cls="c1" data-go="class"><i style="background:var(--st-blue)"></i><span><b>IELTS 6.5 · Tối T3/T5</b><small>18 học viên</small></span><span class="n">6</span></button>
+    <button class="cls" data-cls="c2"><i style="background:var(--st-purple)"></i><span><b>IELTS 5.5 · Sáng T7/CN</b><small>16 học viên</small></span><span class="n">5</span></button>
+    <button class="cls" data-cls="c3"><i style="background:var(--st-orange)"></i><span><b>Writing cấp tốc · 1 kèm 4</b><small>4 học viên</small></span><span class="n">3</span></button>
+    <button class="cls" data-cls="c4"><i style="background:var(--st-green)"></i><span><b>Speaking club · T4</b><small>20 học viên</small></span></button>
+    <div class="group">Sắp mở</div>
+    <button class="cls"><i style="background:var(--st-indigo)"></i><span><b>IELTS 7.0+ · nhóm 6</b><small>Khai giảng 22/9 · 2/6</small></span></button>
+    <div class="setup"><b>Thiết lập lớp học</b>Bước 4/6 — Bật tài khoản học viên<div class="bar"><i></i></div>41/58 đã có tài khoản</div>
+  </aside>
+
+  <main class="canvas">
+
+  <!-- ══════════ TỔNG QUAN ══════════ -->
+  <section class="screen on" id="s-home">
+    <div class="chead"><div><h1>Chào cô Thảo</h1><div class="sub">Thứ Bảy 6/9 — 14 bài chờ chấm, 3 học viên sắp hết học phí, 2 học viên sẵn sàng lên lớp</div></div>
+      <div class="right"><span class="live"><i></i>Cập nhật 7:02</span><button data-go="grade"><svg class="ico s" viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M13 7l3 3"/></svg>Chấm bài ngay</button></div></div>
+    <div class="wrap">
+      <div class="kpis">
+        <div class="kpi"><div class="lab">Học viên đang học</div><div class="val">58</div><div class="d">+4 tháng này · rời 1</div></div>
+        <div class="kpi"><div class="lab">Bài chờ chấm</div><div class="val">14</div><div class="d">nhận xét nháp đã sẵn · ≈ 25 phút</div></div>
+        <div class="kpi"><div class="lab">Band Writing trung bình</div><div class="val good">6.1</div><div class="d">+0.3 sau 8 tuần</div></div>
+        <div class="kpi" data-ta-hide><div class="lab">Học phí sắp đến hạn</div><div class="val warn">7,5tr</div><div class="d">3 học viên · 12/9</div></div>
+      </div>
+      <div class="grid2">
+        <div class="blkc" style="margin-top:0"><h3>Việc hôm nay</h3><p class="sub">Xếp theo thứ tự nên làm. Phần lặp đã có nháp — cô chỉ duyệt.</p>
+          <div class="todo"><span class="who">14</span><div class="t"><b>Duyệt 14 nhận xét nháp</b><small>4 tự luận cần mắt cô · 10 trắc nghiệm đã chấm xong</small></div><button class="go" data-go="grade">Bắt đầu</button></div>
+          <div class="todo"><span class="who c">3</span><div class="t"><b>Duyệt 3 tin gia hạn học phí</b><small>Gửi lúc 9:00 · viết theo tình trạng từng em, không dùng chung mẫu</small></div><button class="go" data-go="fee">Xem tin</button></div>
+          <div class="todo"><span class="who d">2</span><div class="t"><b>Thu Hà và Yến Nhi đủ điều kiện lên 7.0+</b><small>2 bài liên tiếp ≥ 7.0 · lớp 7.0+ cần thêm 4 người để mở</small></div><button class="go" data-go="cls">Xem lớp</button></div>
+          <div class="todo"><span class="who b">1</span><div class="t"><b>Quốc Bảo đang buông</b><small>Nộp muộn 2 tuần, band tụt 6.0 → 5.5 — nên nhắn riêng trước khi nói học phí</small></div><button class="go" data-go="stu">Mở hồ sơ</button></div>
+        </div>
+        <div class="blkc" style="margin-top:0"><h3>Tuần này</h3><p class="sub">Lịch dạy + hạn nộp bài</p>
+          <div class="week">
+            <div class="day"><b>T2 8/9</b><div class="ev o">20:00 Writing cấp tốc</div></div>
+            <div class="day"><b>T3 9/9</b><div class="ev">19:30 IELTS 6.5</div><div class="ev p">Hạn nộp Task 2</div></div>
+            <div class="day"><b>T4 10/9</b><div class="ev" style="border-left-color:var(--st-green)">20:00 Speaking club</div></div>
+            <div class="day"><b>T5 11/9</b><div class="ev">19:30 IELTS 6.5</div></div>
+            <div class="day"><b>T6 12/9</b><div class="ev p">Hạn học phí · 3 em</div></div>
+            <div class="day"><b>T7 13/9</b><div class="ev" style="border-left-color:var(--st-purple)">8:00 IELTS 5.5</div></div>
+            <div class="day"><b>CN 14/9</b><div class="ev" style="border-left-color:var(--st-purple)">8:00 IELTS 5.5</div><div class="ev p">Mock lần 2</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="blkc"><h3>Việc đã tự chạy tuần này</h3><p class="sub">Không cần cô làm — chỉ để cô biết.</p>
+        <div class="lk"><span class="dot" style="background:var(--st-green)"></span><div class="t"><b>Nhắc lịch và hạn nộp cho 41 học viên có tài khoản</b><small>17 em còn lại cô vẫn đang nhắc tay qua Zalo</small></div><span class="go">Mời 17 em bật tài khoản</span></div>
+        <div class="lk"><span class="dot" style="background:var(--st-purple)"></span><div class="t"><b>Nhận xét nháp cho 14 bài mới nộp</b><small>Viết theo cách cô đã chấm 214 bài trước</small></div><span class="go" data-go="grade">Duyệt</span></div>
+        <div class="lk"><span class="dot" style="background:var(--st-green)"></span><div class="t"><b>Số hóa 12 trang đề Cambridge 19</b><small>Đúng 94% · 2 chỗ chữ mờ chờ cô xem</small></div><span class="go" data-go="bank">Xem đề</span></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════ TRỢ GIẢNG — VIỆC CỦA TÔI ══════════ -->
+  <section class="screen" id="s-tahome">
+    <div class="chead"><div><h1>Chào Lan</h1><div class="sub">Trợ giảng lớp IELTS 6.5 · Tối T3/T5 · cô Thảo giao: nháp nhận xét tự luận, trả lời bảng tin, điểm danh</div></div>
+      <div class="right"><span class="live"><i></i>Cô Thảo online</span></div></div>
+    <div class="wrap">
+      <div class="kpis"><div class="kpi"><div class="lab">Bài cần nháp nhận xét</div><div class="val">4</div><div class="d">máy đã nháp · Lan đọc & sửa · cô duyệt</div></div><div class="kpi"><div class="lab">Đã gửi cô duyệt tuần này</div><div class="val good">11</div><div class="d">cô sửa lại 2 · 82% giữ nguyên</div></div><div class="kpi"><div class="lab">Câu hỏi trên bảng tin chưa trả lời</div><div class="val">1</div><div class="d">Gia Huy · 21:14</div></div><div class="kpi"><div class="lab">Buổi tới</div><div class="val" style="font-size:20px">T3 · 19:30</div><div class="d">điểm danh · hỗ trợ nhóm 2</div></div></div>
+      <div class="grid2">
+        <div class="blkc" style="margin-top:0"><h3>Việc hôm nay</h3><p class="sub">Cô Thảo nhìn thấy mọi việc Lan làm. Việc Lan làm không tới học viên cho tới khi cô duyệt.</p>
+          <div class="todo"><span class="who c">4</span><div class="t"><b>Nháp nhận xét 4 bài Task 2 — Education</b><small>Máy đã nháp · Lan đọc, sửa cho sát bài · bấm "Gửi cô duyệt"</small></div><button class="go" data-go="grade">Bắt đầu</button></div>
+          <div class="todo"><span class="who b">1</span><div class="t"><b>Trả lời Gia Huy trên bảng tin</b><small>"partly agree được không?" — Lan trả lời được, cô không cần duyệt</small></div><button class="go" data-go="class">Trả lời</button></div>
+          <div class="todo"><span class="who d">✓</span><div class="t"><b>Điểm danh buổi 31 — T3</b><small>Lan được làm · tự có hiệu lực</small></div><button class="go">Mở khi tới giờ</button></div>
+        </div>
+        <div class="blkc" style="margin-top:0"><h3>Cô Thảo đã sửa gì của Lan</h3><p class="sub">Để Lan nháp giống cô hơn — máy cũng học từ đây.</p>
+          <div class="lk"><span class="dot" style="background:var(--st-orange)"></span><div class="t"><b>Đức Anh · Task 1</b><small>Lan: 5.0 → cô: 5.0 · cô thêm 1 câu: "làm rất nhanh — đọc lại đề trước khi viết"</small></div></div>
+          <div class="lk"><span class="dot" style="background:var(--st-orange)"></span><div class="t"><b>Hải Nam · Task 2</b><small>Lan: 5.5 → cô: 5.0 · lý do: "thiếu ví dụ ở cả 2 đoạn — TR không thể 6"</small></div></div>
+          <div class="lk"><span class="dot" style="background:var(--st-green)"></span><div class="t"><b>9 bài còn lại</b><small>cô giữ nguyên nháp của Lan</small></div></div>
+        </div>
+      </div>
+      <div class="blkc"><h3>Lan không thấy gì</h3><p class="sub">Để Lan biết đâu là ranh giới, không phải để hạn chế.</p>
+        <div class="rulebox" style="margin-top:0"><span class="rule">Học phí & tin gia hạn</span><span class="rule">Rubric và trọng số của cô</span><span class="rule">Ghi chú riêng của cô về học viên</span><span class="rule">Bảng điểm cả lớp — chỉ thấy bài đang chấm</span><span class="rule">Lớp khác của cô Thảo</span><span class="rule">Ngân hàng đề — chỉ xem đề đã giao</span></div></div>
+    </div>
+  </section>
+  <!-- ══════════ CHẤM BÀI ══════════ -->
+  <section class="screen" id="s-grade">
+    <div class="chead"><div><h1>Chấm bài</h1><div class="sub">Nhận xét nháp viết theo cách cô chấm — cô duyệt, sửa, hoặc viết lại. Không gửi gì khi cô chưa bấm.</div></div>
+      <div class="right"><span class="live"><i></i>Nháp xong 21:04 · 14 bài · 9 phút</span><button>Nạp bài mới</button></div></div>
+    <div class="tabs"><button class="on" data-tab="g1">Chờ duyệt <span class="cnt" id="gcnt">14</span></button><button data-tab="g2">Cả lớp sai chung ở đâu</button><button data-tab="g3" data-ta-hide>Rubric của cô</button></div>
+    <div class="wrap">
+    <section class="view on" id="g1">
+      <div class="routes"><button class="route on" data-route="q1">Tự luận · cần mắt cô <span class="c">4</span></button><button class="route" data-route="q2">Trắc nghiệm · đã chấm xong <span class="c">10</span></button></div>
+      <div class="rg on" id="q1">
+        <div class="prog"><div class="track"><i id="gp" style="width:0"></i></div><span class="txt" id="gpt">Đã duyệt 0 / 4</span><button class="all" id="gall">Duyệt tất cả</button></div>
+
+        <div class="paper" data-p>
+          <div class="phd"><span class="av">MA</span><div class="who"><b>Nguyễn Minh Anh</b><small>IELTS 6.5 · Task 2 — Education · 268 từ · nộp hôm qua</small></div><span class="sp"></span>
+            <div class="score"><span class="num">5.5</span><span class="of">/ 9</span><div class="adj"><button aria-label="Tăng">▲</button><button aria-label="Giảm">▼</button></div></div>
+            <div class="conf"><div class="lab"><span>Tin cậy</span><b>91%</b></div><div class="bar"><i style="width:91%"></i></div></div></div>
+          <div class="pbody">
+            <div class="blk"><h5>Lỗi cần sửa</h5>
+              <div class="fix g"><div class="was">I <s>am believing</s> that free education…</div><div class="now"><b>I believe</b> — believe không dùng tiếp diễn</div><div class="tip">Lỗi này lặp 3 bài liên tiếp</div></div>
+              <div class="fix g"><div class="was">a society… <s>have</s> lower crime</div><div class="now"><b>has</b> — chủ ngữ số ít</div></div>
+              <div class="fix v"><div class="was">free university <s>makes more chance</s></div><div class="now"><b>widens access</b></div></div>
+              <div class="fix s"><div class="was">Đoạn 2: hai ý chưa có câu nối</div><div class="now">Thêm câu chuyển trước "Many talented people…"</div></div>
+            </div>
+            <div class="blk"><h5>Theo rubric</h5>
+              <div class="crit"><div class="cr"><span>Task Response</span><div class="b"><i style="width:55%"></i></div><b>5</b></div><div class="cr"><span>Coherence</span><div class="b"><i style="width:66%"></i></div><b>6</b></div><div class="cr"><span>Lexical</span><div class="b"><i style="width:66%"></i></div><b>6</b></div><div class="cr"><span>Grammar</span><div class="b"><i style="width:55%"></i></div><b>5</b></div></div>
+              <h5>Nhận xét gửi Minh Anh <span class="ai">theo giọng cô</span></h5>
+              <div class="note"><textarea>Minh Anh làm tốt phần dàn ý — có luận điểm rõ ở mỗi đoạn, đây là tiến bộ so với tuần trước. Hai điểm sửa ngay: "I am believing" (cô đánh dấu 3 bài liền — viết lại 5 câu với believe ở hiện tại đơn, nộp trước T5) và hòa hợp chủ ngữ–động từ. Giữ đúng cấu trúc này, sửa ngữ pháp là lên 6.0.</textarea><div class="nb"><span>Sửa trực tiếp — lần sau nháp sẽ giống cách cô sửa</span><span>412 ký tự</span></div></div>
+            </div>
+          </div>
+          <div class="pfoot"><span class="sp"></span><button class="btn gho">Viết lại</button><button class="btn pri" data-ok>Gửi nhận xét</button></div>
+        </div>
+
+        <div class="paper flag" data-p>
+          <div class="phd"><span class="av c">QB</span><div class="who"><b>Trần Quốc Bảo</b><small>Writing cấp tốc · Task 1 — Bar chart · 172 từ · nộp muộn 2 tuần</small></div><span class="sp"></span>
+            <div class="score"><span class="num">5.0</span><span class="of">/ 9</span><div class="adj"><button aria-label="Tăng">▲</button><button aria-label="Giảm">▼</button></div></div>
+            <div class="conf low"><div class="lab"><span>Tin cậy</span><b>78%</b></div><div class="bar"><i style="width:78%"></i></div></div></div>
+          <div class="pbody">
+            <div class="blk"><h5>Lỗi cần sửa</h5>
+              <div class="fix s"><div class="was">Thiếu câu overview — lần thứ 4/4</div><div class="now">Thêm: "Overall, all three museums saw growth, with the National Museum remaining the most popular."</div></div>
+              <div class="fix g"><div class="was">The bar chart <s>is show</s></div><div class="now"><b>shows</b></div></div>
+              <div class="fix g"><div class="was">The Science Museum <s>increase</s></div><div class="now"><b>increased</b> — toàn bài quá khứ đơn</div></div>
+            </div>
+            <div class="blk"><h5>Theo rubric</h5>
+              <div class="crit"><div class="cr"><span>Task Ach.</span><div class="b"><i style="width:44%"></i></div><b>4</b></div><div class="cr"><span>Coherence</span><div class="b"><i style="width:55%"></i></div><b>5</b></div><div class="cr"><span>Lexical</span><div class="b"><i style="width:55%"></i></div><b>5</b></div><div class="cr"><span>Grammar</span><div class="b"><i style="width:55%"></i></div><b>5</b></div></div>
+              <h5>Nhận xét gửi Quốc Bảo <span class="ai">theo giọng cô</span></h5>
+              <div class="note"><textarea>Bảo — bài ngắn hơn 150 từ và nộp muộn 2 tuần, nên cô chấm trước hết là để em không mất mạch. Lỗi lớn nhất vẫn là thiếu overview. Em nhắn cô nếu tuần này bận — cô dời deadline, nhưng đừng để trống 2 tuần nữa.</textarea><div class="nb"><span>Tin cậy thấp vì band tụt 1.0 so với bài trước — cần cô xác nhận</span><span>238 ký tự</span></div></div>
+            </div>
+          </div>
+          <div class="pfoot"><span class="warnmsg">⚠ Band tụt hơn 1.0 — hệ thống không tự gửi</span><span class="sp"></span><button class="btn gho">Viết lại</button><button class="btn pri" data-ok>Gửi nhận xét</button></div>
+        </div>
+
+        <div class="paper" data-p>
+          <div class="phd"><span class="av d">TH</span><div class="who"><b>Lê Thu Hà</b><small>IELTS 6.5 · Task 2 — Education · 302 từ</small></div><span class="sp"></span>
+            <div class="score"><span class="num">7.0</span><span class="of">/ 9</span><div class="adj"><button aria-label="Tăng">▲</button><button aria-label="Giảm">▼</button></div></div>
+            <div class="conf"><div class="lab"><span>Tin cậy</span><b>94%</b></div><div class="bar"><i style="width:94%"></i></div></div></div>
+          <div class="pbody">
+            <div class="blk"><h5>Lỗi cần sửa</h5><div class="fix v"><div class="was">"Gifted" lặp 2 lần</div><div class="now">Thay một bằng <b>capable</b></div></div><div class="fix s"><div class="was">Đoạn 3 thiếu ví dụ cụ thể</div><div class="now">Thêm con số hoặc trường hợp (Đức, Bắc Âu) để TR lên 7</div></div></div>
+            <div class="blk"><h5>Theo rubric</h5><div class="crit"><div class="cr"><span>Task Response</span><div class="b"><i style="width:77%"></i></div><b>7</b></div><div class="cr"><span>Coherence</span><div class="b"><i style="width:77%"></i></div><b>7</b></div><div class="cr"><span>Lexical</span><div class="b"><i style="width:66%"></i></div><b>6</b></div><div class="cr"><span>Grammar</span><div class="b"><i style="width:77%"></i></div><b>7</b></div></div>
+              <h5>Nhận xét gửi Thu Hà <span class="ai">theo giọng cô</span></h5>
+              <div class="note"><textarea>Thu Hà — bài này đã 7.0, vượt mục tiêu 6.5 hai bài liên tiếp. Cấu trúc lập luận chặt, gần như không lỗi ngữ pháp. Cô sẽ nâng em lên lộ trình 7.0 từ tuần sau.</textarea><div class="nb"><span>Gợi ý: học viên này đủ điều kiện lớp 7.0+</span><span>170 ký tự</span></div></div></div>
+          </div>
+          <div class="pfoot"><span class="sp"></span><button class="btn gho">Viết lại</button><button class="btn pri" data-ok>Gửi nhận xét</button></div>
+        </div>
+
+        <div class="paper" data-p>
+          <div class="phd"><span class="av b">GH</span><div class="who"><b>Phạm Gia Huy</b><small>IELTS 6.5 · Task 2 — Education · 241 từ · nộp 21:14</small></div><span class="sp"></span>
+            <div class="score"><span class="num">5.5</span><span class="of">/ 9</span><div class="adj"><button aria-label="Tăng">▲</button><button aria-label="Giảm">▼</button></div></div>
+            <div class="conf"><div class="lab"><span>Tin cậy</span><b>89%</b></div><div class="bar"><i style="width:89%"></i></div></div></div>
+          <div class="pbody">
+            <div class="blk"><h5>Lỗi cần sửa</h5><div class="fix s"><div class="was">Bài dưới 250 từ — lần 2/4</div><div class="now">Bị trừ điểm TR. Cần thêm 1 ví dụ ở đoạn 2</div></div><div class="fix g"><div class="was">people <s>who is</s> living in cities</div><div class="now"><b>who are</b></div></div></div>
+            <div class="blk"><h5>Theo rubric</h5><div class="crit"><div class="cr"><span>Task Response</span><div class="b"><i style="width:55%"></i></div><b>5</b></div><div class="cr"><span>Coherence</span><div class="b"><i style="width:66%"></i></div><b>6</b></div><div class="cr"><span>Lexical</span><div class="b"><i style="width:66%"></i></div><b>6</b></div><div class="cr"><span>Grammar</span><div class="b"><i style="width:55%"></i></div><b>5</b></div></div>
+              <h5>Nhận xét gửi Gia Huy <span class="ai">theo giọng cô</span></h5>
+              <div class="note"><textarea>Gia Huy — ý tốt nhưng bài ngắn, đây là lần thứ hai dưới 250 từ. Đoạn 2 thêm một ví dụ cụ thể là đủ. Câu "people who is living" → "who are".</textarea><div class="nb"><span></span><span>151 ký tự</span></div></div></div>
+          </div>
+          <div class="pfoot"><span class="sp"></span><button class="btn gho">Viết lại</button><button class="btn pri" data-ok>Gửi nhận xét</button></div>
+        </div>
+        <div class="empty" id="gempty" hidden><div class="art"><svg class="ico" viewBox="0 0 24 24" style="width:40px;height:40px"><path d="m5 12 5 5L20 7"/></svg></div><h3>Chấm xong 4 bài tự luận</h3><p>Tối nay cô tiết kiệm khoảng 1 giờ 40 phút. Trắc nghiệm chỉ cần chốt điểm cả lớp.</p></div>
+      </div>
+      <div class="rg" id="q2">
+        <div class="prog"><div class="track"><i style="width:100%"></i></div><span class="txt">10 / 10 bài đã chấm tự động · tin cậy trung bình 98%</span><button class="all">Chốt điểm cả lớp</button></div>
+        <div class="tbl"><div class="th"><span>Học viên</span><span>Điểm</span><span>Tin cậy</span><span>Sai ở đâu</span><span>Trạng thái</span></div>
+          <div class="tr"><span class="nm"><i></i>Hoàng Yến Nhi</span><span class="sc">37/40</span><span class="st">99%</span><span class="miss">Câu 20, 35 — từ vựng học thuật</span><span class="tag grn">Sẵn sàng</span></div>
+          <div class="tr"><span class="nm"><i></i>Đặng Hải Nam</span><span class="sc">29/40</span><span class="st">99%</span><span class="miss">Câu 3, 11, 16, 24, 30 — bị động</span><span class="tag grn">Sẵn sàng</span></div>
+          <div class="tr"><span class="nm"><i></i>Vũ Thanh Hà</span><span class="sc">31/40</span><span class="st">92%</span><span class="miss">Câu 9 chữ mờ — đoán B</span><span class="tag org">Xem lại 1 câu</span></div>
+          <div class="tr"><span class="nm"><i></i>Bùi Đức Anh</span><span class="sc low">24/40</span><span class="st">98%</span><span class="miss">14 câu — chủ yếu đọc hiểu</span><span class="tag org">Cần chú ý</span></div>
+          <div class="tr"><span class="nm"><i></i>Phạm Bảo Châu</span><span class="sc">34/40</span><span class="st">99%</span><span class="miss">Câu 7, 14, 22, 31 — mạo từ</span><span class="tag grn">Sẵn sàng</span></div>
+        </div>
+        <p class="sub" style="color:var(--text-2);font-size:13px;margin-top:12px">Còn 5 bài cùng trạng thái. Chỉ cần xem hai dòng màu cam.</p>
+      </div>
+    </section>
+    <section class="view" id="g2">
+      <div class="blkc" style="margin-top:0"><h3>Cả lớp sai chung ở đâu</h3><p class="sub">Gộp lỗi 14 bài tuần này. Đây là thứ nên dạy lại buổi sau, không phải dạy tiếp bài mới.</p>
+        <div class="erow"><span class="nm">Thì hiện tại hoàn thành</span><div class="bar"><i style="width:79%"></i><b>11/14 học viên</b></div><button class="act">Tạo bài luyện</button></div>
+        <div class="erow"><span class="nm">Hòa hợp chủ ngữ – động từ</span><div class="bar"><i style="width:57%"></i><b>8/14</b></div><button class="act">Tạo bài luyện</button></div>
+        <div class="erow"><span class="nm">Thiếu overview Task 1</span><div class="bar"><i style="width:43%"></i><b>6/14</b></div><button class="act">Tạo bài luyện</button></div>
+        <div class="erow"><span class="nm">Từ nối giữa đoạn</span><div class="bar"><i style="width:36%"></i><b>5/14</b></div><button class="act">Tạo bài luyện</button></div>
+      </div>
+    </section>
+    <section class="view" id="g3">
+      <div class="blkc" style="margin-top:0"><h3>Rubric của cô</h3><p class="sub">Học từ 214 bài cô đã chấm. Cô sửa nháp càng nhiều, nháp càng giống cô. Rubric này không mang sang được nơi khác — vì nó là cô.</p>
+        <div class="erow"><span class="nm">Task Response</span><div class="bar"><i style="width:25%;background:var(--primary)"></i><b>25%</b></div><button class="act">Sửa</button></div>
+        <div class="erow"><span class="nm">Coherence &amp; Cohesion</span><div class="bar"><i style="width:25%;background:var(--primary)"></i><b>25%</b></div><button class="act">Sửa</button></div>
+        <div class="erow"><span class="nm">Lexical Resource</span><div class="bar"><i style="width:25%;background:var(--primary)"></i><b>25%</b></div><button class="act">Sửa</button></div>
+        <div class="erow"><span class="nm">Grammatical Range</span><div class="bar"><i style="width:25%;background:var(--primary)"></i><b>25%</b></div><button class="act">Sửa</button></div>
+      </div>
+      <div class="blkc"><h3>Cách cô hay nhận xét</h3><p class="sub">Rút ra từ 214 bài — cô có thể xóa dòng nào không đúng.</p>
+        <div class="rulebox" style="margin-top:0"><span class="rule">Khen một điểm cụ thể trước, rồi mới sửa <button aria-label="Bỏ">×</button></span><span class="rule">Nêu số lần lỗi lặp <button aria-label="Bỏ">×</button></span><span class="rule">Kết bằng một việc cụ thể + hạn <button aria-label="Bỏ">×</button></span><span class="rule">Xưng cô–em, không dùng thuật ngữ tiếng Anh khi có thể <button aria-label="Bỏ">×</button></span></div></div>
+    </section>
+    </div>
+  </section>
+
+  <!-- ══════════ HỌC VIÊN ══════════ -->
+  <section class="screen" id="s-stu">
+    <div class="chead"><div><h1>Học viên</h1><div class="sub">58 đang học · 41 có tài khoản riêng · 3 sắp hết học phí · 2 cần chú ý</div></div>
+      <div class="right"><button>Nhập từ Excel / Zalo</button><button class="btn pri" style="height:36px">Thêm học viên</button></div></div>
+    <div class="tabs"><button class="on" data-tab="u1">Tất cả <span class="cnt">58</span></button><button data-tab="u2">Cần chú ý <span class="cnt">2</span></button><button data-tab="u3">Chưa có tài khoản <span class="cnt">17</span></button></div>
+    <div class="wrap">
+    <section class="view on" id="u1">
+      <div class="tbl stu"><div class="th"><span>Học viên</span><span>Lớp</span><span>Band</span><span>Mục tiêu</span><span>Tài khoản</span><span>Lỗi hay gặp</span><span>Trạng thái</span></div>
+        <div class="tr"><span class="nm"><i></i>Nguyễn Minh Anh</span><span class="miss">IELTS 6.5</span><span class="band up">5.5 ↑</span><span class="miss">6.5</span><span class="tag grn">Đã bật</span><span class="miss">HT hoàn thành ×3</span><span class="tag org">Chậm lộ trình</span></div>
+        <div class="tr"><span class="nm"><i></i>Lê Thu Hà</span><span class="miss">IELTS 6.5</span><span class="band up">7.0 ↑</span><span class="miss">6.5</span><span class="tag grn">Đã bật</span><span class="miss">—</span><span class="tag grn">Vượt mục tiêu</span></div>
+        <div class="tr"><span class="nm"><i></i>Trần Quốc Bảo</span><span class="miss">Writing cấp tốc</span><span class="band dn">5.5 ↓</span><span class="miss">6.5</span><span class="tag org">Chưa mời</span><span class="miss">Thiếu overview ×4</span><span class="tag red">Đang buông</span></div>
+        <div class="tr"><span class="nm"><i></i>Phạm Gia Huy</span><span class="miss">IELTS 6.5</span><span class="band">5.5</span><span class="miss">6.5</span><span class="tag grn">Đã bật</span><span class="miss">Bài ngắn ×2</span><span class="tag blu">Đúng lộ trình</span></div>
+        <div class="tr"><span class="nm"><i></i>Hoàng Yến Nhi</span><span class="miss">IELTS 6.5</span><span class="band up">6.5 ↑</span><span class="miss">6.5</span><span class="tag grn">Đã bật</span><span class="miss">—</span><span class="tag grn">Đủ điều kiện 7.0+</span></div>
+        <div class="tr"><span class="nm"><i></i>Đỗ Khánh Vy</span><span class="miss">IELTS 5.5</span><span class="band">4.5</span><span class="miss">5.5</span><span class="tag org">Chưa mời</span><span class="miss">Mạo từ ×3</span><span class="tag blu">Đúng lộ trình</span></div>
+        <div class="tr"><span class="nm"><i></i>Bùi Đức Anh</span><span class="miss">IELTS 5.5</span><span class="band dn">4.5 ↓</span><span class="miss">5.5</span><span class="tag grn">Đã bật</span><span class="miss">Đọc hiểu · đoán bừa</span><span class="tag org">Cần chú ý</span></div>
+        <div class="tr"><span class="nm"><i></i>Vũ Thanh Hà</span><span class="miss">IELTS 5.5</span><span class="band">5.0</span><span class="miss">5.5</span><span class="tag grn">Đã bật</span><span class="miss">Nộp muộn 5/6</span><span class="tag org">Đang chững</span></div>
+      </div>
+      <p class="sub" style="color:var(--text-2);font-size:13px;margin-top:12px">Còn 50 học viên. Bấm vào tên để xem hồ sơ: lịch sử band theo kỹ năng, lỗi lặp, bài đã nộp, học phí.</p>
+    </section>
+    <section class="view" id="u2">
+      <div class="blkc" style="margin-top:0"><h3>Học viên cần để mắt</h3><p class="sub">Xếp theo mức cần can thiệp, không xếp theo điểm.</p>
+        <div class="lk"><span class="dot" style="background:var(--st-red)"></span><div class="t"><b>Trần Quốc Bảo · Writing cấp tốc</b><small>Tụt 6.0 → 5.5 trong 3 bài. Nộp muộn 2 tuần. Chưa có tài khoản nên không ai nhắc. Hết học phí 12/9.</small></div><span class="n">−0.5</span><button class="go">Nhắn riêng</button></div>
+        <div class="lk"><span class="dot" style="background:var(--st-orange)"></span><div class="t"><b>Bùi Đức Anh · IELTS 5.5</b><small>Đọc hiểu tụt 4 bài liền. Làm rất nhanh — dấu hiệu đoán bừa chứ không phải không biết.</small></div><span class="n">−1.0</span><button class="go">Giao bài riêng</button></div>
+        <div class="lk"><span class="dot" style="background:var(--st-green)"></span><div class="t"><b>Hoàng Yến Nhi · IELTS 6.5</b><small>Tăng 1.0 band trong 4 bài. Nên khen sớm và gợi ý lên 7.0+.</small></div><span class="n">+1.0</span><button class="go">Gợi ý lên lớp</button></div>
+      </div>
+    </section>
+    <section class="view" id="u3">
+      <div class="prog"><div class="track"><i style="width:71%"></i></div><span class="txt">41 / 58 đã có tài khoản · 17 còn nhận bài qua Zalo cá nhân của cô</span><button class="all" id="inv">Gửi lời mời cho 17 em</button></div>
+      <div class="blkc" style="margin-top:0"><h3>Vì sao nên bật</h3><p class="sub">4/4 học viên không gia hạn kỳ trước đều là học viên chưa có tài khoản — không ai nhắc bài, không ai báo tiến độ, đến hạn thì im lặng.</p>
+        <div class="lk"><span class="dot" style="background:var(--st-orange)"></span><div class="t"><b>Trần Quốc Bảo</b><small>Nộp muộn 3/5 lần — không có nhắc tự động</small></div><span class="tag org">Ưu tiên</span></div>
+        <div class="lk"><span class="dot" style="background:var(--st-orange)"></span><div class="t"><b>Đỗ Khánh Vy</b><small>Phụ huynh hỏi tiến độ 2 lần/tuần qua Zalo của cô</small></div><span class="tag org">Ưu tiên</span></div>
+        <div class="lk"><span class="dot" style="background:var(--st-blue)"></span><div class="t"><b>Ngô Đức Minh</b><small>Bài chấm bị lạc 1 lần tháng 8</small></div><span class="tag blu">Bình thường</span></div>
+      </div>
+    </section>
+    </div>
+  </section>
+
+  <!-- ══════════ LỚP HỌC ══════════ -->
+  <section class="screen" id="s-cls">
+    <div class="chead"><div><h1>Lớp học</h1><div class="sub">4 lớp đang chạy · 1 lớp sắp mở · mở lớp mới không cần soạn lại</div></div>
+      <div class="right"><button class="btn pri" style="height:36px"><svg class="ico s" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>Mở lớp mới từ lộ trình</button></div></div>
+    <div class="wrap">
+      <div class="grid3" style="margin-top:0">
+        <div class="card"><div class="ch" style="cursor:pointer" data-go="class"><i style="background:var(--st-blue)"></i><b>IELTS 6.5 · Tối T3/T5</b><span class="tag grn">Đang chạy</span></div>
+          <div class="pb"><i style="width:62%"></i></div><small style="color:var(--text-2)">Buổi 30/48 · lộ trình IELTS 6.5</small>
+          <div class="row" style="margin-top:10px"><span>Học viên</span><b>18</b></div><div class="row"><span>Band trung bình</span><b>6.0 (+0.4)</b></div><div class="row"><span>Bài chờ chấm</span><b>6</b></div><div class="row"><span>Buổi tới</span><b>T3 · 19:30</b></div>
+          <div class="cf"><button class="btn gho" style="flex:1">Bảng tin</button><button class="btn gho" style="flex:1">Điểm danh</button></div></div>
+        <div class="card"><div class="ch" style="cursor:pointer" data-go="class"><i style="background:var(--st-purple)"></i><b>IELTS 5.5 · Sáng T7/CN</b><span class="tag grn">Đang chạy</span></div>
+          <div class="pb"><i style="width:41%"></i></div><small style="color:var(--text-2)">Buổi 20/48 · lộ trình IELTS 5.5</small>
+          <div class="row" style="margin-top:10px"><span>Học viên</span><b>16</b></div><div class="row"><span>Band trung bình</span><b>4.8 (+0.3)</b></div><div class="row"><span>Bài chờ chấm</span><b>5</b></div><div class="row"><span>Buổi tới</span><b>T7 · 8:00</b></div>
+          <div class="cf"><button class="btn gho" style="flex:1">Bảng tin</button><button class="btn gho" style="flex:1">Điểm danh</button></div></div>
+        <div class="card"><div class="ch" style="cursor:pointer" data-go="class"><i style="background:var(--st-orange)"></i><b>Writing cấp tốc · 1 kèm 4</b><span class="tag org">Quá hạn 2 bài</span></div>
+          <div class="pb"><i style="width:88%"></i></div><small style="color:var(--text-2)">Buổi 14/16 · lộ trình Writing 8 tuần</small>
+          <div class="row" style="margin-top:10px"><span>Học viên</span><b>4</b></div><div class="row"><span>Band trung bình</span><b>5.8 (−0.1)</b></div><div class="row"><span>Bài chờ chấm</span><b>3</b></div><div class="row"><span>Kết thúc</span><b>22/9 · gia hạn?</b></div>
+          <div class="cf"><button class="btn gho" style="flex:1">Bảng tin</button><button class="btn pri" style="flex:1">Mở khóa 2</button></div></div>
+        <div class="card"><div class="ch" style="cursor:pointer" data-go="class"><i style="background:var(--st-green)"></i><b>Speaking club · T4</b><span class="tag grn">Đang chạy</span></div>
+          <div class="pb"><i style="width:30%"></i></div><small style="color:var(--text-2)">Buổi 6/20</small>
+          <div class="row" style="margin-top:10px"><span>Học viên</span><b>20</b></div><div class="row"><span>Đi học đều</span><b>84%</b></div><div class="row"><span>Bài chờ chấm</span><b>0</b></div><div class="row"><span>Buổi tới</span><b>T4 · 20:00</b></div>
+          <div class="cf"><button class="btn gho" style="flex:1">Bảng tin</button><button class="btn gho" style="flex:1">Điểm danh</button></div></div>
+        <div class="card" style="border-style:dashed"><div class="ch"><i style="background:var(--st-indigo)"></i><b>IELTS 7.0+ · nhóm 6</b><span class="tag blu">Sắp mở</span></div>
+          <div class="pb"><i style="width:33%;background:var(--st-indigo)"></i></div><small style="color:var(--text-2)">2/6 đăng ký · khai giảng 22/9</small>
+          <div class="row" style="margin-top:10px"><span>Từ lộ trình</span><b>IELTS 7.0 · 36 buổi</b></div><div class="row"><span>Đủ điều kiện từ lớp cũ</span><b>Thu Hà, Yến Nhi</b></div><div class="row"><span>Đang hỏi</span><b>1 (bạn Thu Hà)</b></div><div class="row"><span>Học phí</span><b>+20% · giữ giá cũ HV cũ</b></div>
+          <div class="cf"><button class="btn pri" style="flex:1">Mời 2 em lên lớp</button></div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ══════════ TRANG LỚP ══════════ -->
+  <section class="screen" id="s-class">
+    <div class="chead"><div><div class="crumb"><button data-go="cls">‹ Lớp học</button><span>/</span><span>IELTS 6.5 · Tối T3/T5</span></div><h1>IELTS 6.5 · Tối T3/T5</h1><div class="sub">18 học viên · buổi 30/48 · lộ trình IELTS 6.5 · 6 bài chờ chấm</div></div>
+      <div class="right"><button id="csv">Xuất CSV</button><button id="tabtn">Trợ giảng (1)</button><button class="btn gho" style="height:36px">Thêm học viên</button><button class="btn pri" style="height:36px">Giao bài</button></div></div>
+    <div class="tabs"><button class="on" data-tab="cl1">Bảng tin</button><button data-tab="cl2">Bài tập <span class="cnt">6</span></button><button data-tab="cl3">Học viên <span class="cnt">18</span></button><button data-tab="cl4">Điểm</button><button data-tab="cl5">Chấm bài <span class="cnt">6</span></button></div>
+    <div class="wrap">
+    <section class="view on" id="cl1">
+      <div class="steer" style="margin:0 0 16px"><div class="steer-in"><label class="sr-only" for="clpost">Đăng lên bảng tin lớp</label><textarea id="clpost" placeholder="Đăng cho 18 em lớp IELTS 6.5 · Tối T3/T5…"></textarea>
+        <div class="steer-bar"><div class="l"><button class="hint" data-giao>Giao bài từ ngân hàng đề</button><button class="hint">Nhắc mock CN 14/9</button><button class="hint">Đính tài liệu</button></div><button class="send" id="clsend" aria-label="Đăng"><svg class="ico s" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div></div></div>
+      <div id="clfeed">
+      <div class="post"><span class="av me">CT</span><div class="bd"><div class="hd"><b>Cô Thảo</b><small>Hôm qua 21:30 · Ghim · Bài giao</small></div><p>Bài Task 2 tuần này: đề Education (Cambridge 19, Test 2). Hạn T3 trước 19:00. Nộp ở đây, không gửi Zalo nhé.</p><span class="att">Cambridge 19 · Test 2 · Task 2 · trọng số 10%</span><div class="re"><span>14/18 đã nộp</span><span>4 chưa nộp: Gia Huy, Hải Nam, Đức Anh, Thanh Hà</span><span style="color:var(--primary);font-weight:600" data-nhac>Nhắc 4 em</span></div></div></div>
+      <div class="post"><span class="av">MA</span><div class="bd"><div class="hd"><b>Nguyễn Minh Anh</b><small>Hôm qua 22:41</small></div><p>Em nộp bài Task 2 ạ. Tuần này em cố không dùng "am believing" nữa 😅</p><span class="att">Task2_MinhAnh.docx · 268 từ</span><div class="re"><span class="tag pur">Nháp sẵn · chờ cô</span><span style="color:var(--primary);font-weight:600" data-tab-go="cl5">Chấm ngay</span></div></div></div>
+      <div class="post"><span class="av b">GH</span><div class="bd"><div class="hd"><b>Phạm Gia Huy</b><small>21:14</small></div><p>Cô ơi đề này có thể viết theo hướng "partly agree" không ạ hay phải chọn hẳn một bên?</p><div class="re"><span>2 trả lời</span><span style="color:var(--primary);font-weight:600">Trả lời</span></div></div></div>
+      <div class="post"><span class="av" style="background:linear-gradient(135deg,#b7f3d8,#2eb67d)">TH</span><div class="bd"><div class="hd"><b>Lê Thu Hà</b><small>20:02</small></div><p>Em vừa đạt 7.0 bài thứ hai — cảm ơn cô! Bạn cùng cơ quan em đang hỏi lớp 7.0+, em gửi link học thử cho bạn ấy rồi ạ.</p><div class="re"><span>🎉 9</span><span>Cô Thảo: Tự hào về em. Lớp 7.0+ đang chờ em đó.</span></div></div></div>
+      <div class="post"><span class="av me">CT</span><div class="bd"><div class="hd"><b>Cô Thảo</b><small>29/8 · Bài giao · đã xong</small></div><p>Task 2 — Environment. 17/18 nộp, đã gửi nhận xét cả lớp. Lỗi chung: thì hiện tại hoàn thành (11 em) — buổi 30 cô dạy lại.</p><div class="re"><span class="tag grn">Đã gửi 17 nhận xét</span><span style="color:var(--primary);font-weight:600" data-tab-go="cl4">Xem điểm</span></div></div></div>
+      </div>
+    </section>
+    <section class="view" id="cl2">
+      <div class="asg h"><span>Bài</span><span>Đã nộp</span><span>Đã chấm</span><span></span></div>
+      <div class="asg"><div class="t"><b>Task 2 — Education</b><small>Cambridge 19 · hạn T3 9/9 19:00 · trọng số 10%</small></div><div><div class="pbar"><i style="width:78%"></i></div><div class="pl">14/18 nộp · 2 muộn</div></div><div><span class="tag pur">6 nháp sẵn</span></div><button class="btn gho" style="height:32px" data-go="grade">Chấm</button></div>
+      <div class="asg"><div class="t"><b>Task 2 — Environment</b><small>Tự soạn · 29/8 · trọng số 10%</small></div><div><div class="pbar"><i style="width:94%"></i></div><div class="pl">17/18 nộp</div></div><div><span class="tag grn">17/17 đã gửi</span></div><button class="btn gho" style="height:32px">Xem</button></div>
+      <div class="asg"><div class="t"><b>Trắc nghiệm ngữ pháp 3</b><small>40 câu · 25/8 · trọng số 5% · chấm tự động</small></div><div><div class="pbar"><i style="width:100%"></i></div><div class="pl">18/18</div></div><div><span class="tag grn">Đã chốt</span></div><button class="btn gho" style="height:32px">Xem</button></div>
+      <div class="asg"><div class="t"><b>Task 1 — Bar chart</b><small>Cambridge 18 · 18/8 · trọng số 5%</small></div><div><div class="pbar"><i style="width:89%"></i></div><div class="pl">16/18 · 2 muộn</div></div><div><span class="tag grn">Đã gửi</span></div><button class="btn gho" style="height:32px">Xem</button></div>
+      <div class="asg" style="border-style:dashed"><div class="t"><b>Mock 2</b><small>Theo lộ trình · buổi 28 → CN 14/9 · trọng số 20%</small></div><div><div class="pl">Chưa giao</div></div><div><span class="tag blu">Đề số 7 gắn sẵn</span></div><button class="btn pri" style="height:32px">Giao bài</button></div>
+    </section>
+    <section class="view" id="cl3">
+      <div class="ppl"><div class="pr ph"><span>Học viên</span><span>Band</span><span>Đi học</span><span>Tài khoản</span><span>Lỗi hay gặp</span><span>Học phí</span></div>
+        <div class="pr"><span class="nm" style="display:flex;gap:10px;align-items:center;font-weight:600"><i style="width:26px;height:26px;border-radius:8px;background:var(--grad-avatar);display:block"></i>Nguyễn Minh Anh</span><span class="band up">5.5</span><span class="miss">28/30</span><span class="tag grn">Đã bật</span><span class="miss">HT hoàn thành ×3</span><span class="miss">30/9</span></div><div class="pr"><span class="nm" style="display:flex;gap:10px;align-items:center;font-weight:600"><i style="width:26px;height:26px;border-radius:8px;background:var(--grad-avatar);display:block"></i>Lê Thu Hà</span><span class="band up">7.0</span><span class="miss">30/30</span><span class="tag grn">Đã bật</span><span class="miss">—</span><span class="miss">12/9</span></div><div class="pr"><span class="nm" style="display:flex;gap:10px;align-items:center;font-weight:600"><i style="width:26px;height:26px;border-radius:8px;background:var(--grad-avatar);display:block"></i>Phạm Gia Huy</span><span class="band ">5.5</span><span class="miss">27/30</span><span class="tag grn">Đã bật</span><span class="miss">Bài ngắn ×2</span><span class="miss">15/10</span></div><div class="pr"><span class="nm" style="display:flex;gap:10px;align-items:center;font-weight:600"><i style="width:26px;height:26px;border-radius:8px;background:var(--grad-avatar);display:block"></i>Hoàng Yến Nhi</span><span class="band up">6.5</span><span class="miss">30/30</span><span class="tag grn">Đã bật</span><span class="miss">—</span><span class="miss">15/10</span></div><div class="pr"><span class="nm" style="display:flex;gap:10px;align-items:center;font-weight:600"><i style="width:26px;height:26px;border-radius:8px;background:var(--grad-avatar);display:block"></i>Đặng Hải Nam</span><span class="band ">5.0</span><span class="miss">24/30</span><span class="tag grn">Đã bật</span><span class="miss">Bị động ×5</span><span class="miss">30/9</span></div><div class="pr"><span class="nm" style="display:flex;gap:10px;align-items:center;font-weight:600"><i style="width:26px;height:26px;border-radius:8px;background:var(--grad-avatar);display:block"></i>Bùi Đức Anh</span><span class="band dn">4.5</span><span class="miss">22/30</span><span class="tag grn">Đã bật</span><span class="miss">Đọc hiểu</span><span class="miss">30/9</span></div><div class="pr"><span class="nm" style="display:flex;gap:10px;align-items:center;font-weight:600"><i style="width:26px;height:26px;border-radius:8px;background:var(--grad-avatar);display:block"></i>Vũ Thanh Hà</span><span class="band ">5.5</span><span class="miss">26/30</span><span class="tag org">Chưa</span><span class="miss">Nộp muộn 4/6</span><span class="miss">30/9</span></div>
+      </div>
+      <p class="sub" style="color:var(--text-2);font-size:13px;margin-top:12px">Còn 11 học viên. Bấm tên để mở hồ sơ — hồ sơ là chung cho mọi lớp em đó học.</p>
+    </section>
+    <section class="view" id="cl4">
+      <div class="routes"><button class="route on">Band</button><button class="route">% hoàn thành</button><button class="route">Chỉ bài viết</button><button class="route">Chỉ trắc nghiệm</button></div>
+      <div class="matrix"><table><thead><tr><th>Học viên</th><th>Band TB<small>có trọng số</small></th><th>Task 1 · Line graph<small>18/7</small><span class="wt">Trọng số 5%</span></th><th>Mock 1<small>28/7</small><span class="wt">Trọng số 20%</span></th><th>Task 2 · Technology<small>8/8</small><span class="wt">Trọng số 10%</span></th><th>Task 1 · Bar chart<small>18/8</small><span class="wt">Trọng số 5%</span></th><th>Task 2 · Environment<small>29/8</small><span class="wt">Trọng số 10%</span></th><th>Task 2 · Education<small>9/9</small><span class="wt">Trọng số 10%</span></th></tr></thead><tbody><tr class="avg"><td>Trung bình lớp</td><td class="b">5.7</td><td class="b">5.3</td><td class="b">5.5</td><td class="b">5.6</td><td class="b">5.6</td><td class="b">5.8</td><td class="b">6.0</td></tr><tr><td><span class="nm"><i></i>Nguyễn Minh Anh</span></td><td class="b up">5.3<small>↑ tăng</small></td><td class="b">5.0</td><td class="b">5.0</td><td class="b">5.5</td><td class="b">5.5</td><td class="b">5.5</td><td class="miss">chưa nộp</td></tr><tr><td><span class="nm"><i></i>Lê Thu Hà</span></td><td class="b up">6.7<small>↑ tăng</small></td><td class="b">6.0</td><td class="b">6.5</td><td class="b">6.5</td><td class="b">7.0</td><td class="b">7.0</td><td class="b">7.0</td></tr><tr><td><span class="nm"><i></i>Phạm Gia Huy</span></td><td class="b ">5.3</td><td class="b">5.0</td><td class="b">5.5</td><td class="b">5.5</td><td class="b">5.0</td><td class="b">5.5</td><td class="b">5.5</td></tr><tr><td><span class="nm"><i></i>Hoàng Yến Nhi</span></td><td class="b up">6.3<small>↑ tăng</small></td><td class="b">5.5</td><td class="b">6.0</td><td class="b">6.0</td><td class="b">6.5</td><td class="b">6.5</td><td class="b">7.0</td></tr><tr><td><span class="nm"><i></i>Đặng Hải Nam</span></td><td class="b ">5.1</td><td class="b">5.0</td><td class="b">5.0</td><td class="miss">chưa nộp</td><td class="b late">5.0<small>nộp muộn</small></td><td class="b">5.5</td><td class="b">5.0</td></tr><tr><td><span class="nm"><i></i>Bùi Đức Anh</span></td><td class="b dn">4.9<small>↓ tụt</small></td><td class="b">5.5</td><td class="b">5.0</td><td class="b">5.0</td><td class="b">4.5</td><td class="b">4.5</td><td class="miss">chưa nộp</td></tr><tr><td><span class="nm"><i></i>Vũ Thanh Hà</span></td><td class="b ">5.3</td><td class="b">5.0</td><td class="b">5.5</td><td class="b late">5.0<small>nộp muộn</small></td><td class="b late">5.5<small>nộp muộn</small></td><td class="miss">chưa nộp</td><td class="b late">5.5<small>nộp muộn</small></td></tr></tbody></table></div>
+      <p class="sub" style="color:var(--text-2);font-size:13px;margin-top:12px">Band TB tính theo trọng số cô đặt cho từng bài (Mock 20%, Task 2 10%, Task 1 và trắc nghiệm 5%). Bấm vào ô để mở bài + nhận xét. Bấm tên cột để đổi trọng số.</p>
+    </section>
+    <section class="view" id="cl5">
+      <div class="routes"><button class="route on" data-cr="cq1">Task 2 — Education <span class="c">4 tự luận</span></button><button class="route" data-cr="cq2">Trắc nghiệm ngữ pháp 3 <span class="c">2 xem lại</span></button></div>
+      <div class="rg on" id="cq1">
+        <div class="prog"><div class="track"><i id="cgp" style="width:0"></i></div><span class="txt" id="cgpt">Đã duyệt 0 / 4 · lớp IELTS 6.5 · nháp theo rubric của cô</span><button class="all" id="cgall">Duyệt tất cả</button></div>
+        <div id="cgrade"></div>
+        <div class="empty" id="cgempty" hidden><div class="art"><svg class="ico" viewBox="0 0 24 24" style="width:40px;height:40px"><path d="m5 12 5 5L20 7"/></svg></div><h3>Chấm xong 4 bài của lớp này</h3><p>Điểm đã vào tab Điểm. 4 em chưa nộp sẽ được nhắc lúc 9:00.</p><button class="btn gho" style="margin:14px auto 0" data-tab-go="cl4">Xem tab Điểm</button></div>
+      </div>
+      <div class="rg" id="cq2">
+        <div class="prog"><div class="track"><i style="width:89%"></i></div><span class="txt">16/18 đã chốt · 2 bài cần cô xem 1 câu</span><button class="all">Chốt 2 bài</button></div>
+        <div class="tbl"><div class="th"><span>Học viên</span><span>Điểm</span><span>Tin cậy</span><span>Sai ở đâu</span><span>Trạng thái</span></div>
+          <div class="tr"><span class="nm"><i></i>Vũ Thanh Hà</span><span class="sc">31/40</span><span class="st">92%</span><span class="miss">Câu 9 chữ mờ — đoán B</span><span class="tag org">Xem 1 câu</span></div>
+          <div class="tr"><span class="nm"><i></i>Đặng Hải Nam</span><span class="sc low">23/40</span><span class="st">90%</span><span class="miss">Câu 31 tô 2 ô</span><span class="tag org">Xem 1 câu</span></div>
+        </div>
+      </div>
+    </section>
+    </div>
+  </section>
+  <!-- ══════════ LỘ TRÌNH ══════════ -->
+  <section class="screen" id="s-path">
+    <div class="chead"><div><h1>Lộ trình</h1><div class="sub">Khung buổi học chuẩn của cô — dùng lại cho mọi lớp cùng cấp. Đây là thứ để mở lớp thứ 5 mà không soạn lại.</div></div>
+      <div class="right"><button>Nhân bản</button><button class="btn pri" style="height:36px">Tạo lộ trình</button></div></div>
+    <div class="tabs"><button class="on" data-tab="p1">IELTS 6.5 · 48 buổi</button><button data-tab="p2">IELTS 5.5 · 48 buổi</button><button data-tab="p3">Writing 8 tuần</button><button data-tab="p4">IELTS 7.0 · 36 buổi <span class="cnt">nháp</span></button></div>
+    <div class="wrap">
+    <section class="view on" id="p1">
+      <div class="kpis" style="margin-bottom:20px"><div class="kpi"><div class="lab">Đang dùng cho</div><div class="val">2 lớp</div><div class="d">34 học viên</div></div><div class="kpi"><div class="lab">Học viên đạt mục tiêu</div><div class="val good">71%</div><div class="d">của 3 khóa đã kết thúc</div></div><div class="kpi"><div class="lab">Chặng khó nhất</div><div class="val">Buổi 21–28</div><div class="d">Task 2 — luận điểm</div></div><div class="kpi"><div class="lab">Đề gắn sẵn</div><div class="val">86</div><div class="d">từ ngân hàng đề</div></div></div>
+      <div class="tbl path"><div class="th"><span>Buổi</span><span>Nội dung</span><span>Bài về nhà</span><span>Kiểm tra</span></div>
+        <div class="tr"><span class="band">1–8</span><span>Task 1 — mô tả biểu đồ, 4 dạng cơ bản, overview bắt buộc</span><span class="miss">2 bài Task 1 / tuần</span><span class="miss">—</span></div>
+        <div class="tr"><span class="band">8</span><span>Mock Writing lần 1</span><span class="miss">—</span><span class="tag blu">Đề số 3</span></div>
+        <div class="tr"><span class="band">9–20</span><span>Task 2 — dàn ý, câu chủ đề, 4 dạng đề</span><span class="miss">1 Task 2 / tuần</span><button class="tag blu" style="border:0;cursor:pointer">Giao bài</button></div>
+        <div class="tr"><span class="band">21–28</span><span>Task 2 — luận điểm & ví dụ, phản biện</span><span class="miss">1 Task 2 / tuần + sửa lại bài cũ</span><span class="tag org">Chặng khó</span></div>
+        <div class="tr"><span class="band">28</span><span>Mock Writing lần 2</span><span class="miss">—</span><span class="tag blu">Đề số 7</span></div>
+        <div class="tr"><span class="band">29–44</span><span>Luyện đề tổng hợp, cá nhân hóa theo lỗi lặp của từng em</span><span class="miss">Theo lỗ hổng riêng</span><span class="miss">—</span></div>
+        <div class="tr"><span class="band">45–48</span><span>Mock cuối + chiến thuật phòng thi</span><span class="miss">—</span><span class="tag grn">Mock 3</span></div>
+      </div>
+    </section>
+    <section class="view" id="p2"><div class="empty"><div class="art" style="background:linear-gradient(135deg,#d9c9ff,#8f7bff)"><svg class="ico" viewBox="0 0 24 24"><path d="M4 18h5l3-12h4l3 12h1"/></svg></div><h3>IELTS 5.5 · 48 buổi</h3><p>Đang dùng cho lớp Sáng T7/CN. Cấu trúc giống 6.5, thay bộ đề.</p></div></section>
+    <section class="view" id="p3"><div class="empty"><div class="art" style="background:linear-gradient(135deg,#ffd9a8,#f0913e)"><svg class="ico" viewBox="0 0 24 24"><path d="M4 18h5l3-12h4l3 12h1"/></svg></div><h3>Writing 8 tuần</h3><p>16 buổi, 1 kèm 4. Kết thúc 22/9 — có thể mở khóa 2 ngay từ lộ trình này.</p></div></section>
+    <section class="view" id="p4"><div class="empty"><div class="art" style="background:linear-gradient(135deg,#b6d9ff,#6b8fe0)"><svg class="ico" viewBox="0 0 24 24"><path d="M4 18h5l3-12h4l3 12h1"/></svg></div><h3>IELTS 7.0 · 36 buổi — nháp</h3><p>Dựng từ lộ trình 6.5, bỏ 12 buổi nền, thêm 8 buổi lập luận nâng cao. Cô duyệt là dùng được cho lớp 7.0+.</p></div></section>
+    </div>
+  </section>
+
+  <!-- ══════════ NGÂN HÀNG ĐỀ ══════════ -->
+  <section class="screen" id="s-bank">
+    <div class="chead"><div><h1>Ngân hàng đề</h1><div class="sub">312 đề đã số hóa · gắn nhãn cấp, kỹ năng, chủ đề · 10 năm đề giấy của cô giờ tìm được trong 2 giây</div></div>
+      <div class="right"><button class="btn gho" style="height:36px">Giao bài</button><button class="btn pri" style="height:36px">Chụp / tải ảnh đề</button></div></div>
+    <div class="tabs"><button class="on" data-tab="b1">Chờ duyệt nhãn <span class="cnt">3</span></button><button data-tab="b2">Tất cả <span class="cnt">312</span></button></div>
+    <div class="wrap">
+    <section class="view on" id="b1">
+      <div class="drop"><b>Kéo ảnh hoặc PDF đề vào đây</b>Ảnh chụp điện thoại là đủ. Đọc xong sẽ đề xuất nhãn — cô chỉ duyệt.</div>
+      <div class="tbl exam"><div class="th"><span>Đề</span><span>Nguồn</span><span>Đọc đúng</span><span>Nhãn đề xuất</span><span>Trạng thái</span></div>
+        <div class="tr"><span class="nm"><i style="background:linear-gradient(135deg,#ffd9a8,#f0913e)"></i>Cambridge 19 — Test 2 Writing</span><span class="miss">Ảnh chụp · 12 trang</span><span class="st">94%</span><span class="miss">Task 2 · Education · 6.5</span><span class="tag pur">Chờ duyệt</span></div>
+        <div class="tr"><span class="nm"><i style="background:linear-gradient(135deg,#ffd9a8,#f0913e)"></i>Cambridge 19 — Test 2 Reading</span><span class="miss">Ảnh chụp · 8 trang</span><span class="st" style="color:#d87f16">88%</span><span class="miss">Reading · 3 passage</span><span class="tag org">2 chỗ chữ mờ</span></div>
+        <div class="tr"><span class="nm"><i style="background:linear-gradient(135deg,#b6d9ff,#6b8fe0)"></i>Đề tự soạn — Environment 3</span><span class="miss">PDF</span><span class="st">99%</span><span class="miss">Task 2 · Environment · 6.0</span><button class="tag blu" style="border:0;cursor:pointer">Giao bài</button></div>
+      </div>
+    </section>
+    <section class="view" id="b2">
+      <div class="blkc" style="margin-top:0"><h3>Theo kỹ năng</h3><p class="sub">Bấm để lọc. Đề đã gắn vào lộ trình được đánh dấu.</p>
+        <div class="erow"><span class="nm">Writing Task 2</span><div class="bar"><i style="width:41%;background:var(--primary)"></i><b>128 đề</b></div><button class="act">Xem</button></div>
+        <div class="erow"><span class="nm">Writing Task 1</span><div class="bar"><i style="width:24%;background:var(--primary)"></i><b>74</b></div><button class="act">Xem</button></div>
+        <div class="erow"><span class="nm">Reading</span><div class="bar"><i style="width:20%;background:var(--primary)"></i><b>62</b></div><button class="act">Xem</button></div>
+        <div class="erow"><span class="nm">Speaking</span><div class="bar"><i style="width:15%;background:var(--primary)"></i><b>48</b></div><button class="act">Xem</button></div>
+      </div>
+    </section>
+    </div>
+  </section>
+
+  <!-- ══════════ HỌC PHÍ ══════════ -->
+  <section class="screen" id="s-fee">
+    <div class="chead"><div><h1>Học phí</h1><div class="sub">Tháng 9 · 41/58 thu qua nền tảng · 17 còn chuyển khoản tay</div></div>
+      <div class="right"><span class="live"><i></i>Rà 7:02</span><button>Xuất báo cáo</button></div></div>
+    <div class="tabs"><button class="on" data-tab="f1">Sắp đến hạn <span class="cnt" id="fcnt">3</span></button><button data-tab="f2">Tháng này</button><button data-tab="f3">Tăng trưởng</button></div>
+    <div class="wrap">
+    <section class="view on" id="f1">
+      <div class="prog"><div class="track"><i id="fp" style="width:0"></i></div><span class="txt" id="fpt">Đã duyệt 0 / 3 · gửi lúc 9:00 để không rơi vào giờ đi làm</span><button class="all" id="fall">Duyệt cả 3</button></div>
+      <div class="msg" data-f><span class="av">MA</span><div class="bd"><div class="hd"><b>Nguyễn Minh Anh</b><span class="tag org">Hết 12/9</span><span class="tag grn">Tiến bộ +0.5</span></div>
+        <p>Chào Minh Anh, cô Thảo gửi em tóm tắt 8 tuần: Writing từ 5.0 lên 5.5, lỗi thì hiện tại hoàn thành giảm từ 3 bài/tuần còn 1. Còn 4 tuần là hết chặng 1. Gói tiếp theo 12 buổi, cô giữ nguyên học phí cũ cho học viên đang học. Em xác nhận trước 10/9 để cô giữ chỗ nhé.</p>
+        <small style="color:var(--text-3);font-size:12px">Vì sao gửi bây giờ: 5 ngày trước hạn, ngay sau một bài có tiến bộ. Không nhắc "hết hạn", chỉ nhắc "đang đi tới đâu".</small></div>
+        <div class="acts"><button class="btn pri" data-ok>Gửi 9:00</button><button class="btn gho">Sửa</button></div></div>
+      <div class="msg" data-f><span class="av" style="background:linear-gradient(135deg,#ffd9a8,#f0913e)">QB</span><div class="bd"><div class="hd"><b>Trần Quốc Bảo</b><span class="tag org">Hết 12/9</span><span class="tag red">Đang buông</span></div>
+        <p>Bảo ơi, cô thấy 2 tuần rồi em chưa nộp bài. Cô không nhắc học phí — cô muốn hỏi thật: em đang bận thi ở trường, hay thấy lớp không hợp? Nếu bận, cô dời deadline và giữ chỗ đến hết tháng 9, không tính buổi. Nhắn cô 1 câu là được.</p>
+        <small style="color:var(--text-3);font-size:12px">Học viên đang buông thì tin gia hạn là tin chia tay. Tin này đổi mục tiêu từ thu tiền sang giữ người — nếu cô đồng ý.</small></div>
+        <div class="acts"><button class="btn pri" data-ok>Gửi 9:00</button><button class="btn gho">Sửa</button></div></div>
+      <div class="msg" data-f><span class="av" style="background:linear-gradient(135deg,#b7f3d8,#2eb67d)">TH</span><div class="bd"><div class="hd"><b>Lê Thu Hà</b><span class="tag org">Hết 12/9</span><span class="tag grn">Vượt mục tiêu</span></div>
+        <p>Thu Hà ơi, hai bài gần nhất em đều 7.0 — vượt mục tiêu 6.5. Cô đề nghị em không gia hạn lớp 6.5 nữa mà lên thẳng nhóm 7.0+ khai giảng 22/9 (tối T2/T4, 6 người). Học phí nhóm nhỏ cao hơn 20%, nhưng học viên đang học được giữ giá cũ khóa đầu.</p>
+        <small style="color:var(--text-3);font-size:12px">Gộp gia hạn với nâng lớp: vượt mục tiêu mà học lại lớp cũ sẽ chán trong 1 tháng.</small></div>
+        <div class="acts"><button class="btn pri" data-ok>Gửi 9:00</button><button class="btn gho">Sửa</button></div></div>
+      <div class="empty" id="fempty" hidden><div class="art"><svg class="ico" viewBox="0 0 24 24" style="width:40px;height:40px"><path d="m5 12 5 5L20 7"/></svg></div><h3>Đã xếp lịch gửi cả 3</h3><p>Cô sẽ được báo khi có em trả lời. Chưa ai trả lời sau 3 ngày mới nhắc lần hai.</p></div>
+    </section>
+    <section class="view" id="f2">
+      <div class="kpis"><div class="kpi"><div class="lab">Đã thu tháng 9</div><div class="val good">96,4tr</div><div class="d">41 học viên qua nền tảng</div></div><div class="kpi"><div class="lab">Chuyển khoản tay</div><div class="val">34,2tr</div><div class="d">17 học viên · cô tự đối soát</div></div><div class="kpi"><div class="lab">Sắp đến hạn</div><div class="val warn">7,5tr</div><div class="d">3 học viên · 12/9</div></div><div class="kpi"><div class="lab">Thu từ luyện tập thêm</div><div class="val">2,1tr</div><div class="d">học viên tự mua bài luyện · cô nhận 30%</div></div></div>
+      <div class="tbl fee" style="margin-top:20px"><div class="th"><span>Học viên</span><span>Gói</span><span>Số tiền</span><span>Hạn</span><span>Cách thu</span><span>Trạng thái</span></div>
+        <div class="tr"><span class="nm"><i></i>Hoàng Yến Nhi</span><span class="miss">IELTS 6.5 · 12 buổi</span><span class="band">2,4tr</span><span class="miss">15/10</span><span class="miss">Nền tảng</span><span class="tag grn">Đã thu</span></div>
+        <div class="tr"><span class="nm"><i></i>Phạm Gia Huy</span><span class="miss">IELTS 6.5 · 12 buổi</span><span class="band">2,4tr</span><span class="miss">15/10</span><span class="miss">Nền tảng</span><span class="tag grn">Đã thu</span></div>
+        <div class="tr"><span class="nm"><i></i>Đỗ Khánh Vy</span><span class="miss">IELTS 5.5 · 12 buổi</span><span class="band">2,2tr</span><span class="miss">30/9</span><span class="miss">Chuyển khoản</span><span class="tag org">Chưa đối soát</span></div>
+        <div class="tr"><span class="nm"><i></i>Trần Quốc Bảo</span><span class="miss">Writing 8 tuần</span><span class="band">3,2tr</span><span class="miss">12/9</span><span class="miss">Chuyển khoản</span><span class="tag red">Sắp hết</span></div>
+      </div>
+    </section>
+    <section class="view" id="f3">
+      <div class="blkc" style="margin-top:0"><h3>Đường học viên đi qua lớp cô</h3><p class="sub">30 ngày qua. Tìm chỗ rò, không tìm chỗ khen.</p>
+        <div class="funnel"><div class="fs"><span class="dl">+7</span><b>7</b><small>hỏi thử</small></div><div class="fs"><span class="dl">71%</span><b>5</b><small>học thử</small></div><div class="fs"><span class="dl">80%</span><b>4</b><small>đăng ký</small></div><div class="fs"><span class="dl w">78%</span><b>14/18</b><small>gia hạn kỳ 2</small></div><div class="fs"><span class="dl">2</span><b>2</b><small>lên lớp cao hơn</small></div></div>
+        <p class="sub" style="margin:16px 0 0">Chỗ rò là gia hạn kỳ 2: 4/18 không tiếp tục, cả 4 đều chưa có tài khoản riêng.</p></div>
+      <div class="blkc"><h3>Lớp cô đang ở bước nào</h3><p class="sub">Mỗi bước bật thêm một việc chạy tự động. Bước 4 là bước đổi nhiều nhất.</p>
+        <div class="tier"><div class="done"><b>1 · Chấm qua nền tảng</b>Nháp sẵn, cô duyệt</div><div class="done"><b>2 · Hồ sơ học viên</b>58 hồ sơ, lỗi theo kỹ năng</div><div class="done"><b>3 · Rubric của cô</b>Học từ 214 bài</div><div class="now"><b>4 · Tài khoản học viên</b>41/58 — nhắc bài thay cô</div><div><b>5 · Học phí qua nền tảng</b>Nhắc hạn, thu tự động</div><div><b>6 · Lớp thứ 5</b>Mở từ lộ trình</div></div></div>
+    </section>
+    </div>
+  </section>
+
+  <!-- ══════════ BẢNG TIN ══════════ -->
+  <section class="screen" id="s-feed">
+    <div class="chead"><div><h1>Bảng tin · IELTS 6.5 Tối T3/T5</h1><div class="sub">Nơi học viên nộp bài, hỏi, và thấy tiến độ của nhau. Cô đăng một lần, 18 em đều thấy.</div></div>
+      <div class="right"><span class="live"><i></i>18/18 có tài khoản</span><button>Đổi lớp</button></div></div>
+    <div class="wrap">
+      <div class="steer" style="margin:0 0 20px"><div class="steer-in"><label class="sr-only" for="postbox">Đăng lên bảng tin</label><textarea id="postbox" placeholder="Đăng thông báo, giao bài, hoặc đính đề từ ngân hàng…"></textarea>
+        <div class="steer-bar"><div class="l"><button class="hint" data-giao>Giao bài từ ngân hàng đề</button><button class="hint">Nhắc mock CN</button><button class="hint">Đính đề Cambridge 19</button></div><button class="send" aria-label="Đăng"><svg class="ico s" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div></div></div>
+      <div class="post"><span class="av me">CT</span><div class="bd"><div class="hd"><b>Cô Thảo</b><small>Hôm qua 21:30 · Ghim</small></div><p>Bài Task 2 tuần này: đề Education (Cambridge 19, Test 2). Hạn nộp T3 trước 19:00. Nộp ở đây, không gửi Zalo nhé — cô chấm trên này mới thấy lịch sử lỗi của từng em.</p><span class="att"><svg class="ico s" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/></svg>Cambridge 19 · Test 2 · Task 2</span><div class="re"><span>14 đã nộp</span><span>4 chưa nộp</span><span>3 bình luận</span></div></div></div>
+      <div class="post"><span class="av">MA</span><div class="bd"><div class="hd"><b>Nguyễn Minh Anh</b><small>Hôm qua 22:41</small></div><p>Em nộp bài Task 2 ạ. Tuần này em cố không dùng "am believing" nữa 😅</p><span class="att"><svg class="ico s" viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M13 7l3 3"/></svg>Task2_MinhAnh.docx · 268 từ</span><div class="re"><span class="tag pur">Đã nhận xét · chờ cô duyệt</span></div></div></div>
+      <div class="post"><span class="av b">GH</span><div class="bd"><div class="hd"><b>Phạm Gia Huy</b><small>21:14</small></div><p>Cô ơi đề này có thể viết theo hướng "partly agree" không ạ hay phải chọn hẳn một bên?</p><div class="re"><span>2 trả lời</span><span style="color:var(--primary);font-weight:600">Trả lời</span></div></div></div>
+      <div class="post"><span class="av" style="background:linear-gradient(135deg,#b7f3d8,#2eb67d)">TH</span><div class="bd"><div class="hd"><b>Lê Thu Hà</b><small>20:02</small></div><p>Em vừa đạt 7.0 bài thứ hai — cảm ơn cô! Bạn cùng cơ quan em đang hỏi lớp 7.0+, em gửi link học thử cho bạn ấy rồi ạ.</p><div class="re"><span>🎉 9</span><span>Cô Thảo: Tự hào về em. Lớp 7.0+ đang chờ em đó.</span></div></div></div>
+    </div>
+  </section>
+
+
+  <!-- ══════════ CẤU HÌNH / VẬN HÀNH ══════════ -->
+  <section class="screen" id="s-cfg">
+    <div class="chead"><div><h1>Vận hành & cấu hình</h1><div class="sub">Một tuần của lớp chạy qua 8 bước. Xanh lá là máy tự chạy, xanh dương là cô quyết, cam là dính tới tiền.</div></div></div>
+    <div class="tabs"><button class="on" data-tab="k1">Vòng vận hành tuần</button><button data-tab="k5">Quyền</button><button data-tab="k6">Nhật ký hành vi</button><button data-tab="k2">Luật của cô</button><button data-tab="k3">Học phí & chia sẻ</button></div>
+    <div class="wrap">
+    <section class="view on" id="k1">
+      <div class="loop">
+        <div class="ln human"><div class="no">1 · Thứ Hai</div><b>Giao bài từ lộ trình</b><p>Buổi 31 trong lộ trình đã có sẵn đề gắn kèm. Cô bấm "Giao", 18 em nhận cùng lúc trên bảng tin.</p><div class="who"><span class="tag blu">Cô 1 phút</span></div></div>
+        <div class="ln auto"><div class="no">2 · T2–T3</div><b>Nhắc nộp bài</b><p>Học viên có tài khoản được nhắc trước hạn 24h và 2h. 17 em chưa có tài khoản — cô vẫn nhắc tay.</p><div class="who"><span class="tag grn">Tự chạy</span></div></div>
+        <div class="ln auto"><div class="no">3 · Khi nộp</div><b>Nháp chấm theo rubric của cô</b><p>Đối chiếu 3 bài trước của em đó + rubric cô. Band lệch >1.0 hoặc tin cậy <85% thì gắn cờ, không tự tin.</p><div class="who"><span class="tag grn">Tự chạy · vài phút</span></div></div>
+        <div class="ln human"><div class="no">4 · Tối</div><b>Cô duyệt, sửa, gửi</b><p>Màn Chấm bài. Trắc nghiệm chốt cả lớp; tự luận đọc từng bài. Mỗi lần cô sửa nháp, nháp sau giống cô hơn.</p><div class="who"><span class="tag blu">Cô 25 phút / 14 bài</span></div></div>
+        <div class="ln auto"><div class="no">5 · Sau gửi</div><b>Lỗi lặp → bài luyện 5 phút</b><p>Lỗi xuất hiện ≥2 bài liên tiếp thì tự sinh bài luyện gắn với nhận xét. Kết quả về hồ sơ học viên.</p><div class="who"><span class="tag grn">Tự chạy</span></div></div>
+        <div class="ln human"><div class="no">6 · Trước buổi</div><b>"Cả lớp sai chung ở đâu"</b><p>Gộp lỗi 14 bài thành 3–4 điểm dạy lại. Cô mở màn này 5 phút trước giờ dạy.</p><div class="who"><span class="tag blu">Cô đọc</span></div></div>
+        <div class="ln money"><div class="no">7 · Mỗi sáng</div><b>Rà học phí & học viên rời</b><p>Sắp hết hạn → nháp tin theo tình trạng từng em. Đang buông → tin giữ người, không tin thu tiền. Cô duyệt mới gửi.</p><div class="who"><span class="tag org">Tiền · cô quyết</span></div></div>
+        <div class="ln money"><div class="no">8 · Cuối chặng</div><b>Lên lớp / mở lớp mới</b><p>2 bài liên tiếp ≥ mục tiêu → đề xuất lên lớp. Đủ 6 người → mở lớp mới từ lộ trình, không soạn lại.</p><div class="who"><span class="tag org">Tiền · cô quyết</span></div></div>
+      </div>
+      <div class="leg"><span><i style="background:#c9f0dd"></i>Máy tự chạy, ghi nhật ký</span><span><i style="background:#b3d7ff"></i>Cô quyết</span><span><i style="background:#ffe2b8"></i>Dính tới tiền — luôn qua tay cô</span></div>
+      <div class="blkc"><h3>Tổng thời gian cô bỏ ra mỗi tuần</h3><p class="sub">Với 4 lớp, 58 học viên, 14 bài viết + 10 trắc nghiệm.</p>
+        <div class="sumrow"><span>Giao bài + đọc lỗi chung</span><b>≈ 10 phút</b></div><div class="sumrow"><span>Duyệt chấm</span><b>≈ 25 phút</b></div><div class="sumrow"><span>Duyệt tin học phí / giữ người</span><b>≈ 5 phút</b></div><div class="sumrow"><span>Trước khi có nền tảng (chấm tay + nhắc tay + đối soát)</span><b style="color:var(--st-red)">≈ 7 giờ</b></div></div>
+    </section>
+
+    <section class="view" id="k5">
+      <div class="blkc" style="margin-top:0"><h3>Ai được làm gì</h3><p class="sub">Ba nguyên tắc: quyền đi theo <b>lớp</b> (ra khỏi lớp là hết quyền) · học viên chỉ thấy <b>của mình</b> · máy chỉ <b>đề xuất</b>, trừ việc cô đã bật cho tự làm.</p>
+        <div class="perm"><table><thead><tr><th>Đối tượng</th><th>Giáo viên<small>chủ lớp</small></th><th>Trợ giảng<small>được cô thêm</small></th><th>Học viên<small>thành viên lớp</small></th><th>Phụ huynh<small>nếu cô bật</small></th><th>Máy<small>tự động</small></th></tr></thead><tbody><tr><td><b>Lớp học</b><small>tạo, sửa lịch, đóng lớp</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm read">Chỉ xem</span></td><td><span class="pm read">Chỉ xem</span></td><td><span class="pm none">Không</span></td><td><span class="pm none">Không</span></td></tr><tr><td><b>Thành viên lớp</b><small>thêm/bỏ học viên, mời trợ giảng</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm none">Không</span></td><td><span class="pm none">Không</span></td><td><span class="pm none">Không</span></td><td><span class="pm ask">Đề xuất</span></td></tr><tr><td><b>Hồ sơ học viên</b><small>band, lỗi lặp, ghi chú của cô</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm read">Chỉ xem</span></td><td><span class="pm own">Của mình</span><br><small style="color:var(--text-3)">không thấy ghi chú cô</small></td><td><span class="pm own">Của mình</span><br><small style="color:var(--text-3)">tiến bộ + việc, không điểm</small></td><td><span class="pm auto">Tự làm</span><br><small style="color:var(--text-3)">cập nhật band, lỗi</small></td></tr><tr><td><b>Ngân hàng đề</b><small>tạo, sửa, xóa, xem đáp án</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm read">Chỉ xem</span></td><td><span class="pm none">Không</span></td><td><span class="pm none">Không</span></td><td><span class="pm ask">Đề xuất</span><br><small style="color:var(--text-3)">nhãn, đáp án OCR</small></td></tr><tr><td><b>Bài giao</b><small>giao đề cho lớp, đặt hạn, trọng số</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm ask">Đề xuất</span></td><td><span class="pm read">Chỉ xem</span></td><td><span class="pm none">Không</span></td><td><span class="pm ask">Đề xuất</span><br><small style="color:var(--text-3)">từ lộ trình</small></td></tr><tr><td><b>Bài nộp</b><small>nộp, xem bài của ai</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm read">Chỉ xem</span></td><td><span class="pm own">Của mình</span></td><td><span class="pm none">Không</span></td><td><span class="pm read">Chỉ xem</span></td></tr><tr><td><b>Nhận xét & band</b><small>viết, gửi cho học viên</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm ask">Đề xuất</span><br><small style="color:var(--text-3)">nháp, không gửi</small></td><td><span class="pm own">Của mình</span><br><small style="color:var(--text-3)">chỉ khi cô đã gửi</small></td><td><span class="pm none">Không</span></td><td><span class="pm ask">Đề xuất</span><br><small style="color:var(--text-3)">nháp · tự chốt trắc nghiệm ≥97%</small></td></tr><tr><td><b>Bảng điểm lớp</b><small>ma trận cả lớp</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm read">Chỉ xem</span></td><td><span class="pm none">Không</span><br><small style="color:var(--text-3)">chỉ thấy cột của mình</small></td><td><span class="pm none">Không</span></td><td><span class="pm auto">Tự làm</span></td></tr><tr><td><b>Bảng tin lớp</b><small>đăng, ghim, xóa bài</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm own">Của mình</span></td><td><span class="pm own">Của mình</span><br><small style="color:var(--text-3)">đăng, không ghim/xóa</small></td><td><span class="pm none">Không</span></td><td><span class="pm auto">Tự làm</span><br><small style="color:var(--text-3)">đăng bài giao, nhắc hạn</small></td></tr><tr><td><b>Học phí</b><small>gói, hạn, tin gia hạn</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm none">Không</span></td><td><span class="pm own">Của mình</span></td><td><span class="pm own">Của mình</span></td><td><span class="pm ask">Đề xuất</span><br><small style="color:var(--text-3)">nháp tin, không gửi</small></td></tr><tr><td><b>Rubric & giọng chấm</b><small>trọng số, cách nhận xét</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm none">Không</span></td><td><span class="pm none">Không</span></td><td><span class="pm none">Không</span></td><td><span class="pm auto">Tự làm</span><br><small style="color:var(--text-3)">học từ sửa của cô</small></td></tr><tr><td><b>Xuất dữ liệu</b><small>Excel/CSV toàn bộ</small></td><td><span class="pm full">Toàn quyền</span></td><td><span class="pm none">Không</span></td><td><span class="pm own">Của mình</span></td><td><span class="pm none">Không</span></td><td><span class="pm none">Không</span></td></tr></tbody></table></div>
+        <div class="pmleg"><span class="pm full">Toàn quyền</span><span class="pm own">Của mình</span><span class="pm read">Chỉ xem</span><span class="pm none">Không</span><span class="pm ask">Đề xuất</span> <span style="font-size:12px;color:var(--text-2);align-self:center">= máy/trợ giảng chuẩn bị, cô bấm mới có hiệu lực</span><span class="pm auto">Tự làm</span></div></div>
+
+      <div class="blkc"><h3>Trợ giảng của cô</h3><p class="sub">Quyền cấp theo <b>từng lớp</b> và <b>từng việc</b>. Trợ giảng chỉ thấy lớp được thêm vào.</p>
+        <div class="tacard"><span class="av">L</span><div class="t"><b>Nguyễn Thị Lan</b><small>IELTS 6.5 · Tối T3/T5 · từ 8/2026 · nháp nhận xét, bảng tin, điểm danh</small></div><span class="tag grn">Đang hoạt động</span><button class="btn gho" style="height:32px" id="taperm">Chỉnh quyền</button></div>
+        <div class="tacard"><span class="av" style="background:var(--field);color:var(--text-3)">+</span><div class="t"><b>Mời trợ giảng</b><small>Gửi link qua Zalo · đăng nhập bằng SĐT · quyền mặc định: chỉ xem</small></div><button class="btn pri" style="height:32px" id="tainvite">Mời</button></div>
+      </div>
+      <div class="blkc"><h3>Cùng một bài nộp — mỗi vai thấy gì</h3><p class="sub">Bấm vai để đổi góc nhìn. Đây là cách kiểm tra quyền nhanh nhất: không đọc ma trận, nhìn thẳng đối tượng.</p>
+        <div class="role"><button class="on" data-r="t">Cô Thảo</button><button data-r="ta">Trợ giảng</button><button data-r="s">Minh Anh (chủ bài)</button><button data-r="s2">Thu Hà (bạn cùng lớp)</button><button data-r="p">Phụ huynh Minh Anh</button></div>
+        <div class="obj" id="objv"><h4>Bài nộp · Task 2 — Education · Nguyễn Minh Anh · lớp IELTS 6.5</h4>
+          <div class="kv" data-k="text"><span>Bài viết</span><span>268 từ · nộp 22:41</span></div>
+          <div class="kv" data-k="draft"><span>Nháp chấm của máy</span><span>5.5 · tin cậy 91% · 4 lỗi đánh dấu</span></div>
+          <div class="kv" data-k="band"><span>Band cô chốt</span><span>chưa chốt</span></div>
+          <div class="kv" data-k="fb"><span>Nhận xét gửi học viên</span><span>chưa gửi</span></div>
+          <div class="kv" data-k="hist"><span>Lịch sử lỗi 3 bài trước</span><span>am believing ×3 · chủ-vị ×2</span></div>
+          <div class="kv" data-k="note"><span>Ghi chú riêng của cô</span><span>"Bố mẹ muốn thi tháng 12 — hơi vội"</span></div>
+          <div class="kv" data-k="cls"><span>So với lớp</span><span>TB lớp 6.0 · em xếp 12/18</span></div>
+          <div class="kv" data-k="fee"><span>Học phí</span><span>đến 30/9 · qua nền tảng</span></div>
+          <div class="kv" data-k="act"><span>Được làm</span><span id="objact">chốt band · sửa nhận xét · gửi · giao bài luyện</span></div>
+        </div></div>
+    </section>
+
+    <section class="view" id="k6">
+      <div class="blkc" style="margin-top:0"><h3>Một hành vi đi qua hệ thống như thế nào</h3><p class="sub">Mọi hành vi = một sự kiện: <b>ai · làm gì · trên gì · thuộc lớp nào · lúc nào</b>. Sự kiện sinh ra việc tiếp theo; không ai gọi ai trực tiếp.</p>
+        <div class="flow">
+          <div class="fnode"><span class="r t">Cô</span><b>Giao bài</b><small>Đề Education → lớp 6.5 · hạn T3</small></div>
+          <div class="fnode"><span class="r m">Máy</span><b>Đăng + nhắc</b><small>Bảng tin lớp · nhắc 17 em có tài khoản trước 24h/2h</small></div>
+          <div class="fnode"><span class="r s">Học viên</span><b>Nộp bài</b><small>Chỉ thành viên lớp mới thấy đề · ghi thời gian, số từ</small></div>
+          <div class="fnode"><span class="r m">Máy</span><b>Nháp chấm</b><small>Rubric cô + 3 bài trước · gắn cờ nếu lệch >1.0</small></div>
+          <div class="fnode"><span class="r t">Cô</span><b>Duyệt / sửa / gửi</b><small>Chỉ từ đây học viên mới thấy band · máy học cách cô sửa</small></div>
+          <div class="fnode"><span class="r m">Máy</span><b>Hậu kỳ</b><small>Cập nhật hồ sơ, ma trận điểm · lỗi lặp ≥2 → bài luyện · thông báo cho em</small></div>
+        </div>
+        <div style="margin-top:14px">
+          <div class="rulecard"><b>Luật 1 · Lớp là ranh giới.</b> Sự kiện luôn mang mã lớp. Học viên rời lớp → mất quyền thấy mọi thứ của lớp từ thời điểm đó, nhưng hồ sơ cá nhân (band, lỗi) vẫn đi theo em.</div>
+          <div class="rulecard"><b>Luật 2 · Máy không có hành vi "gửi".</b> Máy chỉ tạo "nháp" và "đề xuất". Sự kiện "gửi cho học viên" chỉ do cô (hoặc luật cô đã bật) phát ra. Vì vậy nhật ký luôn truy được ai chịu trách nhiệm.</div>
+          <div class="rulecard"><b>Luật 3 · Ghi trước, làm sau.</b> Sự kiện được ghi trước khi hiệu lực. Ghi thất bại → hành vi không xảy ra. Điểm số ảnh hưởng tới một đứa trẻ — phải truy ngược được.</div>
+          <div class="rulecard"><b>Luật 4 · Ai thấy nhật ký nào.</b> Cô thấy toàn bộ của lớp mình. Học viên thấy nhật ký về chính mình (ai đã xem bài em, khi nào chấm). Trợ giảng thấy việc mình làm. Nền tảng chỉ thấy sự kiện hệ thống, không đọc nội dung bài.</div>
+        </div></div>
+      <div class="blkc"><h3>Nhật ký lớp IELTS 6.5 · hôm nay</h3><p class="sub">Lọc theo lớp · theo người · theo loại. Bấm dòng để mở đối tượng.</p>
+        <div class="routes"><button class="route on">Tất cả</button><button class="route">Cô</button><button class="route">Học viên</button><button class="route">Máy</button><button class="route">Dính tới tiền</button></div>
+        <div class="audit" id="audit">
+          <div class="au h"><span>Giờ</span><span>Ai</span><span>Làm gì · trên gì</span><span>Lớp</span><span>Ai thấy</span></div>
+          <div class="au"><span class="tm">22:41</span><span class="who"><i style="background:var(--st-green)"></i>Minh Anh</span><span class="what"><b>Nộp bài</b><small>Task 2 — Education · 268 từ · 38 phút viết</small></span><span>IELTS 6.5</span><span class="vis">Cô · Minh Anh</span></div>
+          <div class="au"><span class="tm">22:43</span><span class="who"><i style="background:var(--st-purple)"></i>Máy</span><span class="what"><b>Tạo nháp chấm</b><small>5.5 · tin cậy 91% · 4 lỗi · tham chiếu 3 bài trước</small></span><span>IELTS 6.5</span><span class="vis">Cô</span></div>
+          <div class="au"><span class="tm">22:43</span><span class="who"><i style="background:var(--st-purple)"></i>Máy</span><span class="what"><b>Sinh bài luyện đề xuất</b><small>"believe" ×5 · vì lỗi lặp 3 bài · chờ cô gửi nhận xét mới giao</small></span><span>IELTS 6.5</span><span class="vis">Cô</span></div>
+          <div class="au"><span class="tm">21:14</span><span class="who"><i style="background:var(--st-green)"></i>Gia Huy</span><span class="what"><b>Đăng câu hỏi lên bảng tin</b><small>"partly agree được không?"</small></span><span>IELTS 6.5</span><span class="vis">Cả lớp</span></div>
+          <div class="au"><span class="tm">21:30</span><span class="who"><i style="background:var(--primary)"></i>Cô Thảo</span><span class="what"><b>Giao bài</b><small>Cambridge 19 · Task 2 · hạn T3 19:00 · trọng số 10% · nháp-cô duyệt</small></span><span>IELTS 6.5</span><span class="vis">Cả lớp</span></div>
+          <div class="au"><span class="tm">21:30</span><span class="who"><i style="background:var(--st-purple)"></i>Máy</span><span class="what"><b>Đăng bài giao + đặt lịch nhắc</b><small>17 em có tài khoản · nhắc T2 19:00 và T3 17:00</small></span><span>IELTS 6.5</span><span class="vis">Cô · từng em</span></div>
+          <div class="au"><span class="tm">20:05</span><span class="who"><i style="background:var(--primary)"></i>Cô Thảo</span><span class="what"><b>Sửa nhận xét nháp rồi gửi</b><small>Thu Hà · Task 2 Environment · máy 6.5 → cô chốt 7.0 · sửa 2 câu</small></span><span>IELTS 6.5</span><span class="vis">Cô · Thu Hà</span></div>
+          <div class="au"><span class="tm">20:05</span><span class="who"><i style="background:var(--st-purple)"></i>Máy</span><span class="what"><b>Học từ sửa của cô</b><small>Ghi nhận: cô chấm TR cao hơn máy 0.5 khi có ví dụ số liệu · áp cho nháp sau</small></span><span>Rubric cô</span><span class="vis">Cô</span></div>
+          <div class="au" style="background:#fff9f0"><span class="tm">07:02</span><span class="who"><i style="background:var(--st-purple)"></i>Máy</span><span class="what"><b>Nháp 3 tin gia hạn</b><small>Minh Anh, Quốc Bảo, Thu Hà · hết 12/9 · <b>chưa gửi</b> — chờ cô</small></span><span>6.5 · Writing</span><span class="vis">Cô</span></div>
+          <div class="au"><span class="tm">Hôm qua</span><span class="who"><i style="background:var(--st-orange)"></i>Trợ giảng Lan</span><span class="what"><b>Nháp nhận xét</b><small>Đức Anh · Task 1 · máy 5.0 → Lan đề xuất 5.0 · chờ cô</small></span><span>IELTS 5.5</span><span class="vis">Cô · Lan</span></div>
+          <div class="au"><span class="tm">Hôm qua</span><span class="who"><i style="background:var(--st-green)"></i>Minh Anh</span><span class="what"><b>Xem nhận xét</b><small>Task 2 Environment · mở 2 lần · bấm "Làm bài luyện"</small></span><span>IELTS 6.5</span><span class="vis">Cô · Minh Anh</span></div>
+        </div></div>
+    </section>
+    <section class="view" id="k2">
+      <div class="blkc" style="margin-top:0"><h3>Máy được làm gì mà không hỏi</h3><p class="sub">Tắt là máy dừng, việc đó về tay cô.</p>
+        <div class="cfgrow"><div class="t"><b>Nhắc nộp bài, nhắc lịch</b><small>Chỉ với học viên có tài khoản · 9:00–21:30</small></div><button class="sw on" aria-label="bật"></button></div>
+        <div class="cfgrow"><div class="t"><b>Chốt điểm trắc nghiệm tin cậy ≥ 97%</b><small>Câu chữ mờ vẫn hỏi cô</small></div><button class="sw on" aria-label="bật"></button></div>
+        <div class="cfgrow"><div class="t"><b>Sinh bài luyện 5 phút khi lỗi lặp ≥ 2 bài</b><small>Gắn kèm nhận xét cô đã duyệt</small></div><button class="sw on" aria-label="bật"></button></div>
+        <div class="cfgrow"><div class="t"><b>Gửi nhận xét tự luận không cần cô duyệt</b><small>Cô tắt — mọi nhận xét tự luận đều qua tay cô</small></div><button class="sw" aria-label="tắt"></button></div>
+        <div class="cfgrow"><div class="t"><b>Nhắn phụ huynh</b><small>Chỉ khi cô bật cho từng học viên; gửi tiến bộ + việc cụ thể, không gửi điểm</small></div><button class="sw" aria-label="tắt"></button></div></div>
+      <div class="blkc"><h3>Không bao giờ</h3><p class="sub">Không có công tắc — đây là luật của nền tảng.</p>
+        <div class="rulebox" style="margin-top:0"><span class="rule">Không gửi tin dính tới học phí khi cô chưa duyệt</span><span class="rule">Không so sánh học viên này với học viên khác</span><span class="rule">Không đọc Zalo cá nhân của cô</span><span class="rule">Học viên thuộc về cô — không marketing chéo, xuất dữ liệu bất cứ lúc nào</span></div></div>
+    </section>
+    <section class="view" id="k3">
+      <div class="blkc" style="margin-top:0"><h3>Cách thu học phí</h3>
+        <div class="cfgrow"><div class="t"><b>Thu qua nền tảng</b><small>Học viên có tài khoản trả trong app · nhắc hạn tự động · đối soát sẵn · phí 1,5%</small></div><span class="tag grn">41 học viên</span></div>
+        <div class="cfgrow"><div class="t"><b>Chuyển khoản tay</b><small>Cô tự đối soát, ghi tay vào hồ sơ</small></div><span class="tag org">17 học viên</span></div></div>
+      <div class="blkc"><h3>Chia sẻ doanh thu từ luyện thêm</h3><p class="sub">Học viên mua gói luyện (99K/tháng) hoặc mock chấm tay (150K) trong app của lớp cô.</p>
+        <div class="sumrow"><span>Cô nhận</span><b>30% gói luyện · 80% mock chấm tay</b></div><div class="sumrow"><span>Tháng 9 đến nay</span><b>2,1tr</b></div><div class="sumrow"><span>Chuyển vào</span><b>Tài khoản cô · ngày 5 hằng tháng</b></div></div>
+    </section>
+    </div>
+  </section>
+  </main>
+</div>
+
+<div class="modal" id="wiz"><div class="box">
+  <div class="mh"><svg class="ico" viewBox="0 0 24 24" style="color:var(--primary)"><path d="M12 3l2 5 5 1-4 3.5 1 5.5-4-2.5L8 18l1-5.5L5 9l5-1z"/></svg><h2 id="wz-t">Tạo đề mới</h2><button id="wz-x" aria-label="Đóng">×</button></div>
+  <div class="steps"><span class="sp on" data-st="1"><i>1</i><span>Thông tin</span></span><span class="ln"></span><span class="sp" data-st="2"><i>2</i><span>Tải tệp & số hóa</span></span><span class="ln"></span><span class="sp" data-st="3"><i>3</i><span>Câu hỏi</span></span><span class="ln"></span><span class="sp" data-st="4"><i>4</i><span>Xem trước & lưu</span></span></div>
+  <div class="mb">
+    <!-- step 1 -->
+    <div class="wstep on" id="ws1">
+      <div class="field"><label>Tên đề</label><input id="wz-name" value="Cambridge 19 — Test 2 Reading"></div>
+      <div class="field"><label>Kỹ năng</label><div class="chips" id="wz-skill"><button class="chip">Nghe</button><button class="chip on">Đọc</button><button class="chip">Nói</button><button class="chip">Viết</button><button class="chip">Ngữ pháp / Từ vựng</button></div></div>
+      <div class="frow"><div class="field"><label>Cấp độ</label><select><option>IELTS 6.5</option><option>IELTS 5.5</option><option>IELTS 7.0+</option></select></div><div class="field"><label>Thời gian làm bài (phút)</label><input value="60"></div></div>
+      <div class="frow"><div class="field"><label>Chủ đề (nhãn)</label><input value="Science, Environment"></div><div class="field"><label>Cách chấm mặc định</label><select><option>Tự động — trắc nghiệm / điền từ</option><option>Nháp theo rubric → cô duyệt</option><option>Cô chấm tay</option></select></div></div>
+      <p class="sub" style="margin:4px 0 0">Nhãn giúp đề tự gắn vào đúng buổi trong lộ trình. Sửa sau được.</p>
+    </div>
+    <!-- step 2 -->
+    <div class="wstep" id="ws2">
+      <div class="upl" id="upl"><div class="uic"><svg class="ico" viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></div><b>Tải lên tài liệu đề</b><p>Kéo thả hoặc bấm chọn — PDF, DOCX, PNG, JPG · tối đa 50 MB / tệp · ảnh chụp điện thoại là đủ</p></div>
+      <div class="ocr" id="ocr">
+        <div class="file"><i></i><div><b>Cambridge19_Test2_Reading.pdf</b><small>8 trang · 3,2 MB</small></div><div class="pb"><i id="ocrbar"></i></div></div>
+        <div class="ocrlog" id="ocrlog">
+          <div>Đọc chữ 8 trang… <b>xong · 94% tin cậy</b></div>
+          <div>Tách 3 đoạn văn (passage) và 40 câu hỏi… <b>xong</b></div>
+          <div>Nhận dạng loại câu: <b>26 trắc nghiệm · 9 điền từ · 5 đúng/sai/không có</b></div>
+          <div>Tìm đáp án trong tệp… <b>tìm thấy 38/40</b> — 2 câu chưa có đáp án, sẽ gắn cảnh báo</div>
+          <div>2 chỗ chữ mờ (trang 3, trang 6) đã khoanh để cô xem</div>
+        </div>
+      </div>
+    </div>
+    <!-- step 3 -->
+    <div class="wstep" id="ws3">
+      <div class="wr"><b>2 cảnh báo</b> — câu 12 và câu 27 chưa có đáp án. Đề vẫn lưu được; hai câu đó sẽ chấm tay cho tới khi cô điền đáp án.</div>
+      <div class="passage"><b>Passage 1 · Đoạn văn gắn với câu 1–13</b>The idea of harvesting water from fog is not new. In the Atacama Desert of Chile, where rainfall is almost nonexistent, communities have long relied on large mesh nets that capture droplets from coastal fog… <span style="color:var(--primary);font-weight:600;cursor:pointer">Xem cả đoạn · sửa</span></div>
+      <div class="qlist" id="qlist"></div>
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn gho" id="addq">+ Thêm câu hỏi</button><button class="btn gho">+ Thêm đoạn văn</button><span style="flex:1"></span><span style="font-size:12px;color:var(--text-3);align-self:center">Hiện 3/40 câu · cuộn để xem tiếp</span></div>
+    </div>
+    <!-- step 4 -->
+    <div class="wstep" id="ws4">
+      <div class="pv">
+        <div class="sumbox"><h4>Tóm tắt đề</h4>
+          <div class="sumrow"><span>Tên</span><b id="pv-name">Cambridge 19 — Test 2 Reading</b></div><div class="sumrow"><span>Kỹ năng · cấp</span><b>Đọc · IELTS 6.5</b></div><div class="sumrow"><span>Câu hỏi</span><b>40 · 3 passage</b></div><div class="sumrow"><span>Chấm</span><b>38 tự động · 2 chấm tay</b></div><div class="sumrow"><span>Thời gian</span><b>60 phút</b></div><div class="sumrow"><span>Tin cậy OCR</span><b>94% · 2 chỗ mờ đã xem</b></div>
+          <h4 style="margin-top:16px">40 câu</h4><div class="qmini" id="qmini"></div>
+          <p class="sub" style="margin:10px 0 0;font-size:12px">Xanh: có đáp án · Cam: chưa có đáp án (chấm tay) · Tím: tự luận</p></div>
+        <div class="sumbox"><h4>Sau khi lưu</h4>
+          <div class="pick"><label><input type="radio" name="sv" checked>Lưu vào ngân hàng đề<small>chưa giao</small></label><label><input type="radio" name="sv">Lưu và giao ngay cho lớp<small>mở ngăn giao bài</small></label><label><input type="radio" name="sv">Lưu và gắn vào lộ trình IELTS 6.5 · buổi 33<small>lộ trình đang trống chỗ này</small></label></div>
+          <p class="sub" style="margin:12px 0 0">Đề thuộc ngân hàng của cô, không thuộc lớp nào. Chỉ khi giao mới gắn vào lớp.</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn gho" id="wz-back">‹ Quay lại</button><span class="sp"></span><button class="btn gho" id="wz-cancel">Hủy</button><button class="btn pri" id="wz-next">Tiếp tục ›</button></div>
+</div></div>
+<div class="ov" id="ov"></div>
+<div class="drawer" id="dr"><div class="dh"><div style="flex:1"><h2 id="dr-t"></h2><p id="dr-p"></p></div><button id="dr-x" aria-label="Đóng">×</button></div><div class="db" id="dr-b"></div><div class="df" id="dr-f"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),1900);}
+document.head.insertAdjacentHTML('beforeend','<style>.rg{display:none}.rg.on{display:block}</style>');
+function go(s){
+  $$('.rail button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
+  $$('.screen').forEach(x=>x.classList.toggle('on',x.id==='s-'+s));$('.canvas').scrollTop=0;}
+$$('.rail button').forEach(b=>b.onclick=()=>go(b.dataset.s));
+$$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+$$('.tabs button').forEach(b=>b.onclick=()=>{const tabs=b.parentElement;tabs.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  const wrap=tabs.nextElementSibling;wrap.querySelectorAll(':scope > .view').forEach(v=>v.classList.toggle('on',v.id===b.dataset.tab));});
+$$('.route').forEach(b=>b.onclick=()=>{const p=b.parentElement;p.querySelectorAll('.route').forEach(x=>x.classList.remove('on'));b.classList.add('on');p.parentElement.querySelectorAll('.rg').forEach(r=>r.classList.toggle('on',r.id===b.dataset.route));});
+$$('.panel .cls').forEach(b=>b.onclick=()=>{$$('.panel .cls').forEach(x=>x.classList.remove('on'));b.classList.add('on');if(b.dataset.cls)toast('Lọc theo: '+b.querySelector('b').textContent);});
+/* grading */
+let gd=0;$$('.paper [data-ok]').forEach(b=>b.onclick=()=>{const p=b.closest('.paper');p.classList.add('gone');gd++;$('#gp').style.width=(gd/4*100)+'%';$('#gpt').textContent=`Đã duyệt ${gd} / 4`;$('#gcnt').textContent=14-gd;$('.route[data-route="q1"] .c').textContent=4-gd;
+  toast('Đã gửi nhận xét cho '+p.querySelector('.who b').textContent);if(gd>=4)$('#gempty').hidden=false;});
+$('#gall').onclick=()=>$$('.paper:not(.gone) [data-ok]').forEach(x=>x.click());
+$$('.score .adj button').forEach(b=>b.onclick=()=>{const n=b.closest('.score').querySelector('.num');let v=parseFloat(n.textContent)+(b.textContent==='▲'?0.5:-0.5);n.textContent=v.toFixed(1);toast('Cô chỉnh band → hệ thống ghi nhớ');});
+/* fee */
+let fd=0;$$('.msg [data-ok]').forEach(b=>b.onclick=()=>{const m=b.closest('.msg');m.classList.add('gone');fd++;$('#fp').style.width=(fd/3*100)+'%';$('#fpt').textContent=`Đã duyệt ${fd} / 3 · gửi lúc 9:00`;$('#fcnt').textContent=3-fd;toast('Xếp lịch 9:00 — '+m.querySelector('.hd b').textContent);if(fd>=3)$('#fempty').hidden=false;});
+$('#fall').onclick=()=>$$('.msg:not(.gone) [data-ok]').forEach(x=>x.click());
+$('#inv').onclick=()=>toast('Đã gửi lời mời bật tài khoản cho 17 học viên');
+$$('.hint').forEach(h=>h.onclick=()=>{const ta=h.closest('.steer-in').querySelector('textarea');ta.value=h.textContent;ta.focus();});
+$$('.send').forEach(s=>s.onclick=()=>{const ta=s.closest('.steer-in').querySelector('textarea');if(!ta.value.trim())return;
+  const p=document.createElement('div');p.className='post';p.innerHTML=`<span class="av me">CT</span><div class="bd"><div class="hd"><b>Cô Thảo</b><small>Vừa xong</small></div><p></p><div class="re"><span>0 đã xem</span></div></div>`;p.querySelector('p').textContent=ta.value;
+  s.closest('.steer').insertAdjacentElement('afterend',p);ta.value='';toast('Đã đăng — 18 học viên sẽ được báo');});
+$$('.rule button').forEach(x=>x.onclick=()=>{x.parentElement.remove();toast('Đã bỏ — nháp sau sẽ không dùng cách này');});
+
+/* ── drawer flows ── */
+const F={};
+function open(t,p,b,ok,onok){$('#dr-t').textContent=t;$('#dr-p').textContent=p;$('#dr-b').innerHTML=b;
+  $('#dr-f').innerHTML=`<button class="btn gho" id="dr-c">Hủy</button>${ok?`<button class="btn pri" id="dr-ok">${ok}</button>`:''}`;
+  $('#ov').classList.add('on');$('#dr').classList.add('on');$('#dr-c').onclick=close;
+  if(ok)$('#dr-ok').onclick=()=>{close();onok&&onok();};$$('#dr-b .sw').forEach(w=>w.onclick=()=>w.classList.toggle('on'));}
+function close(){$('#ov').classList.remove('on');$('#dr').classList.remove('on');}
+$('#ov').onclick=close;$('#dr-x').onclick=close;document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+const st=(n,b,body)=>`<div class="step"><i>${n}</i><div class="sb"><b>${b}</b>${body}</div></div>`;
+const fld=(l,inner)=>`<div class="field"><label>${l}</label>${inner}</div>`;
+const pick=(name,items)=>`<div class="pick">${items.map(([v,l,sub,c])=>`<label><input type="${name==='r'?'radio':'checkbox'}" name="${name}" ${c?'checked':''}>${l}<small>${sub||''}</small></label>`).join('')}</div>`;
+
+F['Mở lớp mới từ lộ trình']=()=>open('Mở lớp mới','Không soạn lại — chọn lộ trình, đặt lịch, mời học viên. 3 bước.',
+ st(1,'Chọn lộ trình',pick('r',[['a','IELTS 6.5 · 48 buổi','đang dùng 2 lớp',1],['b','IELTS 5.5 · 48 buổi','1 lớp'],['c','IELTS 7.0 · 36 buổi','nháp — cần duyệt']]))+
+ st(2,'Lịch và sĩ số',fld('Tên lớp','<input value="IELTS 6.5 · Tối T2/T4 (khóa 2)">')+fld('Lịch','<input value="T2, T4 · 19:30–21:00 · khai giảng 22/9">')+fld('Sĩ số tối đa','<input value="18">'))+
+ st(3,'Mời học viên',pick('m',[['x','Học viên chưa xếp lớp','3 em',1],['y','Danh sách chờ từ giới thiệu','2 em',1],['z','Đăng link học thử lên bảng tin','']])),
+ 'Mở lớp',()=>toast('Đã mở lớp — 48 buổi, 86 đề gắn sẵn, 5 lời mời đã gửi'));
+F['Mở khóa 2']=()=>open('Mở khóa 2 — Writing cấp tốc','Kết thúc 22/9. Nhân bản lớp, giữ học viên muốn học tiếp.',
+ st(1,'Ai học tiếp',pick('k',[['1','Lê Thu Hà','đủ điều kiện 7.0+ — nên chuyển'],['2','Trần Quốc Bảo','đang buông — hỏi trước',1],['3','Ngô Đức Minh','',1],['4','Vũ Hải Đăng','',1]]))+
+ st(2,'Lịch khóa 2',fld('Khai giảng','<input value="29/9 · T2 20:00 · 16 buổi">')+fld('Học phí','<input value="3,2tr · giữ giá cũ cho học viên cũ">'))+
+ st(3,'Tin gửi học viên','<div class="pre">Cô Thảo mở khóa 2 Writing từ 29/9, vẫn tối T2. Học viên khóa 1 giữ nguyên học phí. Em xác nhận trước 24/9 để cô giữ chỗ nhé.</div>'),
+ 'Mở khóa 2 & gửi tin',()=>toast('Đã tạo khóa 2 · 3 tin gửi lúc 9:00'));
+F['Mời 2 em lên lớp']=()=>open('Mời lên lớp 7.0+','Thu Hà và Yến Nhi — 2 bài liên tiếp ≥ 7.0.',
+ st(1,'Xác nhận điều kiện','<div class="sumrow"><span>Lê Thu Hà</span><b>7.0 · 7.0</b></div><div class="sumrow"><span>Hoàng Yến Nhi</span><b>6.5 · 7.0</b></div>')+
+ st(2,'Học phí','<div class="pre">Phần học phí còn lại của lớp 6.5 (đến 15/10 với Yến Nhi) được chuyển sang lớp mới, không thu lại. Nhóm 7.0+ cao hơn 20% — khóa đầu giữ giá cũ.</div>')+
+ st(3,'Tin gửi','<div class="pre">Yến Nhi ơi, 4 bài gần nhất em lên đúng 1 band. Cô mở nhóm 7.0+ ngày 22/9, học phí còn lại của em cô chuyển sang, không tính lại. Em thử buổi đầu miễn phí nhé?</div>'),
+ 'Gửi lời mời',()=>{toast('Đã mời 2 em · lớp 7.0+: 4/6');$$('.card').forEach(c=>{if(c.textContent.includes('7.0+')){c.querySelector('small').textContent='4/6 đăng ký · khai giảng 22/9';c.querySelector('.pb i').style.width='66%';}});});
+F['Điểm danh']=()=>open('Điểm danh — IELTS 6.5 · buổi 31','Mặc định có mặt. Chỉ bỏ tích người vắng.',
+ pick('d',[['1','Nguyễn Minh Anh','',1],['2','Lê Thu Hà','',1],['3','Phạm Gia Huy','',1],['4','Hoàng Yến Nhi','',1],['5','Đỗ Khánh Vy','vắng buổi trước'],['6','… 13 em còn lại','',1]])+
+ '<p class="sub" style="margin-top:12px">Vắng 2 buổi liên tiếp → tự vào "Cần chú ý". Vắng không phép và có tài khoản → nhắc nhẹ sau 21:00.</p>',
+ 'Lưu điểm danh',()=>toast('Đã lưu · 17/18 có mặt'));
+F['Bảng tin']=()=>go('feed');
+F['Nhân bản']=()=>open('Nhân bản lộ trình','Tạo bản sao để sửa mà không ảnh hưởng 2 lớp đang chạy.',
+ st(1,'Từ',pick('r',[['a','IELTS 6.5 · 48 buổi','',1]]))+st(2,'Thành',fld('Tên','<input value="IELTS 6.5 · bản 2027 (rút còn 40 buổi)">'))+st(3,'Giữ lại',pick('g',[['1','Đề gắn kèm 86 đề','',1],['2','Bài về nhà theo buổi','',1],['3','Mốc kiểm tra','',1]])),
+ 'Nhân bản',()=>toast('Đã tạo bản nháp — chưa lớp nào dùng'));
+F['Tạo lộ trình']=()=>open('Tạo lộ trình mới','Nhập khung, đề gắn sau.',
+ fld('Tên','<input placeholder="VD: TOEIC 700 · 24 buổi">')+fld('Số buổi','<input value="24">')+fld('Mục tiêu đầu ra','<input placeholder="VD: 700 TOEIC">')+fld('Mốc kiểm tra','<input value="Buổi 8 · 16 · 24">')+'<p class="sub" style="margin-top:8px">Sau khi tạo, cô điền nội dung từng buổi hoặc để máy dựng nháp từ lộ trình gần nhất.</p>',
+ 'Tạo',()=>toast('Đã tạo khung — 24 buổi trống'));
+F['Chụp / tải ảnh đề']=()=>open('Số hóa đề','Ảnh chụp điện thoại là đủ. 3 bước, cô chỉ duyệt nhãn.',
+ st(1,'Tải lên','<div class="drop" style="margin:0;padding:22px"><b>Kéo ảnh / PDF vào đây</b>hoặc chụp từ điện thoại — mã QR mở camera</div>')+
+ st(2,'Máy đọc','<div class="pre">Đọc chữ (OCR), tách câu hỏi, nhận đáp án nếu có, đề xuất nhãn: kỹ năng · cấp · chủ đề. Chỗ chữ mờ được khoanh để cô xem.</div>')+
+ st(3,'Cô duyệt','<div class="pre">Đề xuất hiện ở tab "Chờ duyệt nhãn". Cô sửa nhãn, bấm duyệt — đề vào ngân hàng, gắn được vào lộ trình và giao lên bảng tin.</div>'),
+ 'Mở camera / chọn file',()=>toast('Demo: tải 12 trang · đọc xong sau ~40 giây'));
+F['Xem']=()=>open('Writing Task 2 · 128 đề','Lọc theo chủ đề hoặc cấp.',`<div class="tbl"><div class="th" style="grid-template-columns:2fr 80px 1fr 90px"><span>Đề</span><span>Cấp</span><span>Chủ đề</span><span>Đã dùng</span></div><div class="tr" style="grid-template-columns:2fr 80px 1fr 90px"><span class="nm"><i></i>Cambridge 19 · T2 Education</span><span class="miss">6.5</span><span class="miss">Education</span><span class="miss">2 lớp</span></div><div class="tr" style="grid-template-columns:2fr 80px 1fr 90px"><span class="nm"><i></i>Tự soạn · Environment 3</span><span class="miss">6.0</span><span class="miss">Environment</span><span class="miss">1 lớp</span></div><div class="tr" style="grid-template-columns:2fr 80px 1fr 90px"><span class="nm"><i></i>Cambridge 18 · T1 Technology</span><span class="miss">6.5</span><span class="miss">Technology</span><span class="miss">3 lớp</span></div><div class="tr" style="grid-template-columns:2fr 80px 1fr 90px"><span class="nm"><i></i>Tự soạn · Work 2</span><span class="miss">5.5</span><span class="miss">Work</span><span class="miss">—</span></div></div>`);
+F['Xuất báo cáo']=()=>open('Xuất báo cáo học phí','Tháng 9 · 58 học viên.',pick('r',[['a','Excel — đối soát chuyển khoản tay','17 dòng',1],['b','PDF — tổng thu theo lớp',''],['c','Gửi kế toán qua email','']]),'Xuất',()=>toast('Đã xuất hoc-phi-thang-9.xlsx'));
+F['Sửa']=()=>open('Sửa trọng số rubric','Thay đổi áp dụng cho nháp chấm từ bài tiếp theo. 214 bài đã chấm không đổi.',
+ ['Task Response','Coherence & Cohesion','Lexical Resource','Grammatical Range'].map(n=>fld(n,'<input value="25%">')).join('')+'<p class="sub">Tổng phải bằng 100%. Cô có thể thêm tiêu chí riêng, ví dụ "Có ví dụ cụ thể".</p>','Lưu',()=>toast('Đã lưu rubric — áp dụng từ bài tiếp'));
+F['Tạo bài luyện']=()=>open('Tạo bài luyện từ lỗi chung','Thì hiện tại hoàn thành — 11/14 học viên.',
+ st(1,'Dạng bài',pick('r',[['a','5 câu chọn đáp án · chấm ngay','5 phút',1],['b','Viết lại 5 câu sai của chính em',''],['c','Đoạn văn điền thì','']]))+
+ st(2,'Giao cho',pick('g',[['1','11 em mắc lỗi','',1],['2','Cả lớp 18 em','']]))+
+ st(3,'Xem trước','<div class="pre"><b>Câu 1.</b> She ___ (live) in Hanoi since 2019.\n<b>Giải thích:</b> "since 2019" → hành động bắt đầu quá khứ, kéo dài tới nay → hiện tại hoàn thành.</div>'),
+ 'Giao bài luyện',()=>toast('Đã giao cho 11 em · hạn T5'));
+F['Viết lại']=()=>open('Viết lại nhận xét','Xóa nháp, cô viết từ đầu. Máy học cách cô viết cho lần sau.',fld('Nhận xét','<textarea placeholder="Viết như cô hay viết…"></textarea>')+'<p class="sub">Gợi ý cấu trúc cô hay dùng: khen 1 điểm cụ thể → lỗi lặp + số lần → 1 việc + hạn.</p>','Dùng bản này',()=>toast('Đã thay nháp'));
+F['Nạp bài mới']=()=>open('Nạp bài mới','Bài nộp qua tài khoản tự vào. Đây là cho 17 em còn gửi Zalo.',st(1,'Chọn học viên',fld('','<select><option>Trần Quốc Bảo</option><option>Đỗ Khánh Vy</option><option>Ngô Đức Minh</option></select>'))+st(2,'Tải bài','<div class="drop" style="margin:0;padding:18px"><b>Ảnh bài viết tay hoặc file</b>Chụp là đủ</div>')+st(3,'Máy đọc & nháp','<div class="pre">Vào hàng chờ chấm như bài nộp qua app. Hồ sơ em đó vẫn đầy đủ dù chưa có tài khoản.</div>'),'Nạp',()=>toast('Đã nạp — nháp sẵn sau vài phút'));
+F['Nhập từ Excel / Zalo']=()=>open('Nhập danh sách học viên','Dán từ Excel hoặc danh sách Zalo. Máy tách tên, lớp, SĐT.',fld('Dán vào đây','<textarea placeholder="Nguyễn Văn A  0901…  IELTS 6.5\nTrần Thị B  0912…  IELTS 5.5"></textarea>')+'<p class="sub">Sau khi nhập, mỗi em có hồ sơ. Mời bật tài khoản là bước riêng — cô quyết ai, khi nào.</p>','Nhập',()=>toast('Đã nhập 0 học viên (demo)'));
+F['Thêm học viên']=()=>open('Thêm học viên','',fld('Họ tên','<input>')+fld('Lớp','<select><option>IELTS 6.5 · Tối T3/T5</option><option>IELTS 5.5 · Sáng T7/CN</option><option>Speaking club</option></select>')+fld('Band hiện tại / mục tiêu','<input placeholder="5.0 / 6.5">')+fld('Học phí đến','<input placeholder="30/10">')+pick('t',[['1','Mời bật tài khoản ngay','']]),'Thêm',()=>toast('Đã thêm học viên'));
+F['Nhắn riêng']=()=>open('Nhắn riêng Quốc Bảo','Nháp theo giọng cô — mục tiêu giữ người, không nhắc tiền.','<div class="pre">Bảo ơi, cô thấy 2 tuần rồi em chưa nộp bài. Cô không nhắc học phí — cô muốn hỏi thật: em đang bận thi ở trường, hay thấy lớp không hợp? Nếu bận, cô dời deadline và giữ chỗ đến hết tháng 9. Nhắn cô 1 câu là được.</div>'+fld('Sửa','<textarea>Bảo ơi, cô thấy 2 tuần rồi em chưa nộp bài…</textarea>'),'Gửi 9:00',()=>toast('Xếp lịch 9:00 — Quốc Bảo'));
+F['Giao bài riêng']=()=>open('Giao bài riêng — Bùi Đức Anh','Đọc hiểu tụt 4 bài, làm rất nhanh — dấu hiệu đoán bừa.',pick('r',[['a','3 passage ngắn, bắt buộc ghi dòng chứa đáp án','15 phút',1],['b','Bài đọc có giới hạn thời gian tối thiểu','']])+'<p class="sub" style="margin-top:10px">Kết quả về hồ sơ. Nếu vẫn tụt sau 2 bài → gợi ý cô gọi riêng.</p>','Giao',()=>toast('Đã giao — hạn CN'));
+F['Gợi ý lên lớp']=F['Mời 2 em lên lớp'];
+F['Đổi lớp']=()=>open('Đổi lớp bảng tin','',pick('r',[['a','IELTS 6.5 · Tối T3/T5','18',1],['b','IELTS 5.5 · Sáng T7/CN','16'],['c','Writing cấp tốc','4'],['d','Speaking club','20']]),'Xem',()=>toast('Đã đổi lớp'));
+F['Rubric của cô']=()=>{go('grade');$$('#s-grade .tabs button')[2].click();};
+F['Chốt điểm cả lớp']=()=>open('Chốt điểm trắc nghiệm','10 bài · tin cậy TB 98%. 2 bài cam sẽ được hỏi lại.','<div class="sumrow"><span>Chốt ngay</span><b>8 bài</b></div><div class="sumrow"><span>Vũ Thanh Hà — câu 9 chữ mờ</span><b>cô xem 1 câu</b></div><div class="sumrow"><span>Bùi Đức Anh — 24/40</span><b>vào "Cần chú ý"</b></div>','Chốt 8 & mở 2',()=>toast('Đã chốt 8 bài · 2 bài chờ cô'));
+F['Mời 17 em bật tài khoản']=F['Gửi lời mời cho 17 em']=()=>open('Mời bật tài khoản','Gửi qua Zalo của cô — link riêng từng em, đăng nhập bằng SĐT.',st(1,'Tin gửi','<div class="pre">Cô Thảo chuyển việc nộp bài và nhận xét sang app lớp để em không bị lạc bài và được nhắc hạn. Bấm link, đăng nhập bằng số điện thoại — 1 phút.</div>')+st(2,'Thứ tự','<div class="pre">Ưu tiên 2 em nộp muộn và 1 em phụ huynh hay hỏi. 14 em còn lại gửi sau 2 ngày để cô không bị dồn câu hỏi.</div>'),'Gửi 17 lời mời',()=>toast('Đã gửi 3 · 14 gửi sau 2 ngày'));
+/* student profile */
+F['__profile']=(name)=>open(name,'Hồ sơ học viên — cô thấy mọi thứ trong 1 màn.',
+ `<div class="profile"><div class="top"><span class="av">${name.split(' ').slice(-2).map(x=>x[0]).join('')}</span><div><h3>${name}</h3><small>IELTS 6.5 · Tối T3/T5 · vào lớp 7/2026 · đã bật tài khoản</small></div></div>
+ <div class="mini"><div><b>5.5</b><small>Writing hiện tại</small></div><div><b>6.5</b><small>mục tiêu</small></div><div><b>30/9</b><small>học phí đến</small></div></div>
+ <h5 style="font-size:12px;color:var(--text-2);margin:0 0 8px">Lỗi lặp</h5><div class="lk"><span class="dot" style="background:var(--st-red)"></span><div class="t"><b>Động từ trạng thái + tiếp diễn</b><small>3 bài liên tiếp · đã giao bài luyện · làm 4/5 đúng</small></div></div><div class="lk"><span class="dot" style="background:var(--st-orange)"></span><div class="t"><b>Hòa hợp chủ ngữ – động từ</b><small>2/3 bài</small></div></div>
+ <h5 style="font-size:12px;color:var(--text-2);margin:14px 0 8px">Bài gần đây</h5><div class="sumrow"><span>Task 2 — Education</span><b>chờ cô</b></div><div class="sumrow"><span>Task 2 — Environment</span><b>5.5</b></div><div class="sumrow"><span>Task 1 — Line graph</span><b>5.5</b></div><div class="sumrow"><span>Task 2 — Technology</span><b>5.0</b></div>
+ <h5 style="font-size:12px;color:var(--text-2);margin:14px 0 8px">Ghi chú của cô</h5><div class="field"><textarea placeholder="Chỉ cô thấy. VD: nhà xa, hay đến muộn 10 phút — không phải lười.">Bố mẹ muốn em thi tháng 12. Hơi vội — nói chuyện lại sau Mock 2.</textarea></div></div>`,
+ 'Lưu ghi chú',()=>toast('Đã lưu'));
+
+F['Giao bài']=()=>open('Giao bài cho lớp','Đề nằm trong ngân hàng của cô. Giao mới gắn vào lớp — chỉ học viên trong lớp đó thấy.',
+ st(1,'Chọn đề',fld('Từ ngân hàng','<select><option>Cambridge 19 · Test 2 · Task 2 — Education</option><option>Tự soạn · Environment 3 · Task 2</option><option>Cambridge 18 · Test 1 · Task 1 — Line graph</option></select>')+'<p class="sub" style="margin:0">Hoặc chọn từ buổi trong lộ trình — đề đã gắn sẵn.</p>')+
+ st(2,'Giao cho lớp',pick('r',[['a','IELTS 6.5 · Tối T3/T5','18 học viên',1],['b','IELTS 5.5 · Sáng T7/CN','16 học viên'],['c','Writing cấp tốc · 1 kèm 4','4 học viên'],['d','Cả 2 lớp IELTS','34 · thành 2 bài giao riêng']])+'<p class="sub" style="margin:8px 0 0">Loại trừ: <label style="font-size:13px"><input type="checkbox"> Học viên đang nghỉ (0)</label></p>')+
+ st(3,'Hạn & cách chấm',fld('Hạn nộp','<input value="T3 9/9 · 19:00">')+fld('Cách chấm','<select><option>Nháp theo rubric của cô → cô duyệt</option><option>Cô chấm tay hoàn toàn</option><option>Chấm tự động (trắc nghiệm)</option></select>')+pick('o',[['1','Đăng lên bảng tin lớp','',1],['2','Nhắc trước hạn 24h và 2h','học viên có tài khoản',1],['3','Cho nộp muộn — cô thấy thời gian','',1]])),
+ 'Giao cho 18 em',()=>{toast('Đã giao · 18 em nhận · 17 em có tài khoản được nhắc');});
+$$('button').forEach(b=>{if(b.textContent.trim()==='Giao bài'&&!b.onclick)b.onclick=e=>{e.stopPropagation();F['Giao bài']();};});
+$$('[data-giao]').forEach(b=>b.onclick=()=>F['Giao bài']());
+
+$$('[data-go="class"]').forEach(b=>b.onclick=e=>{e.stopPropagation();go('class');});
+$('#csv').onclick=()=>toast('Đã xuất diem-ielts-6-5.csv · 18 dòng × 6 bài');
+$$('#s-class .matrix td.b').forEach(td=>{if(!td.parentElement.classList.contains('avg')&&td.cellIndex>1)td.style.cursor='pointer',td.onclick=()=>toast('Mở bài + nhận xét — '+td.parentElement.querySelector('.nm').textContent.trim());});
+$$('#s-class .matrix th').forEach((th,i)=>{if(i>1)th.style.cursor='pointer',th.onclick=()=>open('Trọng số — '+th.childNodes[0].textContent,'Đổi trọng số áp dụng cho Band TB của cả lớp ngay.',fld('Trọng số','<input value="'+th.querySelector('.wt').textContent.replace('Trọng số ','')+'">')+'<p class="sub">Tổng trọng số hiện tại: 60%. Mock 2 (20%) và Mock 3 (20%) sẽ bù đủ 100%.</p>','Lưu',()=>toast('Đã đổi trọng số'));});
+$$('#s-class .ppl .pr:not(.ph)').forEach(r=>r.onclick=()=>F['__profile'](r.querySelector('.nm').textContent.trim()));
+$$('#s-class .route').forEach(b=>b.onclick=()=>{$$('#s-class .route').forEach(x=>x.classList.remove('on'));b.classList.add('on');toast('Đổi cách xem: '+b.textContent);});
+
+/* ── in-class grading: clone the 4 papers of IELTS 6.5 from màn Chấm bài (same data, class-scoped) ── */
+(function(){
+  const src=$$('#q1 .paper');const host=$('#cgrade');
+  src.forEach(p=>{const c=p.cloneNode(true);c.classList.remove('gone');c.removeAttribute('data-p');c.dataset.cp='1';host.appendChild(c);});
+  let n=0;
+  $$('#cgrade [data-ok]').forEach(b=>b.onclick=()=>{const p=b.closest('.paper');p.classList.add('gone');n++;$('#cgp').style.width=(n/4*100)+'%';$('#cgpt').textContent=`Đã duyệt ${n} / 4 · lớp IELTS 6.5`;
+    $$('#s-class .tabs .cnt')[2].textContent=6-n;$('.route[data-cr="cq1"] .c').textContent=(4-n)+' tự luận';
+    const name=p.querySelector('.who b').textContent;toast('Đã gửi nhận xét — '+name+' · điểm vào tab Điểm');
+    // update matrix cell for that student (last column)
+    $$('#s-class .matrix tbody tr').forEach(tr=>{if(tr.textContent.includes(name)){const td=tr.lastElementChild;if(td.classList.contains('miss')){td.className='b';td.textContent=p.querySelector('.score .num').textContent;}}});
+    if(n>=4)$('#cgempty').hidden=false;});
+  $$('#cgrade .score .adj button').forEach(b=>b.onclick=()=>{const num=b.closest('.score').querySelector('.num');num.textContent=(parseFloat(num.textContent)+(b.textContent==='▲'?0.5:-0.5)).toFixed(1);toast('Cô chỉnh band → ghi nhớ');});
+  $('#cgall').onclick=()=>$$('#cgrade .paper:not(.gone) [data-ok]').forEach(x=>x.click());
+  $$('#s-class .route[data-cr]').forEach(b=>b.onclick=()=>{$$('#s-class .route[data-cr]').forEach(x=>x.classList.remove('on'));b.classList.add('on');$$('#cl5 .rg').forEach(r=>r.classList.toggle('on',r.id===b.dataset.cr));});
+})();
+function clTab(id){const t=$(`#s-class .tabs [data-tab="${id}"]`);if(t)t.click();}
+$$('[data-tab-go]').forEach(b=>b.onclick=e=>{e.stopPropagation();clTab(b.dataset.tabGo);});
+$$('[data-nhac]').forEach(b=>b.onclick=()=>toast('Nhắc 4 em lúc 9:00 — chỉ em có tài khoản; Thanh Hà cô nhắc tay'));
+$('#clsend').onclick=()=>{const ta=$('#clpost');if(!ta.value.trim())return;const p=document.createElement('div');p.className='post';p.innerHTML='<span class="av me">CT</span><div class="bd"><div class="hd"><b>Cô Thảo</b><small>Vừa xong</small></div><p></p><div class="re"><span>0/18 đã xem</span></div></div>';p.querySelector('p').textContent=ta.value;$('#clfeed').prepend(p);ta.value='';toast('Đã đăng — 18 em lớp này được báo');};
+$$('#cl1 .hint:not([data-giao])').forEach(h=>h.onclick=()=>{$('#clpost').value=h.textContent;$('#clpost').focus();});
+
+/* ── exam wizard ── */
+const QS=[
+ {n:1,type:'Trắc nghiệm',q:'What does the writer say about fog harvesting in the Atacama Desert?',o:['It was introduced by foreign scientists.','It has been used by local communities for a long time.','It is more expensive than desalination.','It only works during winter.'],a:1,ex:'Câu hỏi hỏi thông tin cụ thể trong đoạn 1: "communities have long relied on…" → đáp án B.'},
+ {n:2,type:'Điền từ',q:'Complete the sentence with NO MORE THAN TWO WORDS: The nets capture droplets from ______.',o:['coastal fog'],a:0,ex:'Từ khóa "capture droplets from" nằm ở câu 2 đoạn 1.'},
+ {n:12,type:'Trắc nghiệm',q:'According to paragraph C, the main limitation of the technique is',o:['the cost of the mesh material.','the amount of maintenance required.','its dependence on specific weather conditions.','the lack of government support.'],a:-1,ex:'',warn:'Không tìm thấy đáp án trong tệp — cô chọn đáp án đúng, hoặc để chấm tay.'}
+];
+function qcard(q){return `<div class="qc ${q.a<0?'warn':''}" data-q="${q.n}"><div class="qh"><span class="no">Câu ${q.n}</span><span class="tag blu">${q.type} ▾</span>${q.a<0?'<span class="tag org">1 cảnh báo</span>':''}<span class="sp"></span><button class="ic" title="Thêm câu sau">+</button><button class="ic" title="Lên">↑</button><button class="ic" title="Xuống">↓</button><button class="ic" title="Xóa" style="color:var(--st-red)">🗑</button></div>
+ <div class="qb">${q.warn?`<div class="wr" style="margin-bottom:10px"><b>Cảnh báo</b> ${q.warn}</div>`:''}<div class="qtext" contenteditable>${q.n}. ${q.q}</div>
+ <div class="ins"><button>🖼 Chèn ảnh</button><button>🎧 Chèn MP3</button><button>📄 Chèn đoạn văn</button><button>📑 Dùng đoạn văn có sẵn ▾</button></div>
+ ${q.type==='Điền từ'?`<p class="qhint">Đáp án chấp nhận (cách nhau bằng dấu phẩy):</p><div class="qtext" contenteditable style="background:#e3f9ef">${q.o[0]}, coastal fogs</div>`:
+ `<p class="qhint">Bấm chọn đáp án đúng. Bấm lại để bỏ chọn → câu này chuyển sang chấm tay.</p><div class="opts2">${q.o.map((o,k)=>`<div class="op ${q.a===k?'on':''}" data-k="${k}"><i></i><b>${'ABCD'[k]}</b><span contenteditable>${o}</span></div>`).join('')}</div>`}
+ <div class="expl"><label>💡 Giải thích đáp án (tùy chọn — hiện cho học viên sau khi nộp)</label><div contenteditable>${q.ex||'Chưa có — cô có thể để máy gợi ý từ đoạn văn.'}</div></div></div></div>`;}
+function renderQ(){$('#qlist').innerHTML=QS.map(qcard).join('');
+  $$('#qlist .op').forEach(o=>o.onclick=e=>{if(e.target.isContentEditable)return;const card=o.closest('.qc');const was=o.classList.contains('on');card.querySelectorAll('.op').forEach(x=>x.classList.remove('on'));if(!was){o.classList.add('on');card.classList.remove('warn');const w=card.querySelector('.qh .tag.org');if(w)w.remove();const wr=card.querySelector('.qb .wr');if(wr)wr.remove();toast('Đã chọn đáp án — câu này chấm tự động');}else{toast('Bỏ đáp án — câu này chấm tay');}});
+  $$('#qlist .ins button').forEach(b=>b.onclick=()=>toast(b.textContent.trim()+' — mở ở bản đầy đủ'));
+  $$('#qlist .qh .ic').forEach(b=>b.onclick=()=>toast(b.title));}
+$('#addq').onclick=()=>{QS.push({n:QS.length+1,type:'Trắc nghiệm',q:'',o:['','','',''],a:-1,ex:''});renderQ();$('#qlist').lastElementChild.scrollIntoView({behavior:'smooth'});};
+let wst=1;
+function wizGo(n){wst=n;$$('#wiz .wstep').forEach((w,i)=>w.classList.toggle('on',i+1===n));
+  $$('#wiz .steps .sp').forEach((sp,i)=>{sp.classList.toggle('on',i+1===n);sp.classList.toggle('done',i+1<n);sp.querySelector('i').textContent=i+1<n?'✓':i+1;});
+  $$('#wiz .steps .ln').forEach((l,i)=>l.classList.toggle('done',i+1<n));
+  $('#wz-back').style.visibility=n===1?'hidden':'visible';$('#wz-next').textContent=n===4?'Lưu đề':'Tiếp tục ›';
+  if(n===3&&!$('#qlist').innerHTML)renderQ();
+  if(n===4){$('#pv-name').textContent=$('#wz-name').value;$('#qmini').innerHTML=Array.from({length:40},(_,i)=>`<i class="${[12,27].includes(i+1)?'w':'ok'}">${i+1}</i>`).join('');}
+  $('#wiz .mb').scrollTop=0;}
+function openWiz(step,title){$('#wz-t').textContent=title||'Tạo đề mới';$('#wiz').classList.add('on');wizGo(step||1);}
+function closeWiz(){$('#wiz').classList.remove('on');}
+$('#wz-x').onclick=closeWiz;$('#wz-cancel').onclick=closeWiz;$('#wz-back').onclick=()=>wizGo(Math.max(1,wst-1));
+$('#wz-next').onclick=()=>{if(wst===2&&!$('#ocr').classList.contains('on')){toast('Tải tệp lên trước');return;}
+  if(wst<4)wizGo(wst+1);else{closeWiz();toast('Đã lưu vào ngân hàng đề · 40 câu · 2 câu chấm tay');
+    const r=$$('#s-bank .tbl.exam .tr').find(t=>t.textContent.includes('Test 2 Reading'));if(r){const tg=r.querySelector('.tag');tg.className='tag grn';tg.textContent='Đã duyệt';r.querySelector('.st').style.color='';}}};
+$('#upl').onclick=()=>{$('#ocr').classList.add('on');$('#upl').style.opacity=.5;const bar=$('#ocrbar');const logs=$$('#ocrlog div');let i=0;bar.style.width='0';
+  const t=setInterval(()=>{i++;bar.style.width=Math.min(100,i*20)+'%';if(logs[i-1])logs[i-1].classList.add('on');if(i>=5){clearInterval(t);toast('Số hóa xong — bấm Tiếp tục để duyệt câu hỏi');}},650);};
+$$('#wz-skill .chip').forEach(c=>c.onclick=()=>{$$('#wz-skill .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');});
+/* wire bank */
+F['Chụp / tải ảnh đề']=()=>openWiz(1,'Tạo đề mới');
+$$('#s-bank .tbl.exam .tr').forEach(r=>{r.style.cursor='pointer';r.onclick=e=>{if(e.target.closest('button'))return;openWiz(3,'Chỉnh sửa đề — '+r.querySelector('.nm').textContent.trim());};});
+$$('#s-bank .drop').forEach(d=>{d.style.cursor='pointer';d.onclick=()=>{openWiz(2,'Tạo đề mới');};});
+
+/* ── role view ── */
+const RV={t:{hide:[],act:'chốt band · sửa nhận xét · gửi · giao bài luyện · xem ghi chú riêng'},
+ ta:{hide:['note','fee'],act:'đọc bài · viết nháp nhận xét · không gửi, không chốt band'},
+ s:{hide:['draft','note','cls','hist'],act:'xem bài của mình · xem nhận xét sau khi cô gửi · làm bài luyện — band nháp của máy em không thấy'},
+ s2:{hide:['text','draft','band','fb','hist','note','cls','fee','act'],act:'—'},
+ p:{hide:['text','draft','band','hist','note','cls'],act:'xem tiến bộ + việc cần làm ở nhà (cô bật) · xem học phí của con'}};
+$$('.role button').forEach(b=>b.onclick=()=>{$$('.role button').forEach(x=>x.classList.remove('on'));b.classList.add('on');const r=RV[b.dataset.r];
+  $$('#objv .kv').forEach(k=>k.classList.toggle('hide',r.hide.includes(k.dataset.k)));$('#objact').textContent=r.act;
+  if(b.dataset.r==='s2')toast('Bạn cùng lớp không thấy gì của bài này — chỉ thấy bài đăng chung trên bảng tin');});
+$$('#k6 .route').forEach(b=>b.onclick=()=>{$$('#k6 .route').forEach(x=>x.classList.remove('on'));b.classList.add('on');const f=b.textContent.trim();
+  $$('#audit .au:not(.h)').forEach(r=>{const w=r.querySelector('.who').textContent;let show=true;
+    if(f==='Cô')show=w.includes('Cô');else if(f==='Học viên')show=!w.includes('Cô')&&!w.includes('Máy')&&!w.includes('Trợ');else if(f==='Máy')show=w.includes('Máy');else if(f==='Dính tới tiền')show=r.textContent.includes('gia hạn')||r.textContent.includes('Học phí');
+    r.style.display=show?'':'none';});});
+$$('#audit .au:not(.h)').forEach(r=>r.onclick=()=>toast('Mở: '+r.querySelector('.what b').textContent+' — '+r.querySelector('.who').textContent.trim()));
+
+/* ── assistant permission drawer ── */
+const TAOBJ=[['Bài nộp & nhận xét','nháp nhận xét tự luận','a'],['Trắc nghiệm','chốt điểm tự động','r'],['Bảng tin lớp','đăng, trả lời, ghim','f'],['Điểm danh','buổi học','f'],['Hồ sơ học viên','band, lỗi lặp — không ghi chú cô','r'],['Bảng điểm lớp','ma trận','n'],['Giao bài','từ ngân hàng / lộ trình','a'],['Ngân hàng đề','xem đề đã giao','r'],['Học phí','gói, hạn, tin gia hạn','n'],['Rubric của cô','trọng số, giọng chấm','n']];
+const LV=[['n','Không'],['r','Chỉ xem'],['a','Đề xuất'],['f','Tự làm']];
+function taRows(){return '<div class="talvl h"><span>Việc</span>'+LV.map(l=>`<span>${l[1]}</span>`).join('')+'</div>'+TAOBJ.map(([n,d,cur])=>`<div class="talvl" data-cur="${cur}"><div class="nm"><b>${n}</b><small>${d}</small></div>${LV.map(([k,l])=>`<div class="lv ${k} ${k===cur?'on':''}" data-k="${k}">${l}</div>`).join('')}</div>`).join('');}
+function taDrawer(title,sub,okLabel){open(title,sub,
+  st(1,'Lớp được vào',pick('c',[['1','IELTS 6.5 · Tối T3/T5','18 học viên',1],['2','IELTS 5.5 · Sáng T7/CN','16'],['3','Writing cấp tốc','4'],['4','Speaking club','20']]))+
+  st(2,'Việc được làm trong lớp đó','<p class="sub" style="margin:0 0 8px;font-size:12px">"Đề xuất" = trợ giảng chuẩn bị, cô bấm mới tới học viên. "Tự làm" = có hiệu lực ngay, vẫn ghi nhật ký.</p>'+taRows())+
+  st(3,'Ranh giới cứng','<div class="rulebox" style="margin-top:0"><span class="rule">Không bao giờ thấy học phí</span><span class="rule">Không sửa rubric</span><span class="rule">Không thấy ghi chú riêng của cô</span><span class="rule">Không xuất dữ liệu</span></div><p class="sub" style="margin:8px 0 0;font-size:12px">Bốn dòng này không có ô chọn — là luật của nền tảng cho vai trợ giảng.</p>'),
+  okLabel,()=>toast('Đã lưu quyền — Lan thấy thay đổi ngay'));
+  $$('#dr-b .lv').forEach(l=>l.onclick=()=>{const row=l.parentElement;row.querySelectorAll('.lv').forEach(x=>x.classList.remove('on'));l.classList.add('on');});}
+$('#taperm').onclick=()=>taDrawer('Quyền trợ giảng — Lan','Cấp theo lớp, theo việc. Đổi là có hiệu lực ngay.','Lưu quyền');
+$('#tainvite').onclick=()=>taDrawer('Mời trợ giảng','Nhập SĐT, chọn lớp, đặt quyền. Link mời hết hạn sau 7 ngày.','Gửi lời mời');
+$('#tabtn').onclick=()=>taDrawer('Trợ giảng lớp IELTS 6.5','1 trợ giảng · Nguyễn Thị Lan','Lưu quyền');
+/* ── role switch ── */
+let asTA=false;
+function setRole(ta){asTA=ta;document.body.classList.toggle('ta',ta);
+  if(ta){$('.shopname').textContent='Lớp IELTS 6.5 · trợ giảng Lan';go('tahome');$$('.panel .cls').forEach(x=>x.classList.remove('on'));$('.panel .cls[data-cls="c1"]').classList.add('on');toast('Đang xem như trợ giảng Lan');}
+  else{$('.shopname').textContent='Lớp IELTS của cô Thảo';go('home');$$('.panel .cls').forEach(x=>x.classList.remove('on'));$('.panel .cls[data-cls="all"]').classList.add('on');toast('Về vai cô Thảo');}}
+$('#rolebtn').onclick=()=>open('Đổi vai để kiểm tra quyền','Cùng dữ liệu, giao diện co theo quyền của vai được chọn.',
+  pick('r',[['t','Cô Thảo — chủ lớp','toàn quyền',!asTA],['a','Trợ giảng Lan','IELTS 6.5 · đề xuất, không gửi',asTA]])+'<p class="sub" style="margin-top:10px">Muốn xem như học viên, mở file demo học viên (oblue-student-demo.html).</p>',
+  'Đổi vai',()=>setRole($$('#dr-b input[name="r"]')[1].checked));
+$('#roleback').onclick=()=>setRole(false);
+/* in TA mode, grading footer buttons send to teacher */
+document.addEventListener('click',e=>{if(!asTA)return;const b=e.target.closest('.paper [data-ok]');if(b){setTimeout(()=>toast('Đã gửi cô Thảo duyệt — học viên chưa thấy'),50);}},true);
+/* bind by text */
+$$('button').forEach(b=>{const t=b.textContent.trim();if(F[t]&&!b.dataset.go&&!b.id){b.onclick=e=>{e.stopPropagation();F[t]();};}});
+$$('#s-stu .tbl.stu .tr').forEach(r=>r.onclick=()=>F['__profile'](r.querySelector('.nm').textContent.trim()));
+$$('.cfgrow .sw').forEach(w=>w.onclick=()=>{w.classList.toggle('on');toast(w.classList.contains('on')?'Bật — máy tự làm, ghi nhật ký':'Tắt — việc này về tay cô');});
+$$('.act,.go,.all:not(#gall):not(#fall):not(#inv),.card .btn,.chead .right button:not([data-go]),.tbl .tr').forEach(x=>{if(!x.onclick)x.onclick=()=>toast('Thao tác này sẽ mở ở bản đầy đủ');});
+</script>
+</html>

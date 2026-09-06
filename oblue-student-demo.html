@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="vi">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OBLUE — Minh Anh · Lớp IELTS 6.5</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primary:#0073ea;--primary-hover:#0060b9;--primary-selected:#cce5ff;--primary-selected-hover:#b3d7ff;
+  --text:#323338;--text-2:#676879;--text-3:#9699a6;--ink:#1f2534;
+  --surface:#fff;--hover:#f5f6f8;--field:#f0f1f4;--send-bg:#eceef3;
+  --border:#d0d4e4;--border-light:#e6e9ef;
+  --st-red:#e2445c;--st-orange:#fdab3d;--st-warm:#ff9f43;--st-yellow:#ffcb00;
+  --st-green:#00c875;--st-blue:#579bfc;--st-indigo:#5b6bff;--st-purple:#a25ddc;--st-brand-red:#ff3d57;
+  --grad-a:#00d2d3;--grad-b:#6c6cff;--grad-c:#a25ddc;
+  --grad-avatar:linear-gradient(135deg,#c9b6ff,#8f7bff);
+  --grad-me:linear-gradient(135deg,#8f9bb3,#6b7590);
+  --r-s:4px;--r-m:8px;--r-l:16px;--r-box:10px;--r-art:26px;--r-pill:20px;--r-full:50%;
+  --sh-s:0 6px 20px rgba(0,0,0,.08);--sh-prompt:0 10px 34px rgba(90,90,190,.14);
+  --rail:104px;--panel:260px;--topbar:56px;--content-max:1180px;
+  --t-fast:.1s ease;--t-mid:.12s ease;--t-slow:.15s ease;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:21px;color:var(--text);
+     background:var(--surface);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none;padding:0}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:var(--r-s)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ico{width:20px;height:20px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico.s{width:16px;height:16px}
+
+.topbar{height:var(--topbar);display:flex;align-items:center;gap:16px;padding:0 20px;
+        border-bottom:1px solid var(--border-light)}
+.logo{display:flex;gap:3px;align-items:flex-end;flex:none}
+.logo i{width:9px;height:22px;border-radius:6px;display:block}
+.logo i:nth-child(1){background:var(--st-brand-red)}
+.logo i:nth-child(2){background:var(--st-yellow);height:26px}
+.logo i:nth-child(3){background:var(--st-green)}
+.shopname{font-weight:600;border-left:1px solid var(--border-light);margin-left:6px;padding-left:16px}
+.search{flex:1;max-width:520px;margin:0 auto;height:36px;border-radius:18px;background:var(--field);
+        display:flex;align-items:center;gap:10px;padding:0 16px;color:var(--text-3)}
+.tb-right{display:flex;align-items:center;gap:18px;flex:none}
+.badge{position:relative;display:grid;place-items:center}
+.badge span{position:absolute;top:-6px;right:-7px;background:var(--primary);color:#fff;font-size:10px;
+            font-weight:700;line-height:15px;min-width:15px;text-align:center;border-radius:8px;padding:0 3px}
+.avatar-me{width:32px;height:32px;border-radius:var(--r-full);background:var(--grad-me)}
+
+.shell{display:flex;height:calc(100vh - var(--topbar));overflow:hidden}
+.rail{width:var(--rail);flex:none;border-right:1px solid var(--border-light);padding:16px 0;
+      display:flex;flex-direction:column;align-items:center;gap:4px;overflow:auto}
+.rail button{width:76px;padding:8px 0;border-radius:var(--r-m);display:flex;flex-direction:column;
+             align-items:center;gap:6px;font-size:12px;line-height:16px;transition:background var(--t-fast)}
+.rail button:hover{background:var(--hover)}
+.rail button.on{color:var(--primary);font-weight:600}
+.rail button.on .box{background:var(--primary-selected);box-shadow:inset 0 0 0 1px rgba(0,115,234,.35)}
+.rail .box{width:44px;height:36px;border-radius:var(--r-box);display:grid;place-items:center}
+.rail hr{width:44px;border:none;border-top:1px solid var(--border-light);margin:10px 0}
+
+.panel{width:var(--panel);flex:none;border-right:1px solid var(--border-light);padding:18px 14px;
+       display:flex;flex-direction:column;gap:4px;overflow:auto}
+.panel h2{font-size:18px;line-height:24px;font-weight:600;margin:0 0 12px;
+          display:flex;align-items:center;justify-content:space-between}
+.panel h2 button{color:var(--text-2);display:grid;place-items:center}
+.new{height:40px;border-radius:var(--r-s);background:var(--primary-selected);color:var(--primary);
+     font-weight:600;display:flex;align-items:center;gap:10px;padding:0 12px;margin-bottom:6px}
+.new:hover{background:var(--primary-selected-hover)}
+.item{height:36px;border-radius:var(--r-s);display:flex;align-items:center;gap:12px;padding:0 12px;width:100%}
+.item:hover{background:var(--hover)}
+.group{margin:22px 0 6px;padding:0 12px;font-weight:700}
+.agent{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:var(--r-s);width:100%;text-align:left}
+.agent:hover{background:var(--hover)}
+.agent.on{background:var(--primary-selected)}
+.agent.on b{color:var(--primary)}
+.agent .pic{width:32px;height:32px;border-radius:var(--r-box);flex:none;background:var(--grad-avatar)}
+.agent .pic.b{background:linear-gradient(135deg,#b6d9ff,#6b8fe0)}
+.agent .pic.c{background:linear-gradient(135deg,#ffd9a8,#f0913e)}
+.agent .pic.off{background:linear-gradient(135deg,#dfe1e8,#c2c5d0)}
+.agent b{display:block;font-weight:600}
+.agent small{color:var(--text-2);font-size:13px;line-height:18px;display:block}
+.agent .n{margin-left:auto;font-size:11px;font-weight:700;color:#fff;background:var(--primary);
+          border-radius:8px;min-width:18px;height:18px;display:grid;place-items:center;padding:0 5px}
+.agent .soon{margin-left:auto;font-size:11px;color:var(--text-3)}
+.panel .foot{margin-top:auto;padding-top:16px}
+
+.canvas{flex:1;overflow:auto;
+  background:radial-gradient(900px 420px at 12% 100%,rgba(190,225,255,.26),transparent 70%),
+             radial-gradient(900px 460px at 88% 95%,rgba(200,185,255,.26),transparent 70%),
+             linear-gradient(#fff 0%,#fbfbff 55%,#f2f4ff 100%)}
+.chead{display:flex;align-items:center;gap:14px;padding:20px 32px 0}
+.chead .pic{width:44px;height:44px;border-radius:12px;background:var(--grad-avatar)}
+.chead h1{font-family:'Be Vietnam Pro',sans-serif;font-size:24px;line-height:30px;font-weight:600;margin:0}
+.chead .sub{color:var(--text-2);font-size:13px}
+.chead .right{margin-left:auto;display:flex;align-items:center;gap:20px;font-weight:500}
+.chead .right button{display:flex;align-items:center;gap:8px}
+.chead .right button:hover{color:var(--primary)}
+.live{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-2);font-weight:400}
+.live i{width:8px;height:8px;border-radius:var(--r-full);background:var(--st-green)}
+
+.tabs{display:flex;gap:26px;padding:18px 32px 0;border-bottom:1px solid var(--border-light)}
+.tabs button{padding:0 0 12px;font-weight:600;color:var(--text-2);border-bottom:2px solid transparent;
+             display:flex;align-items:center;gap:8px;transition:var(--t-fast)}
+.tabs button:hover{color:var(--text)}
+.tabs button.on{color:var(--primary);border-bottom-color:var(--primary)}
+.tabs .cnt{background:var(--field);border-radius:8px;font-size:11px;font-weight:700;padding:1px 6px;color:var(--text-2)}
+.tabs button.on .cnt{background:var(--primary-selected);color:var(--primary)}
+
+.wrap{max-width:var(--content-max);margin:0 auto;padding:24px 32px 64px}
+.view{display:none}.view.on{display:block}
+
+.routes{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.route{height:40px;padding:0 18px;border-radius:var(--r-pill);border:1px solid var(--border);background:#fff;
+       font-weight:500;display:flex;align-items:center;gap:9px;transition:var(--t-mid)}
+.route:hover{border-color:var(--text-3)}
+.route.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.route .c{font-size:12px;font-weight:700;opacity:.7}
+
+.prog{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.prog .track{flex:1;height:6px;border-radius:3px;background:var(--field);overflow:hidden}
+.prog .track i{display:block;height:100%;background:var(--st-green);width:0;transition:width var(--t-slow)}
+.prog .txt{font-size:13px;color:var(--text-2);white-space:nowrap}
+.prog .all{font-weight:600;color:var(--primary);white-space:nowrap}
+
+/* ── paper row ── */
+.paper{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);margin-bottom:14px;
+       overflow:hidden;transition:var(--t-slow)}
+.paper:hover{box-shadow:var(--sh-s)}
+.paper.gone{opacity:0;height:0;margin:0;border-width:0;overflow:hidden;transform:translateY(-6px)}
+.paper.flag{border-color:#f6cfd6}
+.phd{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--border-light)}
+.phd .av{width:38px;height:38px;border-radius:12px;flex:none;display:grid;place-items:center;
+         color:#fff;font-weight:700;font-size:14px;background:var(--grad-avatar)}
+.phd .av.b{background:linear-gradient(135deg,#b6d9ff,#6b8fe0)}
+.phd .av.c{background:linear-gradient(135deg,#ffd9a8,#f0913e)}
+.phd .av.d{background:linear-gradient(135deg,#b7f3d8,#2eb67d)}
+.phd .who b{font-weight:600;display:block}
+.phd .who small{color:var(--text-2);font-size:13px}
+.phd .sp{flex:1}
+.score{display:flex;align-items:center;gap:10px}
+.score .num{font-family:'Be Vietnam Pro',sans-serif;font-size:26px;line-height:32px;font-weight:600}
+.score .of{color:var(--text-3);font-size:13px}
+.score .adj{display:flex;flex-direction:column;gap:2px}
+.score .adj button{width:22px;height:16px;display:grid;place-items:center;color:var(--text-3);
+                   border:1px solid var(--border-light);border-radius:3px}
+.score .adj button:hover{color:var(--primary);border-color:var(--primary)}
+.conf{width:150px}
+.conf .lab{font-size:11px;color:var(--text-2);display:flex;justify-content:space-between;margin-bottom:4px}
+.conf .bar{height:5px;border-radius:3px;background:var(--field);overflow:hidden}
+.conf .bar i{display:block;height:100%;background:var(--st-green)}
+.conf.low .bar i{background:var(--st-orange)}
+.conf.low .lab b{color:#d87f16}
+
+.pbody{padding:18px 20px;display:grid;grid-template-columns:1.25fr 1fr;gap:24px}
+.blk h5{font-size:12px;font-weight:700;color:var(--text-2);margin:0 0 10px;
+        display:flex;align-items:center;gap:7px}
+.fix{border-left:3px solid var(--border-light);padding:0 0 0 12px;margin-bottom:14px}
+.fix.g{border-left-color:var(--st-red)}
+.fix.v{border-left-color:var(--st-orange)}
+.fix.s{border-left-color:var(--st-purple)}
+.fix .was{color:var(--text-2);font-size:13px;line-height:20px}
+.fix .was s{text-decoration-color:var(--st-red);text-decoration-thickness:2px}
+.fix .now{font-size:13px;line-height:20px;margin-top:3px}
+.fix .now b{color:#00925a;font-weight:600}
+.fix .tip{font-size:12px;color:var(--text-3);margin-top:4px}
+.crit{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+.crit .cr{display:flex;align-items:center;gap:12px;font-size:13px}
+.crit .cr span{width:104px;flex:none;color:var(--text-2)}
+.crit .cr .b{flex:1;height:8px;border-radius:4px;background:var(--field);overflow:hidden}
+.crit .cr .b i{display:block;height:100%;background:var(--primary);opacity:.85}
+.crit .cr b{width:30px;text-align:right;font-weight:600}
+.note{border:1px solid var(--border);border-radius:var(--r-m);background:#fcfcfd}
+.note textarea{width:100%;border:none;outline:none;resize:vertical;font:inherit;font-size:13px;
+               line-height:21px;padding:12px 14px;background:transparent;min-height:118px;border-radius:var(--r-m)}
+.note .nb{padding:0 14px 10px;font-size:12px;color:var(--text-3);display:flex;justify-content:space-between}
+.pfoot{display:flex;align-items:center;gap:12px;padding:0 20px 18px}
+.pfoot .warnmsg{font-size:13px;color:#d87f16;display:flex;align-items:center;gap:7px}
+.pfoot .sp{flex:1}
+.btn{height:36px;padding:0 18px;border-radius:var(--r-s);font-weight:600;display:flex;align-items:center;
+     justify-content:center;gap:8px;transition:var(--t-mid)}
+.btn.pri{background:var(--primary);color:#fff}
+.btn.pri:hover{background:var(--primary-hover)}
+.btn.gho{border:1px solid var(--border);color:var(--text-2)}
+.btn.gho:hover{border-color:var(--text-3);color:var(--text)}
+
+.tag{font-size:11px;font-weight:600;border-radius:var(--r-s);padding:2px 8px;line-height:18px}
+.tag.red{background:#fdeaed;color:var(--st-red)}
+.tag.org{background:#fff2e0;color:#d87f16}
+.tag.grn{background:#e3f9ef;color:#00925a}
+.tag.blu{background:var(--primary-selected);color:var(--primary)}
+.tag.pur{background:#f3e8fb;color:#7b3fb0}
+
+/* MCQ batch table */
+.tbl{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);overflow:hidden}
+.tbl .th,.tbl .tr{display:grid;grid-template-columns:2fr 90px 90px 1.6fr 96px;gap:14px;
+                  align-items:center;padding:13px 20px}
+.tbl .th{background:#fbfbfd;border-bottom:1px solid var(--border-light);font-size:12px;
+         font-weight:700;color:var(--text-2)}
+.tbl .tr{border-bottom:1px solid var(--border-light)}
+.tbl .tr:last-child{border-bottom:none}
+.tbl .tr:hover{background:var(--hover)}
+.tbl .nm{display:flex;align-items:center;gap:10px;font-weight:600}
+.tbl .nm i{width:28px;height:28px;border-radius:9px;background:var(--grad-avatar);display:block;flex:none}
+.tbl .sc{font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:16px}
+.tbl .sc.low{color:var(--st-red)}
+.tbl .miss{font-size:13px;color:var(--text-2)}
+.tbl .st{font-size:12px}
+
+/* parent msg */
+.msg{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:18px 20px;
+     margin-bottom:12px;display:flex;gap:16px;transition:var(--t-slow)}
+.msg:hover{box-shadow:var(--sh-s)}
+.msg.gone{opacity:0;height:0;padding:0;margin:0;border-width:0;overflow:hidden}
+.msg .av{width:38px;height:38px;border-radius:12px;flex:none;background:linear-gradient(135deg,#b6d9ff,#6b8fe0);
+         display:grid;place-items:center;color:#fff;font-weight:700}
+.msg .bd{flex:1;min-width:0}
+.msg .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.msg .acts{display:flex;flex-direction:column;gap:8px;width:118px;flex:none}
+
+/* KPI + health */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:18px 20px}
+.kpi .lab{font-size:13px;color:var(--text-2)}
+.kpi .val{font-family:'Be Vietnam Pro',sans-serif;font-size:28px;line-height:38px;font-weight:600;margin-top:6px}
+.kpi .val.warn{color:var(--st-red)}
+.kpi .val.good{color:var(--st-green)}
+.kpi .d{font-size:12px;color:var(--text-3)}
+.blkc{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:24px;margin-top:20px}
+.blkc h3{font-size:18px;font-weight:600;margin:0 0 4px}
+.blkc .sub{color:var(--text-2);font-size:13px;margin:0 0 20px}
+.erow{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.erow .nm{width:230px;flex:none;font-size:13px}
+.erow .bar{flex:1;height:32px;border-radius:var(--r-m);background:var(--field);overflow:hidden;position:relative}
+.erow .bar i{display:block;height:100%;background:var(--st-red);opacity:.78;border-radius:var(--r-m)}
+.erow .bar b{position:absolute;left:12px;top:0;line-height:32px;color:#fff;font-size:12px;font-weight:600}
+.erow .act{width:130px;text-align:right;color:var(--primary);font-weight:600;font-size:13px}
+.lk{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border-light)}
+.lk:first-of-type{border-top:none}
+.lk .dot{width:10px;height:10px;border-radius:var(--r-full);flex:none}
+.lk .t{flex:1}.lk .t b{display:block;font-weight:600}
+.lk .t small{color:var(--text-2);font-size:13px}
+.lk .n{font-weight:700;font-family:'Be Vietnam Pro',sans-serif;font-size:15px;width:78px;text-align:right}
+.lk .go{color:var(--primary);font-weight:600;font-size:13px;white-space:nowrap;width:140px;text-align:right}
+
+.empty{text-align:center;padding:56px 24px}
+.empty .art{width:96px;height:96px;border-radius:var(--r-art);margin:0 auto 20px;
+            background:linear-gradient(135deg,#b7f3d8,#2eb67d);display:grid;place-items:center;color:#fff}
+.empty h3{font-family:'Be Vietnam Pro',sans-serif;font-size:22px;font-weight:600;margin:0 0 8px}
+.empty p{color:var(--text-2);margin:0}
+
+.log{position:relative;padding-left:26px}
+.log::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:1px;background:var(--border-light)}
+.logi{position:relative;padding:0 0 20px}
+.logi::before{content:"";position:absolute;left:-25px;top:5px;width:11px;height:11px;border-radius:var(--r-full);
+              background:#fff;box-shadow:inset 0 0 0 2px var(--primary)}
+.logi.g::before{box-shadow:inset 0 0 0 2px var(--st-green)}
+.logi.m::before{box-shadow:inset 0 0 0 2px var(--text-3)}
+.logi .tm{font-size:12px;color:var(--text-3)}
+.logi b{display:block;font-weight:600;margin:2px 0}
+.logi small{color:var(--text-2);font-size:13px}
+
+.steer{border-radius:var(--r-l);padding:2px;margin-top:24px;
+       background:linear-gradient(120deg,var(--grad-a),var(--grad-b) 55%,var(--grad-c));box-shadow:var(--sh-prompt)}
+.steer-in{background:#fff;border-radius:14px;padding:16px 18px 12px}
+.steer-in textarea{width:100%;border:none;outline:none;resize:none;font:inherit;font-size:15px;
+                   line-height:24px;color:var(--text-2);min-height:48px;background:transparent}
+.steer-bar{display:flex;align-items:center;justify-content:space-between;color:var(--text-2)}
+.steer-bar .l{display:flex;gap:8px;flex-wrap:wrap}
+.hint{font-size:12px;border:1px solid var(--border);border-radius:var(--r-pill);padding:4px 12px;color:var(--text-2)}
+.hint:hover{border-color:var(--text-3);color:var(--text)}
+.send{width:36px;height:36px;border-radius:var(--r-m);background:var(--send-bg);display:grid;
+      place-items:center;color:var(--text-3);flex:none}
+.rulebox{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.rule{font-size:12px;background:var(--field);border-radius:var(--r-pill);padding:5px 10px 5px 12px;
+      display:flex;align-items:center;gap:8px;color:var(--text-2)}
+.rule button{color:var(--text-3);display:grid;place-items:center}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);
+       color:#fff;padding:12px 20px;border-radius:var(--r-m);font-weight:500;box-shadow:var(--sh-s);
+       transition:transform .18s ease;z-index:40}
+.toast.on{transform:translateX(-50%) translateY(0)}
+
+@media(max-width:1199px){.pbody{grid-template-columns:1fr}}
+@media(max-width:1099px){.panel{display:none}.kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:767px){.rail{display:none}.tbl .th,.tbl .tr{grid-template-columns:1.4fr 60px 1fr}
+  .tbl .th span:nth-child(3),.tbl .tr .st{display:none}.erow .nm{width:120px}.erow .act{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important}}
+
+/* ── additions ── */
+.screen{display:none}.screen.on{display:block}
+.panel .cls{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--r-s);width:100%;text-align:left}
+.panel .cls:hover{background:var(--hover)}
+.panel .cls.on{background:var(--primary-selected)}.panel .cls.on b{color:var(--primary)}
+.panel .cls i{width:10px;height:10px;border-radius:3px;flex:none}
+.panel .cls b{display:block;font-weight:600;font-size:13px}
+.panel .cls small{display:block;color:var(--text-2);font-size:12px}
+.panel .cls .n{margin-left:auto;font-size:12px;color:var(--text-3)}
+.panel .setup{margin-top:auto;padding:14px 12px;border:1px solid var(--border-light);border-radius:var(--r-m);font-size:12px;color:var(--text-2)}
+.panel .setup b{display:block;color:var(--text);font-size:13px;margin-bottom:6px}
+.panel .setup .bar{height:6px;border-radius:3px;background:var(--field);overflow:hidden;margin:4px 0 6px}
+.panel .setup .bar i{display:block;height:100%;width:66%;background:var(--primary)}
+.grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;margin-top:20px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.card{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:20px 22px;transition:var(--t-slow)}
+.card:hover{box-shadow:var(--sh-s)}
+.card .ch{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.card .ch i{width:10px;height:22px;border-radius:3px;flex:none}
+.card .ch b{font-weight:600;font-size:15px;flex:1}
+.card .row{display:flex;justify-content:space-between;font-size:13px;color:var(--text-2);padding:5px 0;border-top:1px solid var(--border-light)}
+.card .row b{color:var(--text);font-weight:600}
+.card .pb{height:6px;border-radius:3px;background:var(--field);overflow:hidden;margin:10px 0 4px}
+.card .pb i{display:block;height:100%;background:var(--primary)}
+.card .cf{display:flex;gap:8px;margin-top:14px}
+.todo{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border-light)}
+.todo:first-of-type{border-top:0}
+.todo .who{width:36px;height:36px;border-radius:11px;background:var(--grad-avatar);flex:none;display:grid;place-items:center;color:#fff;font-size:12px;font-weight:700}
+.todo .who.b{background:linear-gradient(135deg,#b6d9ff,#6b8fe0)}.todo .who.c{background:linear-gradient(135deg,#ffd9a8,#f0913e)}.todo .who.d{background:linear-gradient(135deg,#b7f3d8,#2eb67d)}
+.todo .t{flex:1}.todo .t b{display:block;font-weight:600}.todo .t small{color:var(--text-2);font-size:13px}
+.todo .go{color:var(--primary);font-weight:600;font-size:13px;white-space:nowrap}
+.tbl.stu .th,.tbl.stu .tr{grid-template-columns:2fr 1.2fr 80px 80px 110px 1.2fr 110px}
+.tbl.exam .th,.tbl.exam .tr{grid-template-columns:2.2fr 110px 110px 1.4fr 110px}
+.tbl.fee .th,.tbl.fee .tr{grid-template-columns:2fr 1.2fr 110px 110px 1.2fr 120px}
+.tbl.path .th,.tbl.path .tr{grid-template-columns:90px 2.2fr 1.4fr 130px}
+.band{font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-size:15px}
+.band.up{color:#00925a}.band.dn{color:var(--st-red)}
+.drop{border:2px dashed var(--border);border-radius:var(--r-l);padding:28px;text-align:center;color:var(--text-2);background:#fff;margin-bottom:20px}
+.drop b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px}
+.day{background:var(--field);border-radius:var(--r-m);padding:10px;min-height:96px;font-size:12px;color:var(--text-2)}
+.day b{display:block;color:var(--text);margin-bottom:6px}
+.day .ev{background:#fff;border-left:3px solid var(--st-blue);border-radius:4px;padding:4px 6px;margin-bottom:4px;font-size:11px;line-height:15px;color:var(--text)}
+.day .ev.o{border-left-color:var(--st-orange)}.day .ev.p{border-left-color:var(--st-purple)}
+.post{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:18px 20px;margin-bottom:12px;display:flex;gap:14px}
+.post .av{width:36px;height:36px;border-radius:11px;flex:none;background:var(--grad-avatar);display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px}
+.post .av.b{background:linear-gradient(135deg,#b6d9ff,#6b8fe0)}.post .av.me{background:var(--grad-me)}
+.post .bd{flex:1}.post .hd{display:flex;gap:8px;align-items:center;margin-bottom:6px}.post .hd b{font-weight:600}.post .hd small{color:var(--text-3);font-size:12px}
+.post p{margin:0 0 8px;font-size:13px;line-height:21px}
+.post .re{display:flex;gap:14px;font-size:12px;color:var(--text-2)}
+.post .att{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border-light);border-radius:var(--r-m);padding:6px 10px;font-size:12px;margin:4px 0 8px}
+.ai{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#7b3fb0;background:#f3e8fb;border-radius:var(--r-s);padding:2px 8px}
+@media(max-width:1099px){.grid2,.grid3{grid-template-columns:1fr}.week{grid-template-columns:repeat(2,1fr)}.tier{flex-wrap:wrap}}
+.tier{display:flex;gap:8px;margin-top:8px}
+.tier div{flex:1;border-radius:var(--r-m);padding:12px 12px 10px;border:1px solid var(--border-light);font-size:12px;color:var(--text-2)}
+.tier div b{display:block;color:var(--text);font-size:13px;margin-bottom:2px}
+.tier div.done{background:#e3f9ef;border-color:#c9f0dd}
+.tier div.now{background:var(--primary-selected);border-color:#b3d7ff}.tier div.now b{color:var(--primary)}
+.funnel{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:8px}
+.fs{background:var(--field);border-radius:var(--r-m);padding:14px 14px 12px;position:relative}
+.fs b{font-family:'Be Vietnam Pro',sans-serif;font-size:24px;line-height:30px;display:block}
+.fs small{color:var(--text-2);font-size:12px;display:block}
+.fs .dl{position:absolute;right:10px;top:10px;font-size:11px;font-weight:700;color:#00925a}.fs .dl.w{color:#d87f16}
+
+/* ── type roles: Be Vietnam Pro = tiêu đề/nút/nhãn · Inter = nội dung/bảng ── */
+h1,h2,h3,h5,.shopname,.rail button,.new,.panel .group,.panel .cls b,.tabs button,.route,.btn,.tag,.hint,.rule,.chead .right button,
+.kpi .lab,.tbl .th,.prog .all,.erow .act,.lk .go,.todo .go,.card .ch b,.day b,.ai,.setup b,.pfoot .warnmsg{font-family:'Be Vietnam Pro',Inter,sans-serif}
+.tbl,.tbl .tr,.note textarea,.post p,.msg p,.fix,.crit,.logi small,.lk .t small,.todo .t small,.card .row,.kpi .d,.sub{font-family:Inter,system-ui,sans-serif}
+.tbl .sc,.kpi .val,.score .num,.band,.fs b,.lk .n{font-family:'Be Vietnam Pro',sans-serif;font-variant-numeric:tabular-nums}
+.tbl .tr,.card .row,.tbl .miss{font-variant-numeric:tabular-nums}
+.panel .cls small,.who small,.logi small{line-height:19px}
+
+/* ── student additions ── */
+:root{--rail:104px}
+.shell.stu .canvas{max-width:none}
+.wrap.n{max-width:760px}
+.hero{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:22px 24px;display:flex;gap:20px;align-items:center}
+.hero .ring{width:92px;height:92px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--primary) 0 62%,var(--field) 62% 100%);position:relative}
+.hero .ring::after{content:"";position:absolute;inset:8px;background:#fff;border-radius:50%}
+.hero .ring b{position:relative;font-family:'Be Vietnam Pro',sans-serif;font-size:22px;line-height:1}
+.hero .ring small{position:relative;font-size:10px;color:var(--text-2);display:block;text-align:center}
+.hero h2{font-size:18px;margin:0 0 4px}
+.hero p{margin:0;color:var(--text-2);font-size:13px}
+.hero .meta{display:flex;gap:16px;margin-top:10px;font-size:13px}
+.hero .meta b{font-family:'Be Vietnam Pro',sans-serif;font-size:18px;display:block;line-height:1.1}
+.hero .meta small{color:var(--text-2);font-size:12px}
+.task{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:16px 18px;margin-top:12px;display:flex;gap:14px;align-items:center}
+.task .ic{width:40px;height:40px;border-radius:12px;flex:none;display:grid;place-items:center;color:#fff;background:var(--grad-avatar)}
+.task .ic.o{background:linear-gradient(135deg,#ffd9a8,#f0913e)}.task .ic.g{background:linear-gradient(135deg,#b7f3d8,#2eb67d)}.task .ic.b{background:linear-gradient(135deg,#b6d9ff,#6b8fe0)}
+.task .t{flex:1}.task .t b{display:block;font-weight:600}.task .t small{color:var(--text-2);font-size:13px}
+.task.due{border-color:#f6cfd6;background:#fffafb}
+.skill{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--border-light)}
+.skill:first-of-type{border-top:0}
+.skill span{width:110px;font-size:13px;color:var(--text-2)}
+.skill .b{flex:1;height:10px;border-radius:5px;background:var(--field);overflow:hidden;position:relative}
+.skill .b i{display:block;height:100%;background:var(--primary);border-radius:5px}
+.skill .b em{position:absolute;top:-4px;width:2px;height:18px;background:var(--st-green)}
+.skill b{width:64px;text-align:right;font-family:'Be Vietnam Pro',sans-serif}
+.skill b small{color:#00925a;font-weight:600;font-size:11px}
+.fb{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:18px 20px;margin-top:12px}
+.fb .h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.fb .h .av{width:32px;height:32px;border-radius:10px;background:var(--grad-me);flex:none}
+.fb .h b{font-weight:600}.fb .h small{color:var(--text-3);font-size:12px;display:block}
+.fb .msgtxt{font-size:14px;line-height:22px;white-space:pre-line;border-left:3px solid var(--primary);padding-left:12px;margin:8px 0 12px}
+.fb .fixes .fix{margin-bottom:10px}
+.spark{display:flex;align-items:flex-end;gap:6px;height:64px;margin:8px 0 4px}
+.spark i{flex:1;background:var(--field);border-radius:3px 3px 0 0;position:relative}
+.spark i.on{background:var(--primary)}
+.spark i::after{content:attr(data-v);position:absolute;top:-18px;left:0;right:0;text-align:center;font-size:11px;color:var(--text-2);font-family:'Be Vietnam Pro',sans-serif;font-weight:600}
+.spark-l{display:flex;gap:6px;font-size:11px;color:var(--text-3)}.spark-l span{flex:1;text-align:center}
+.pack{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.pack.rec{border-color:#b3d7ff;background:linear-gradient(180deg,#f3f8ff,#fff)}
+.pack h4{margin:0;font-size:15px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.pack h4 .price{font-family:'Be Vietnam Pro',sans-serif;color:var(--primary)}
+.pack p{margin:0;font-size:13px;color:var(--text-2)}
+.pack ul{margin:4px 0 6px;padding-left:18px;font-size:13px;color:var(--text)}
+.pack .btn{margin-top:auto}
+.streak{display:flex;gap:6px}
+.streak i{flex:1;height:28px;border-radius:6px;background:var(--field);display:grid;place-items:center;font-size:11px;color:var(--text-3)}
+.streak i.on{background:var(--st-green);color:#fff;font-weight:700}
+.streak i.today{outline:2px solid var(--primary);outline-offset:-2px}
+.bottombar{display:none}
+@media(max-width:767px){
+  .rail{display:none}.bottombar{display:flex;position:fixed;bottom:0;left:0;right:0;height:60px;background:#fff;border-top:1px solid var(--border-light);z-index:30}
+  .bottombar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-family:'Be Vietnam Pro',sans-serif;color:var(--text-2)}
+  .bottombar button.on{color:var(--primary);font-weight:600}
+  .wrap{padding:16px 16px 90px}.chead{padding:16px 16px 0}.tabs{padding:14px 16px 0;gap:18px}
+  .hero{flex-direction:column;align-items:flex-start}.grid2,.grid3{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}
+  .shell{height:auto;overflow:visible}.canvas{overflow:visible}
+}
+
+/* ── exercise screens ── */
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--text-2);font-size:13px;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;margin-bottom:6px}
+.back:hover{color:var(--primary)}
+.qcard{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:22px 24px;margin-top:14px}
+.qcard .qn{font-size:12px;color:var(--text-3);font-family:'Be Vietnam Pro',sans-serif;font-weight:600;margin-bottom:8px}
+.qcard .qs{font-size:17px;line-height:27px;margin-bottom:16px}
+.qcard .qs u{text-decoration:none;border-bottom:2px dashed var(--st-red);padding-bottom:1px}
+.opts{display:grid;gap:8px}
+.opt{border:1px solid var(--border);border-radius:var(--r-m);padding:12px 14px;text-align:left;font-size:15px;display:flex;align-items:center;gap:12px;transition:var(--t-mid);background:#fff}
+.opt:hover{border-color:var(--text-3)}
+.opt i{width:24px;height:24px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;font-size:12px;font-family:'Be Vietnam Pro',sans-serif;font-weight:600;color:var(--text-2);flex:none}
+.opt.ok{border-color:var(--st-green);background:#e3f9ef}.opt.ok i{background:var(--st-green);color:#fff;border-color:var(--st-green)}
+.opt.no{border-color:var(--st-red);background:#fdeaed}.opt.no i{background:var(--st-red);color:#fff;border-color:var(--st-red)}
+.opt:disabled{cursor:default}
+.why{margin-top:14px;padding:12px 14px;border-radius:var(--r-m);background:var(--field);font-size:14px;line-height:22px;display:none}
+.why.on{display:block}
+.why b{font-family:'Be Vietnam Pro',sans-serif}
+.why.good{background:#e3f9ef}.why.bad{background:#fff2e0}
+.dots{display:flex;gap:6px;margin-top:6px}
+.dots i{flex:1;height:5px;border-radius:3px;background:var(--field)}
+.dots i.ok{background:var(--st-green)}.dots i.no{background:var(--st-red)}.dots i.cur{background:var(--primary)}
+.qfoot{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+.qfoot small{color:var(--text-3);font-size:12px}
+.result{text-align:center;padding:36px 20px 20px}
+.result .big{font-family:'Be Vietnam Pro',sans-serif;font-size:44px;font-weight:700;line-height:1;color:var(--primary)}
+.result p{color:var(--text-2);margin:8px 0 0}
+.result .note-t{margin:18px auto 0;max-width:460px;text-align:left;background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:16px 18px;font-size:14px;line-height:22px}
+.result .note-t b{display:block;font-family:'Be Vietnam Pro',sans-serif;margin-bottom:4px}
+/* writing */
+.wgrid{display:grid;grid-template-columns:1fr 300px;gap:16px;margin-top:14px}
+.prompt{background:#fff;border:1px solid var(--border-light);border-radius:var(--r-l);padding:18px 20px}
+.prompt .lbl{font-size:12px;color:var(--text-3);font-family:'Be Vietnam Pro',sans-serif;font-weight:600;margin-bottom:6px}
+.prompt p{margin:0 0 8px;font-size:15px;line-height:24px}
+.prompt .req{font-size:13px;color:var(--text-2)}
+.editor{background:#fff;border:1px solid var(--border);border-radius:var(--r-l);margin-top:14px;overflow:hidden}
+.editor textarea{width:100%;min-height:340px;border:none;outline:none;resize:vertical;font:inherit;font-size:15px;line-height:26px;padding:18px 20px;color:var(--text)}
+.editor .ebar{display:flex;align-items:center;gap:14px;padding:10px 16px;border-top:1px solid var(--border-light);font-size:13px;color:var(--text-2);flex-wrap:wrap}
+.editor .ebar b{font-family:'Be Vietnam Pro',sans-serif;color:var(--text)}
+.editor .ebar .wc.low b{color:var(--st-red)}.editor .ebar .wc.ok b{color:#00925a}
+.editor .ebar .sp{flex:1}
+.side .blkc{margin-top:0}
+.side .blkc+.blkc{margin-top:14px}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--border-light);font-size:13px;line-height:19px}
+.chk:first-of-type{border-top:0}
+.chk i{width:18px;height:18px;border-radius:5px;border:1px solid var(--border);flex:none;display:grid;place-items:center;font-size:11px;color:#fff;margin-top:1px}
+.chk i.on{background:var(--st-green);border-color:var(--st-green)}
+.chk small{display:block;color:var(--text-3);font-size:12px}
+.timer{font-family:'Be Vietnam Pro',sans-serif;font-weight:600;font-variant-numeric:tabular-nums}
+.pre{font-size:13px;color:var(--text-2);line-height:20px}
+.pre b{color:var(--text);font-family:'Be Vietnam Pro',sans-serif;display:block;margin-bottom:4px}
+.after{margin-top:14px}
+.after .st{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--border-light)}
+.after .st:first-child{border-top:0}
+.after .st i{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:12px;font-family:'Be Vietnam Pro',sans-serif;font-weight:700;color:#fff;background:var(--text-3)}
+.after .st i.on{background:var(--st-green)}.after .st i.now{background:var(--primary)}
+.after .st b{display:block;font-weight:600}.after .st small{color:var(--text-2);font-size:13px}
+@media(max-width:900px){.wgrid{grid-template-columns:1fr}}
+</style>
+<div class="topbar">
+  <span class="logo"><i></i><i></i><i></i></span>
+  <span class="shopname">Lớp IELTS 6.5 · cô Thảo</span>
+  <span style="flex:1"></span>
+  <div class="tb-right"><span class="tag grn">Chuỗi 12 ngày</span><button class="badge" aria-label="Thông báo"><svg class="ico" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span>2</span></button><button class="avatar-me" aria-label="Minh Anh" style="background:var(--grad-avatar)"></button></div>
+</div>
+
+<div class="shell stu">
+  <nav class="rail"><button data-s="today" class=on><span class="box"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>Hôm nay</button><button data-s="work"><span class="box"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M13 7l3 3"/></svg></span>Bài của tôi</button><button data-s="prog"><span class="box"><svg class="ico" viewBox="0 0 24 24"><path d="M4 19h16M7 16V9M12 16V5M17 16v-6"/></svg></span>Tiến độ</button><hr><button data-s="prac"><span class="box"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2l.9-5.5-4-3.9L9.5 8z"/></svg></span>Luyện thêm</button><button data-s="feed"><span class="box"><svg class="ico" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></svg></span>Bảng tin</button></nav>
+  <main class="canvas">
+
+  <!-- HÔM NAY -->
+  <section class="screen on" id="s-today">
+    <div class="chead"><div><h1>Chào Minh Anh</h1><div class="sub">Thứ Bảy 6/9 · buổi tới T3 19:30 · 1 bài cần nộp trước T3</div></div></div>
+    <div class="wrap n">
+      <div class="hero">
+        <div class="ring"><b>5.5</b><small>Writing</small></div>
+        <div style="flex:1"><h2>Mục tiêu 6.5 — em đã đi 62% chặng 1</h2><p>Cô Thảo: "Giữ đúng cấu trúc này, sửa ngữ pháp là lên 6.0."</p>
+          <div class="meta"><div><b>+0.5</b><small>band sau 8 tuần</small></div><div><b>30/48</b><small>buổi</small></div><div><b>1</b><small>lỗi cần dứt điểm</small></div></div></div>
+      </div>
+      <div class="task due"><span class="ic o"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M13 7l3 3"/></svg></span><div class="t"><b>Nộp Task 2 — Education</b><small>Hạn T3 19:00 · đề Cambridge 19 · 250+ từ</small></div><button class="btn pri" data-go="submit">Nộp bài</button></div>
+      <div class="task"><span class="ic b"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2l.9-5.5-4-3.9L9.5 8z"/></svg></span><div class="t"><b>5 câu với "believe" ở hiện tại đơn</b><small>Cô giao riêng · 5 phút · để dứt lỗi "am believing"</small></div><button class="btn gho" data-go="drill">Làm ngay</button></div>
+      <div class="task"><span class="ic g"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div class="t"><b>Buổi 31 — T3 19:30</b><small>Task 2: luận điểm & ví dụ · mang bài Education đã sửa</small></div><button class="btn gho">Xem trước</button></div>
+      <div class="blkc"><h3>Tuần này em học đều không</h3><p class="sub">Mỗi ô là một ngày có nộp bài hoặc luyện ≥ 5 phút.</p>
+        <div class="streak"><i class="on">T2</i><i class="on">T3</i><i class="on">T4</i><i>T5</i><i class="on">T6</i><i class="today">T7</i><i>CN</i></div>
+        <p class="sub" style="margin:12px 0 0">Chuỗi 12 ngày. Hôm nay làm bài 5 phút là giữ chuỗi.</p></div>
+    </div>
+  </section>
+
+  <!-- BÀI CỦA TÔI -->
+  <section class="screen" id="s-work">
+    <div class="chead"><div><h1>Bài của tôi</h1><div class="sub">14 bài đã nộp · 13 đã có nhận xét · 1 đang chờ cô</div></div></div>
+    <div class="tabs"><button class="on" data-tab="w1">Nhận xét mới <span class="cnt">1</span></button><button data-tab="w2">Tất cả <span class="cnt">14</span></button></div>
+    <div class="wrap n">
+    <section class="view on" id="w1">
+      <div class="fb"><div class="h"><span class="av"></span><div><b>Cô Thảo nhận xét bài Task 2 — Environment</b><small>Hôm qua 22:10 · band 5.5</small></div></div>
+        <div class="msgtxt">Minh Anh làm tốt phần dàn ý — có luận điểm rõ ở mỗi đoạn, đây là tiến bộ so với tuần trước. Hai điểm sửa ngay: "I am believing" (cô đánh dấu 3 bài liền — viết lại 5 câu với believe ở hiện tại đơn, nộp trước T5) và hòa hợp chủ ngữ–động từ. Giữ đúng cấu trúc này, sửa ngữ pháp là lên 6.0.</div>
+        <div class="fixes"><h5 style="font-size:12px;color:var(--text-2);margin:0 0 8px">Chỗ cô đánh dấu trong bài</h5>
+          <div class="fix g"><div class="was">I <s>am believing</s> that free education…</div><div class="now"><b>I believe</b> — believe không dùng tiếp diễn</div></div>
+          <div class="fix g"><div class="was">a society… <s>have</s> lower crime</div><div class="now"><b>has</b> — chủ ngữ số ít</div></div>
+          <div class="fix v"><div class="was">free university <s>makes more chance</s></div><div class="now"><b>widens access</b></div></div></div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" style="flex:1" data-go="drill">Làm bài luyện cô giao</button><button class="btn gho">Xem bài gốc</button></div></div>
+    </section>
+    <section class="view" id="w2">
+      <div class="tbl" style="--c:1"><div class="th" style="grid-template-columns:2fr 90px 1.4fr 110px"><span>Bài</span><span>Band</span><span>Cô nhắc</span><span>Trạng thái</span></div>
+        <div class="tr" style="grid-template-columns:2fr 90px 1.4fr 110px"><span class="nm"><i style="background:linear-gradient(135deg,#ffd9a8,#f0913e)"></i>Task 2 — Education</span><span class="band">—</span><span class="miss">—</span><span class="tag pur">Chờ cô</span></div>
+        <div class="tr" style="grid-template-columns:2fr 90px 1.4fr 110px"><span class="nm"><i></i>Task 2 — Environment</span><span class="band up">5.5 ↑</span><span class="miss">am believing ×3</span><span class="tag grn">Đã nhận xét</span></div>
+        <div class="tr" style="grid-template-columns:2fr 90px 1.4fr 110px"><span class="nm"><i></i>Task 1 — Line graph</span><span class="band">5.5</span><span class="miss">Thiếu so sánh</span><span class="tag grn">Đã nhận xét</span></div>
+        <div class="tr" style="grid-template-columns:2fr 90px 1.4fr 110px"><span class="nm"><i></i>Task 2 — Technology</span><span class="band">5.0</span><span class="miss">am believing ×2</span><span class="tag grn">Đã nhận xét</span></div>
+        <div class="tr" style="grid-template-columns:2fr 90px 1.4fr 110px"><span class="nm"><i></i>Mock 1</span><span class="band">5.0</span><span class="miss">Overview Task 1</span><span class="tag blu">Mock</span></div>
+      </div>
+    </section>
+    </div>
+  </section>
+
+  <!-- TIẾN ĐỘ -->
+  <section class="screen" id="s-prog">
+    <div class="chead"><div><h1>Tiến độ</h1><div class="sub">Em ở đâu so với mục tiêu 6.5 — và cái gì đang kéo em lại</div></div></div>
+    <div class="wrap n">
+      <div class="blkc" style="margin-top:0"><h3>Band Writing 8 tuần qua</h3><p class="sub">Mỗi cột là một bài chấm.</p>
+        <div class="spark"><i data-v="5.0" style="height:40%"></i><i data-v="5.0" style="height:40%"></i><i data-v="5.0" style="height:40%"></i><i data-v="5.5" style="height:55%"></i><i data-v="5.0" style="height:40%"></i><i data-v="5.5" style="height:55%"></i><i data-v="5.5" style="height:55%"></i><i class="on" data-v="5.5" style="height:55%"></i></div>
+        <div class="spark-l"><span>T7</span><span>T7</span><span>T8</span><span>T8</span><span>T8</span><span>T8</span><span>T9</span><span>T9</span></div></div>
+      <div class="blkc"><h3>Theo tiêu chí</h3><p class="sub">Vạch xanh là mức 6.5. Cột nào xa vạch nhất là cột cần luyện.</p>
+        <div class="skill"><span>Task Response</span><div class="b"><i style="width:55%"></i><em style="left:72%"></em></div><b>5.0</b></div>
+        <div class="skill"><span>Coherence</span><div class="b"><i style="width:66%"></i><em style="left:72%"></em></div><b>6.0 <small>↑</small></b></div>
+        <div class="skill"><span>Lexical</span><div class="b"><i style="width:66%"></i><em style="left:72%"></em></div><b>6.0</b></div>
+        <div class="skill"><span>Grammar</span><div class="b"><i style="width:55%"></i><em style="left:72%"></em></div><b>5.0</b></div></div>
+      <div class="blkc"><h3>Lỗi đang kéo em lại</h3><p class="sub">Dứt được 2 lỗi này là Grammar lên 6.0 — theo cô Thảo.</p>
+        <div class="lk"><span class="dot" style="background:var(--st-red)"></span><div class="t"><b>Động từ trạng thái ở thì tiếp diễn</b><small>"am believing", "is knowing" — 3 bài liên tiếp</small></div><button class="go" data-go="drill">Luyện 5 phút</button></div>
+        <div class="lk"><span class="dot" style="background:var(--st-orange)"></span><div class="t"><b>Hòa hợp chủ ngữ – động từ</b><small>2/3 bài gần nhất</small></div><button class="go" data-go="drill">Luyện 5 phút</button></div>
+        <div class="lk"><span class="dot" style="background:var(--st-green)"></span><div class="t"><b>Overview Task 1</b><small>Đã sửa xong từ tuần 5 — không tái phạm</small></div><span class="tag grn">Đã dứt</span></div></div>
+    </div>
+  </section>
+
+  <!-- LUYỆN THÊM -->
+  <section class="screen" id="s-prac">
+    <div class="chead"><div><h1>Luyện thêm</h1><div class="sub">Bài luyện cô Thảo soạn hoặc duyệt — chấm ngay, theo đúng cách cô chấm</div></div></div>
+    <div class="wrap n">
+      <div class="grid2" style="margin-top:0;grid-template-columns:1fr 1fr">
+        <div class="pack rec"><h4>Gói theo lỗi của em <span class="price">Đang có</span></h4><p>Đi kèm học phí lớp. Bài do cô giao riêng.</p><ul><li>5 câu "believe" hiện tại đơn — cô giao</li><li>Sửa lại bài Environment theo nhận xét</li></ul><button class="btn pri" data-go="drill">Làm ngay</button></div>
+        <div class="pack"><h4>Luyện Writing hằng ngày <span class="price">99K / tháng</span></h4><p>1 đề mỗi ngày, chấm trong 2 phút theo rubric cô Thảo, tự đổi đề theo lỗi em đang mắc.</p><ul><li>30 đề Task 1 + Task 2 theo cấp 5.5→6.5</li><li>Nhận xét theo cách cô hay viết</li><li>Cô Thảo thấy kết quả, không cần em báo</li></ul><button class="btn gho">Thử 3 ngày miễn phí</button></div>
+        <div class="pack"><h4>Mock có chấm tay <span class="price">150K / bài</span></h4><p>Cô Thảo chấm tay trực tiếp, trả trong 48h, kèm 10 phút gọi.</p><ul><li>Nên làm trước Mock 2 (14/9)</li></ul><button class="btn gho">Đặt lịch</button></div>
+        <div class="pack" style="opacity:.75"><h4>Luyện nói 1-1 <span class="price">Sắp có</span></h4><p>Nói với trợ giảng AI theo đề Speaking Part 2, chấm phát âm và độ trôi chảy.</p><button class="btn gho" disabled>Báo khi mở</button></div>
+      </div>
+      <p class="sub" style="color:var(--text-3);font-size:12px;margin-top:14px">Học phí của gói luyện thêm được chia cho cô Thảo. Em mua ở đây là đang trả tiền cho cô, không phải cho ứng dụng.</p>
+    </div>
+  </section>
+
+  <!-- BẢNG TIN -->
+  <section class="screen" id="s-feed">
+    <div class="chead"><div><h1>Bảng tin lớp</h1><div class="sub">IELTS 6.5 · Tối T3/T5 · 18 bạn</div></div></div>
+    <div class="wrap n">
+      <div class="post"><span class="av me">CT</span><div class="bd"><div class="hd"><b>Cô Thảo</b><small>Hôm qua 21:30 · Ghim</small></div><p>Bài Task 2 tuần này: đề Education (Cambridge 19, Test 2). Hạn T3 trước 19:00. Nộp ở đây, không gửi Zalo nhé.</p><span class="att">Cambridge 19 · Test 2 · Task 2</span><div class="re"><span>14 đã nộp</span><span style="color:var(--st-red);font-weight:600">Em chưa nộp</span></div></div></div>
+      <div class="post"><span class="av b">GH</span><div class="bd"><div class="hd"><b>Gia Huy</b><small>21:14</small></div><p>Cô ơi đề này có thể viết theo hướng "partly agree" không ạ?</p><div class="re"><span>Cô Thảo: Được, nhưng phải nói rõ agree phần nào ngay ở mở bài.</span></div></div></div>
+      <div class="post"><span class="av" style="background:linear-gradient(135deg,#b7f3d8,#2eb67d)">TH</span><div class="bd"><div class="hd"><b>Thu Hà</b><small>20:02</small></div><p>Em vừa đạt 7.0 bài thứ hai — cảm ơn cô!</p><div class="re"><span>🎉 9</span><span style="color:var(--primary);font-weight:600">Chúc mừng</span></div></div></div>
+      <div class="steer" style="margin-top:8px"><div class="steer-in"><textarea placeholder="Hỏi cô hoặc cả lớp…"></textarea><div class="steer-bar"><div class="l"><button class="hint">Đính bài của em</button></div><button class="send" aria-label="Gửi"><svg class="ico s" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div></div></div>
+    </div>
+  </section>
+
+
+  <!-- ═══ LUYỆN: 5 câu believe ═══ -->
+  <section class="screen" id="s-drill">
+    <div class="chead"><div><button class="back" data-go="today">‹ Hôm nay</button><h1>5 câu với "believe"</h1><div class="sub">Cô Thảo giao riêng · để dứt lỗi "am believing" đã lặp 3 bài · chấm ngay từng câu</div></div>
+      <div class="right"><span class="live"><i></i><span class="timer" id="dt">0:00</span></span></div></div>
+    <div class="wrap n">
+      <div class="dots" id="dots"><i class="cur"></i><i></i><i></i><i></i><i></i></div>
+      <div id="drill"></div>
+    </div>
+  </section>
+
+  <!-- ═══ NỘP BÀI: Task 2 ═══ -->
+  <section class="screen" id="s-submit">
+    <div class="chead"><div><button class="back" data-go="today">‹ Hôm nay</button><h1>Task 2 — Education</h1><div class="sub">Cambridge 19 · Test 2 · hạn T3 19:00 · cô chấm theo rubric của cô, không phải máy chấm chung</div></div>
+      <div class="right"><span class="live"><i></i>Đang lưu tự động</span><span class="timer" id="wt">40:00</span></div></div>
+    <div class="wrap" style="max-width:1100px">
+      <div class="wgrid" id="wgrid">
+        <div>
+          <div class="prompt"><div class="lbl">Đề bài</div>
+            <p>Some people believe that university education should be free for all students, while others think students should pay for their own tuition. Discuss both views and give your own opinion.</p>
+            <div class="req">Viết ít nhất 250 từ · 40 phút như thi thật · em có thể nộp muộn hơn nhưng cô sẽ thấy thời gian</div></div>
+          <div class="editor"><textarea id="ed" placeholder="Viết bài ở đây. Bài được lưu mỗi 10 giây — tắt máy vẫn còn."></textarea>
+            <div class="ebar"><span class="wc low" id="wc"><b>0</b> / 250 từ</span><span id="para"><b>0</b> đoạn</span><span class="sp"></span><button class="btn gho" style="height:32px">Lưu nháp</button><button class="btn pri" style="height:32px" id="submitBtn" disabled>Nộp cho cô</button></div></div>
+        </div>
+        <div class="side">
+          <div class="blkc"><h3 style="font-size:15px">Trước khi nộp</h3><p class="sub" style="margin-bottom:8px">Tự kiểm — dựa trên lỗi em hay mắc.</p>
+            <div class="chk"><i id="c1"></i><div>Có câu mở bài nêu rõ ý kiến của em<small>Bài Environment thiếu — cô đã nhắc</small></div></div>
+            <div class="chk"><i id="c2"></i><div>Không có "am/is believing", "am knowing"<small>Lỗi lặp 3 bài</small></div></div>
+            <div class="chk"><i id="c3"></i><div>Mỗi đoạn thân có 1 ví dụ cụ thể</div></div>
+            <div class="chk"><i id="c4"></i><div>Đủ 250 từ<small>Máy đếm — tự tích</small></div></div></div>
+          <div class="blkc"><h3 style="font-size:15px">Bài trước của em ở đề tương tự</h3>
+            <div class="pre"><b>Task 2 — Technology · band 5.0</b>Cô nhắc: "Ý tốt nhưng mỗi đoạn chỉ có một câu lập luận, chưa có ví dụ." Lần này thử thêm ví dụ về học phí ở Đức hoặc Việt Nam.</div></div>
+        </div>
+      </div>
+
+      <div id="submitted" hidden>
+        <div class="result"><div class="art" style="width:72px;height:72px;border-radius:22px;margin:0 auto 14px;background:linear-gradient(135deg,#b7f3d8,#2eb67d);display:grid;place-items:center;color:#fff"><svg class="ico" viewBox="0 0 24 24" style="width:32px;height:32px"><path d="m5 12 5 5L20 7"/></svg></div>
+          <h2 style="margin:0;font-size:22px">Đã nộp cho cô Thảo</h2><p><span id="finalwc">0</span> từ · <span id="finaltime">0:00</span> · trước hạn 2 ngày</p></div>
+        <div class="blkc"><h3>Chuyện gì xảy ra tiếp theo</h3><p class="sub">Để em biết khi nào có kết quả, không cần hỏi cô.</p>
+          <div class="after">
+            <div class="st"><i class="on">✓</i><div><b>Bài đã lưu vào hồ sơ của em</b><small>Cô thấy ngay, kèm thời gian viết và số từ</small></div></div>
+            <div class="st"><i class="now">2</i><div><b>Nhận xét nháp theo cách cô chấm — trong vài phút</b><small>Máy đọc bài, đối chiếu với 3 bài trước của em và rubric của cô. Em <u>chưa</u> thấy bản nháp này — chỉ cô thấy.</small></div></div>
+            <div class="st"><i>3</i><div><b>Cô Thảo duyệt hoặc sửa — thường trước buổi T3</b><small>Cô đọc bài, chỉnh band nếu cần, viết thêm. Không có gì đến em mà cô chưa xem.</small></div></div>
+            <div class="st"><i>4</i><div><b>Em nhận nhận xét + bài luyện theo lỗi</b><small>Ở mục Bài của tôi. Nếu lỗi cũ tái phạm, sẽ có bài luyện 5 phút đi kèm.</small></div></div>
+          </div></div>
+        <div style="display:flex;gap:8px;margin-top:14px"><button class="btn pri" data-go="drill">Làm bài luyện "believe" trong lúc chờ</button><button class="btn gho" data-go="today">Về Hôm nay</button></div>
+      </div>
+    </div>
+  </section>
+  </main>
+</div>
+<nav class="bottombar"><button data-s="today" class=on><svg class="ico s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Hôm nay</button><button data-s="work"><svg class="ico s" viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M13 7l3 3"/></svg>Bài</button><button data-s="prog"><svg class="ico s" viewBox="0 0 24 24"><path d="M4 19h16M7 16V9M12 16V5M17 16v-6"/></svg>Tiến độ</button><button data-s="prac"><svg class="ico s" viewBox="0 0 24 24"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2l.9-5.5-4-3.9L9.5 8z"/></svg>Luyện</button><button data-s="feed"><svg class="ico s" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></svg>Lớp</button></nav>
+<div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),1900);}
+let go=function(s){$$('.rail button,.bottombar button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));$$('.screen').forEach(x=>x.classList.toggle('on',x.id==='s-'+s));window.scrollTo(0,0);$('.canvas').scrollTop=0;};
+$$('.rail button,.bottombar button').forEach(b=>b.onclick=()=>go(b.dataset.s));
+$$('.tabs button').forEach(b=>b.onclick=()=>{const t=b.parentElement;t.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');t.nextElementSibling.querySelectorAll(':scope > .view').forEach(v=>v.classList.toggle('on',v.id===b.dataset.tab));});
+$$('.btn:not([data-go]),.go:not([data-go]),.hint').forEach(x=>x.onclick=()=>toast(x.textContent.trim()+' — sẽ mở ở bản đầy đủ'));
+$('.send').onclick=()=>{const ta=$('.steer-in textarea');if(!ta.value.trim())return;const p=document.createElement('div');p.className='post';p.innerHTML='<span class="av"></span><div class="bd"><div class="hd"><b>Minh Anh</b><small>Vừa xong</small></div><p></p></div>';p.querySelector('p').textContent=ta.value;$('.steer').insertAdjacentElement('beforebegin',p);ta.value='';toast('Đã đăng lên bảng tin lớp');};
+
+/* ── drill ── */
+const DQ=[
+ {s:'In my opinion, I ___ that free education brings more benefits to society.',o:['am believing','believe','believing','was believing'],a:1,
+  ok:'Đúng. "Believe" là động từ trạng thái — diễn tả điều em nghĩ, không phải hành động đang diễn ra — nên dùng hiện tại đơn.',
+  bad:'Đây chính là câu em viết trong bài Environment. "Believe" không đi với tiếp diễn: em không "đang tin" như đang chạy — em tin, chấm hết.'},
+ {s:'Many students ___ that university fees are too high nowadays.',o:['are thinking','think','thinks','are think'],a:1,
+  ok:'Đúng. "Think" khi nghĩa là "cho rằng" cũng là động từ trạng thái. Chú ý chủ ngữ số nhiều → không có -s.',
+  bad:'"Think" với nghĩa "cho rằng" là trạng thái, giống believe. "Are thinking" chỉ đúng khi đang cân nhắc điều gì ("I\'m thinking about moving").'},
+ {s:'The government ___ the importance of higher education.',o:['is understanding','understand','understands','understanding'],a:2,
+  ok:'Đúng — và em bắt được cả lỗi thứ hai của mình: "the government" là số ít, cần -s. Hai lỗi cô đánh dấu, em tránh được cả hai trong một câu.',
+  bad:'Hai chỗ cần để ý: "understand" là trạng thái (không tiếp diễn), và "the government" là số ít → "understands". Đây là cả hai lỗi cô đánh dấu bài trước.'},
+ {s:'Right now, the ministry ___ a new policy on tuition fees.',o:['considers','is considering','consider','has considering'],a:1,
+  ok:'Đúng — câu này là bẫy. "Consider" ở đây là hành động đang diễn ra ("right now"), nên tiếp diễn lại đúng. Em phân biệt được rồi.',
+  bad:'Câu này cố tình ngược: "Right now" + đang xem xét = hành động đang diễn ra, nên "is considering" đúng. Không phải mọi tiếp diễn đều sai — chỉ sai với động từ trạng thái.'},
+ {s:'Although free education costs a lot, I ___ the benefits outweigh the cost.',o:['am believing','believe','believes','believed'],a:1,
+  ok:'Đúng. Đây là câu kết bài em viết sai lần thứ ba. Giờ em viết đúng — cô Thảo sẽ thấy kết quả này trong hồ sơ của em.',
+  bad:'Chính câu kết bài Environment. Chủ ngữ "I" → "believe", không -s, không tiếp diễn, không quá khứ vì ý kiến hiện tại.'}
+];
+let di=0,dscore=0,dt0=null,dtimer;
+function fmt(sec){return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
+function drillTick(){if(!dt0)return;$('#dt').textContent=fmt(Math.floor((Date.now()-dt0)/1000));}
+function renderDrill(){
+  const q=DQ[di];const el=$('#drill');
+  if(!q){clearInterval(dtimer);const t=fmt(Math.floor((Date.now()-dt0)/1000));
+    el.innerHTML=`<div class="qcard"><div class="result"><div class="big">${dscore}/5</div><p>${t} · ${dscore>=4?'Cô sẽ thấy em đã dứt được lỗi này':'Làm lại một lần nữa là chắc'}</p>
+    <div class="note-t"><b>Gửi vào hồ sơ của em</b>Lỗi "động từ trạng thái + tiếp diễn": ${dscore}/5 đúng. ${dscore>=4?'Bài Task 2 tới nếu em không tái phạm, cô Thảo sẽ đánh dấu "đã dứt".':'Cô Thảo sẽ thấy câu nào em sai và có thể nhắc trong buổi T3.'}</div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:16px"><button class="btn pri" data-go="submit">Viết Task 2 luôn</button><button class="btn gho" id="redo">Làm lại</button></div></div></div>`;
+    $('#redo').onclick=()=>{di=0;dscore=0;dt0=Date.now();$$('#dots i').forEach((d,k)=>d.className=k===0?'cur':'');renderDrill();};
+    $$('#drill [data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));return;}
+  el.innerHTML=`<div class="qcard"><div class="qn">Câu ${di+1} / 5</div><div class="qs">${q.s.replace('___','<u>______</u>')}</div>
+    <div class="opts">${q.o.map((o,k)=>`<button class="opt" data-k="${k}"><i>${'ABCD'[k]}</i>${o}</button>`).join('')}</div>
+    <div class="why" id="why"></div>
+    <div class="qfoot"><small>Chọn một đáp án — giải thích hiện ngay</small><button class="btn pri" id="nextq" hidden>${di===4?'Xem kết quả':'Câu tiếp'}</button></div></div>`;
+  $$('#drill .opt').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;$$('#drill .opt').forEach(x=>x.disabled=true);
+    const w=$('#why');if(k===q.a){b.classList.add('ok');dscore++;w.className='why on good';w.innerHTML='<b>Đúng.</b> '+q.ok;$$('#dots i')[di].className='ok';}
+    else{b.classList.add('no');$$('#drill .opt')[q.a].classList.add('ok');w.className='why on bad';w.innerHTML='<b>Chưa đúng.</b> '+q.bad;$$('#dots i')[di].className='no';}
+    $('#nextq').hidden=false;});
+  $('#nextq').onclick=()=>{di++;if($$('#dots i')[di])$$('#dots i')[di].className='cur';renderDrill();};
+}
+/* ── writing ── */
+let wt=40*60,wtimer,wt0;
+function wTick(){wt--;if(wt<0)return;$('#wt').textContent=fmt(wt);}
+const ed=$('#ed');
+ed.addEventListener('input',()=>{const txt=ed.value.trim();const n=txt?txt.split(/\s+/).length:0;const par=txt?txt.split(/\n\s*\n/).filter(x=>x.trim()).length:0;
+  const wc=$('#wc');wc.querySelector('b').textContent=n;wc.className='wc '+(n>=250?'ok':'low');$('#para b').textContent=par;
+  $('#c4').className=n>=250?'on':'';$('#c4').textContent=n>=250?'✓':'';
+  const bad=/\b(am|is|are)\s+(believ|know|understand|want|need|prefer)ing\b/i.test(txt);$('#c2').className=(txt&&!bad)?'on':'';$('#c2').textContent=(txt&&!bad)?'✓':'';
+  const op=/\b(I (believe|think|agree|disagree)|in my (opinion|view))\b/i.test(txt);$('#c1').className=op?'on':'';$('#c1').textContent=op?'✓':'';
+  $('#c3').className=par>=4?'on':'';$('#c3').textContent=par>=4?'✓':'';
+  $('#submitBtn').disabled=n<150;$('#submitBtn').textContent=n>=250?'Nộp cho cô':(n>=150?'Nộp (chưa đủ 250 từ)':'Nộp cho cô');});
+$('#submitBtn').onclick=()=>{clearInterval(wtimer);$('#finalwc').textContent=$('#wc b').textContent;$('#finaltime').textContent=fmt(40*60-wt);$('#wgrid').hidden=true;$('#submitted').hidden=false;window.scrollTo(0,0);toast('Đã nộp — cô Thảo sẽ thấy ngay');};
+const _go=go;go=function(s){_go(s);if(s==='drill'){if(!dt0){dt0=Date.now();dtimer=setInterval(drillTick,500);}if(!$('#drill').innerHTML)renderDrill();}
+  if(s==='submit'&&!wtimer){wtimer=setInterval(wTick,1000);setTimeout(()=>ed.focus(),50);}};
+$$('[data-go]').forEach(b=>{b.onclick=()=>go(b.dataset.go);});
+</script>
+</html>

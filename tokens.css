@@ -1,0 +1,16 @@
+/* sinh từ design/_reference/oblue-platform-demo.html — sửa ở đây rồi cập nhật bản mẫu */
+:root{
+  --primary:#0073ea;--primary-hover:#0060b9;--primary-selected:#cce5ff;--primary-selected-hover:#b3d7ff;
+  --text:#323338;--text-2:#676879;--text-3:#9699a6;--ink:#1f2534;
+  --surface:#fff;--hover:#f5f6f8;--field:#f0f1f4;--send-bg:#eceef3;
+  --border:#d0d4e4;--border-light:#e6e9ef;
+  --st-red:#e2445c;--st-orange:#fdab3d;--st-warm:#ff9f43;--st-yellow:#ffcb00;
+  --st-green:#00c875;--st-blue:#579bfc;--st-indigo:#5b6bff;--st-purple:#a25ddc;--st-brand-red:#ff3d57;
+  --grad-a:#00d2d3;--grad-b:#6c6cff;--grad-c:#a25ddc;
+  --grad-avatar:linear-gradient(135deg,#c9b6ff,#8f7bff);
+  --grad-me:linear-gradient(135deg,#8f9bb3,#6b7590);
+  --r-s:4px;--r-m:8px;--r-l:16px;--r-box:10px;--r-art:26px;--r-pill:20px;--r-full:50%;
+  --sh-s:0 6px 20px rgba(0,0,0,.08);--sh-prompt:0 10px 34px rgba(90,90,190,.14);
+  --rail:104px;--panel:260px;--topbar:56px;--content-max:1180px;
+  --t-fast:.1s ease;--t-mid:.12s ease;--t-slow:.15s ease;
+}
