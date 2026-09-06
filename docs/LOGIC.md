@@ -124,9 +124,12 @@ Một hàm, gọi trước mọi thao tác. Thứ tự dưới đây **không đ
 function can(actor, action, object): boolean {
   const [type, verb] = action.split('.')            // "review.send" → ["review","send"]
 
-  // 1. Máy: chỉ được nháp/đề xuất/tự chạy. Chặn trước mọi thứ khác.
+  // 1. Máy: đọc được để làm việc, nhưng ghi thì chỉ nháp/đề xuất/tự chạy.
+  //    (Sửa 2026-09 lúc cài đặt: bản đầu quên `view`, job chấm sẽ không đọc nổi
+  //    chính bài nó phải chấm.)
   if (actor.role === 'system')
-    return verb === 'draft' || verb === 'propose' || verb.startsWith('auto:')
+    return verb === 'view' || verb === 'draft' || verb === 'propose'
+        || verb.startsWith('auto:')
 
   // 2. Khác tên miền → không bàn thêm.
   if (object.tenantId !== actor.tenantId) return false
@@ -163,13 +166,26 @@ function can(actor, action, object): boolean {
 | `own` | `view`, `create`, `update` — **chỉ khi** `object.ownerId === actor.accountId` |
 | `propose` | `view` + `draft`, `propose` — chạm lớp 3, **không bao giờ** lớp 1 |
 | `full` | tất cả, trừ `SEND_ACTIONS` nếu không phải owner |
-| `auto` | chỉ `system`: `auto:*` |
+| `auto` | "Tự làm": `view`, `draft`, `propose`, `create`, `update`, `approve`, `reject`, `auto:*` |
+
+Lưu ý `auto` **không** phải mức riêng của `system`. `permissions.json` liệt kê nó trong
+`assistant_grantable_levels`, và bốn mức cô cấp được cho trợ giảng — Không · Chỉ xem ·
+Đề xuất · Tự làm — ánh xạ đúng vào `none` · `read` · `propose` · `auto`.
+Vẫn không vượt được trần cứng (cửa 5) và `SEND_ACTIONS` (cửa 4).
 
 `propose` **không** bao hàm `own`: trợ giảng mức "Đề xuất" không sửa được bài đăng của chính mình
 trên bảng tin nếu `post` cấp `propose`. Cấp `own` nếu muốn thế.
 
 ### RLS phản chiếu, không thay thế
 DB chỉ mirror nhánh `read` của hàm trên. Mọi `write` đi qua server. RLS là lưới thứ hai, không phải lưới duy nhất.
+
+**Chính sách hỏi sang bảng khác thì phải đi qua hàm `security definer`.**
+Chính sách của `tenants` cần biết người này có phải thành viên không → hỏi `memberships`;
+chính sách của `memberships` cần biết người này có phải chủ không → hỏi `tenants`. Hai chính
+sách gọi thẳng nhau thành vòng tròn và Postgres ném `infinite recursion detected in policy`.
+Bọc mỗi câu hỏi đó vào một hàm `stable security definer set search_path = public, pg_temp`
+(xem `app.is_active_member`, `app.is_tenant_owner`): hàm chạy dưới quyền chủ schema nên truy vấn
+bên trong không kích hoạt RLS, vòng tròn đứt. Ghim `search_path` để không ai chèn bảng giả cùng tên.
 
 ---
 
