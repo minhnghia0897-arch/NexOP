@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  cheSoDienThoai,
   chuanHoaSoDienThoai,
   cungMotSo,
   danDanhSachHocVien,
@@ -117,5 +118,21 @@ describe('dán danh sách học viên', () => {
       'Trần Thu Hà\t01634567890\nThu Hà\t0334567890',
     )
     expect(hopLe).toHaveLength(1)
+  })
+})
+
+describe('che số trên màn lời mời', () => {
+  it('đúng dạng bản mẫu đã duyệt', () => {
+    expect(cheSoDienThoai('+84901234567')).toBe('0901 ••• 567')
+  })
+
+  it('che 3 chữ số giữa — đủ để em nhận ra số mình', () => {
+    const che = cheSoDienThoai('+84901234567')
+    expect(che.replace(/\D/g, '')).toHaveLength(7)
+    expect(che).toContain('•••')
+  })
+
+  it('số hỏng thì không lộ gì', () => {
+    expect(cheSoDienThoai('linh tinh')).toBe('•••')
   })
 })

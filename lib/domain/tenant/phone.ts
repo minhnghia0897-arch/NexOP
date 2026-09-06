@@ -143,3 +143,16 @@ export function danDanhSachHocVien(text: string): KetQuaDan {
 
   return { hopLe, hong }
 }
+
+/**
+ * Che giữa số: `+84901234567` → `0901 ••• 567`. Dạng lấy từ bản mẫu đã duyệt.
+ *
+ * Dùng ở màn lời mời, để em nhận ra số của mình và biết link gửi đúng người.
+ * Che 3 trên 10 chữ số là đủ cho việc nhận ra, không phải để giấu số — ai cầm được
+ * link thì đã cầm được link rồi; cửa thật là bước nhập đủ số và khớp với số cô lưu.
+ */
+export function cheSoDienThoai(chuan: string): string {
+  const digits = chuan.replace(/\D/g, '').replace(/^84/, '')
+  if (digits.length !== 9) return '•••'
+  return `0${digits.slice(0, 3)} ••• ${digits.slice(-3)}`
+}
