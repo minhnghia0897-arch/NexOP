@@ -7,3 +7,26 @@
 5. `docs/permissions.json` là nguồn duy nhất cho `lib/auth/can.ts` và test quyền.
 
 Thứ tự dựng khuyến nghị: Tenant/Auth (§6) → Class + Membership → Exam + OCR → Assignment/Submission → Draft/Review → Profile → Growth. Events và `can()` từ ngày đầu.
+
+## Xem bản mẫu
+
+`index.html` ở gốc là khung xem 3 bản mẫu đã duyệt — chuyển qua lại giữa vai giáo viên,
+học viên và luồng đăng nhập, có nút xem ở bề ngang 375px cho màn học viên.
+
+```
+python3 -m http.server    # rồi mở http://localhost:8000
+```
+
+Mở thẳng `index.html` bằng file:// cũng chạy trên phần lớn trình duyệt; nếu trình duyệt
+chặn nhúng file cục bộ thì khung sẽ chỉ đường sang nút "Mở riêng".
+
+## Cấu trúc
+
+```
+CLAUDE.md              luật cứng, Claude Code đọc tự động
+index.html             khung xem bản mẫu
+docs/                  SRS · ARCHITECTURE · DECISIONS · OPERATIONS · PLAN · permissions.json
+design/tokens.css      nguồn màu/chữ duy nhất
+design/DESIGN.md       token, bố cục, thành phần
+design/_reference/     3 bản mẫu đã duyệt — khi mâu thuẫn với DESIGN.md, bản mẫu thắng
+```
