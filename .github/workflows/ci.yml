@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Đúng ba việc CLAUDE.md bắt phải xanh trước khi báo xong.
+      # check-tokens chạy trong `pnpm lint`: không hex nào ngoài design/tokens.css.
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      # Build cuối: bắt lỗi chỉ lộ ra khi dựng thật, không lộ lúc typecheck.
+      - run: pnpm build

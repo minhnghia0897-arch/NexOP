@@ -8,6 +8,27 @@
 
 Thứ tự dựng khuyến nghị: Tenant/Auth (§6) → Class + Membership → Exam + OCR → Assignment/Submission → Draft/Review → Profile → Growth. Events và `can()` từ ngày đầu.
 
+## Chạy app
+
+```bash
+pnpm install
+cp .env.example .env.local     # điền khóa Supabase khi đã có project
+pnpm dev                       # http://localhost:3000
+```
+
+| Lệnh | Việc |
+|---|---|
+| `pnpm dev` | máy chủ phát triển |
+| `pnpm build` | dựng bản production |
+| `pnpm lint` | ESLint + canh không có hex ngoài `design/tokens.css` |
+| `pnpm typecheck` | `tsc --noEmit`, TypeScript strict |
+| `pnpm test` | Vitest |
+| `pnpm db:migrate` | `supabase db push` — cần Supabase CLI cài sẵn |
+
+CI chạy `lint → typecheck → test → build` cho mọi pull request.
+App chưa nối Supabase: `.env.local` thiếu khóa thì trang tĩnh vẫn chạy, chỉ hỏng khi
+có màn nào thật sự gọi DB.
+
 ## Xem bản mẫu
 
 `index.html` ở gốc là khung xem 3 bản mẫu đã duyệt — chuyển qua lại giữa vai giáo viên,
