@@ -139,6 +139,7 @@ DEMOS.forEach(d => {
 
 function show(id){
   current = DEMOS.find(d => d.id === id) || DEMOS[0];
+  watchLoad();
   view.src = current.file;
   note.innerHTML = current.note;
   open.href = current.file;
@@ -157,12 +158,25 @@ function setWidth(w){
 
 document.querySelectorAll('.dev').forEach(b => b.onclick = () => setWidth(b.dataset.w));
 
-// file:// có thể chặn nhúng — hiện lối thoát thay vì khung trắng
-view.addEventListener('load', () => { fallback.style.display = 'none'; });
-setTimeout(() => {
-  try { if (!view.contentDocument || !view.contentDocument.body.childElementCount) throw 0; }
-  catch(e){ fallback.style.display = 'block'; }
-}, 1200);
+// file:// ở vài trình duyệt chặn nhúng — chỉ hiện lối thoát khi iframe thật sự không tải được.
+// Không dò bằng contentDocument: mở bằng file:// thì Chrome chặn đọc chéo origin dù khung vẫn hiện.
+let loaded = false, timer = null;
+view.addEventListener('load', () => {
+  loaded = true;
+  fallback.style.display = 'none';
+  view.style.display = 'block';
+});
+function watchLoad(){
+  loaded = false;
+  fallback.style.display = 'none';
+  view.style.display = 'block';
+  clearTimeout(timer);
+  timer = setTimeout(() => {
+    if (loaded) return;
+    view.style.display = 'none';
+    fallback.style.display = 'block';
+  }, 3000);
+}
 
 show((location.hash || '').slice(1) || DEMOS[0].id);
 </script>
