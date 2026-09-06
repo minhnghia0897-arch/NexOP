@@ -21,11 +21,13 @@ Kế hoạch này **không đổi** quyết định nào trong `DECISIONS.md`. M
 
 **Chưa có:** toàn bộ code. Không `package.json`, không `app/`, không migration, không test.
 
-**Ba việc dọn dẹp trước khi gõ dòng code đầu tiên:**
-1. Tài liệu nằm phẳng ở gốc, nhưng `CLAUDE.md` trỏ tới `docs/SRS.md`, `design/tokens.css`,
-   `design/_reference/*.html`. Phải chuyển đúng vị trí, nếu không mọi tham chiếu trong `CLAUDE.md` đều hỏng.
-2. `CLAUDE (3).md` trùng byte-với-byte `CLAUDE.md` → xóa.
-3. Kho tên `NexOP`, sản phẩm tên `OBLUE` — thống nhất hoặc ghi rõ vì sao khác.
+**Dọn dẹp — đã làm:**
+1. ✅ Chuyển tài liệu về `docs/` và `design/` cho khớp đường dẫn `CLAUDE.md` trỏ tới.
+2. ✅ Xóa `CLAUDE (3).md` (trùng byte-với-byte `CLAUDE.md`).
+3. ⬜ Kho tên `NexOP`, sản phẩm tên `OBLUE` — thống nhất hoặc ghi rõ vì sao khác.
+
+**Khung xem bản mẫu — đã làm.** `index.html` ở gốc: chuyển qua lại 3 bản mẫu, có chế độ 375px cho màn học viên.
+Tĩnh, không phụ thuộc gì, chỉ để trình bày trước khi có code thật. Sẽ bỏ khi chặng 3 dựng xong màn thật.
 
 ---
 
