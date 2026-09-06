@@ -29,6 +29,32 @@
   --color-st-indigo: var(--st-indigo);
   --color-st-purple: var(--st-purple);
 
+  /* Sắc độ trạng thái: nền mềm + viền + chữ đậm, cho `tag`, `pm`, `pn`, `opt`. */
+  --color-st-green-soft: var(--st-green-soft);
+  --color-st-green-line: var(--st-green-line);
+  --color-st-green-deep: var(--st-green-deep);
+  --color-st-orange-soft: var(--st-orange-soft);
+  --color-st-orange-line: var(--st-orange-line);
+  --color-st-orange-deep: var(--st-orange-deep);
+  --color-st-red-soft: var(--st-red-soft);
+  --color-st-red-line: var(--st-red-line);
+  --color-st-purple-soft: var(--st-purple-soft);
+  --color-st-purple-deep: var(--st-purple-deep);
+  --color-st-blue-soft: var(--st-blue-soft);
+  --color-st-blue-line: var(--st-blue-line);
+  --color-st-yellow-soft: var(--st-yellow-soft);
+  --color-st-yellow-line: var(--st-yellow-line);
+  --color-st-yellow-deep: var(--st-yellow-deep);
+
+  --color-callout-green: var(--callout-green);
+  --color-callout-orange: var(--callout-orange);
+  --color-ta-text: var(--ta-text);
+
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-late: var(--surface-late);
+  --color-surface-due: var(--surface-due);
+
   --radius-s: var(--r-s);
   --radius-m: var(--r-m);
   --radius-l: var(--r-l);

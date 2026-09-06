@@ -12,5 +12,38 @@
   --r-s:4px;--r-m:8px;--r-l:16px;--r-box:10px;--r-art:26px;--r-pill:20px;--r-full:50%;
   --sh-s:0 6px 20px rgba(0,0,0,.08);--sh-prompt:0 10px 34px rgba(90,90,190,.14);
   --rail:104px;--panel:260px;--topbar:56px;--content-max:1180px;
+
+  /* ── Sắc độ của bảng trạng thái ──
+     Rà bản mẫu đã duyệt thấy 32 màu chưa có tên ở đây. Chúng không phải màu mới:
+     mỗi màu trạng thái thực ra dùng thành bộ ba — nền mềm, viền, và chữ đủ đậm để
+     đọc trên nền mềm đó. Đúng thành phần `tag` trong design/DESIGN.md ("nhãn nền
+     nhạt chữ đậm"). Giá trị lấy nguyên từ bản mẫu, không nắn lại. */
+  --st-green-soft:#e3f9ef;--st-green-line:#c9f0dd;--st-green-deep:#00925a;
+  --st-orange-soft:#fff2e0;--st-orange-line:#ffe2b8;--st-orange-deep:#d87f16;
+  --st-red-soft:#fdeaed;--st-red-line:#f6cfd6;
+  --st-purple-soft:#f3e8fb;--st-purple-deep:#7b3fb0;
+  --st-blue-soft:#f3f8ff;--st-blue-line:#b6d9ff;
+  --st-yellow-soft:#fff9e6;--st-yellow-line:#ffe8a3;--st-yellow-deep:#b26a00;
+
+  /* Nền hộp "vì sao" (.ctx) — nhạt hơn nền nhãn một bậc, vì trải trên cả khối. */
+  --callout-green:#f4fdf8;--callout-orange:#fff9f0;
+
+  /* Dải cam vai trợ giảng: chữ phải đủ tương phản trên nền cam nhạt. */
+  --ta-text:#8a4b00;
+
+  /* Nền gần trắng, phân tầng bề mặt mà không kẻ thêm đường. */
+  --surface-2:#fbfbfd;   /* header bảng, ma trận điểm, chân ngăn kéo */
+  --surface-3:#fcfcfd;   /* ghi chú */
+  --surface-late:#fff7f8;/* ô nộp muộn */
+  --surface-due:#fffafb; /* việc quá hạn */
+  --canvas-a:#fbfbff;--canvas-b:#f2f4ff; /* hai vệt lavender của canvas */
+
+  /* Avatar: cặp đầu–cuối của gradient, phân biệt người bằng màu chứ không bằng emoji. */
+  --av-orange-a:#ffd9a8;--av-orange-b:#f0913e;
+  --av-blue-a:#b6d9ff;--av-blue-b:#6b8fe0;
+  --av-green-a:#b7f3d8;--av-green-b:#2eb67d;
+  --av-purple-a:#d9c9ff;
+  --av-off-a:#dfe1e8;--av-off-b:#c2c5d0;
+
   --t-fast:.1s ease;--t-mid:.12s ease;--t-slow:.15s ease;
 }
