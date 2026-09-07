@@ -15,9 +15,10 @@ trong khi học viên nhận nhận xét theo đúng cách cô chấm và bài l
 
 Không có vai "admin nền tảng" nhìn nội dung bài; vận hành nền tảng chỉ thấy sự kiện hệ thống.
 
-Có đúng một việc admin nền tảng làm: **duyệt tên miền mới** (và khoá tên miền vi phạm). Tầm nhìn
-của vai đó là danh sách `subdomain · chủ · trạng thái`, không hơn — không lớp, không đề, không bài
-nộp, không nhật ký lớp học. Chốt 2026-09-07; xem `DECISIONS.md` và `LOGIC.md` §1.0.
+Có đúng một việc admin nền tảng làm: **khoá tên miền vi phạm** (và gỡ khoá). Tên miền mới **tự
+duyệt** khi đăng ký — cô không phải chờ ai. Tầm nhìn của vai đó là danh sách `subdomain · chủ ·
+trạng thái`, không hơn — không lớp, không đề, không bài nộp, không nhật ký lớp học.
+Chốt 2026-09-07; xem `DECISIONS.md` và `LOGIC.md` §1.0.
 
 ## 3. Thực thể chính
 Giáo viên → **Lớp** (gắn lộ trình) → Thành viên lớp (học viên/trợ giảng) · **Bài giao** (= Đề + Lớp + hạn + cách chấm) → **Bài nộp** (1/học viên) → Nhận xét + band.

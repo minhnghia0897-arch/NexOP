@@ -172,18 +172,22 @@ lộ ra ở hoá đơn cuối tháng. Đúng loại lỗi mà cả hai tài li�
 
 | Bản cũ có | Chốt | Đã làm |
 |---|---|---|
-| `super_admin` duyệt trung tâm mới | **Admin duyệt** — nhưng chỉ duyệt tên miền, không nhìn nội dung | ✅ migration 0008–0009, 27 test |
+| `super_admin` duyệt trung tâm mới | **Tự duyệt khi đăng ký**; admin giữ van khoá, không giữ cổng | ✅ migration 0008–0010, 26 test |
 | Lịch + xuất ICS | **Hoãn** — hạn nộp đã có ở bảng tin lớp; lịch buổi để sau | ⬜ chưa xếp chặng |
 | Khoá học tách khỏi lớp (`courses`) | **Giữ `paths`** — trọng tâm là lớp, không phải nội dung đóng gói | ✅ không đổi gì |
 
 Lý do đầy đủ của cả ba nằm ở `DECISIONS.md`, mục 2026-09-07.
 
-Riêng chuyện admin: điều làm nó không mâu thuẫn với `SRS` §2 là quyền của vai này hẹp **bằng cấu
-trúc**, không bằng lời hứa. Admin không có mức nào trong `permissions.json`, và mọi chính sách đọc
+Riêng chuyện admin: chốt đầu là "admin duyệt", chốt sau cùng ngày là **tự duyệt** — vì hỏi tiếp
+"ai trực hàng chờ" thì câu trả lời là chưa có ai, và hàng chờ không người trực là cô ngồi đợi rồi bỏ
+đi. Đổi đúng mặc định; toàn bộ cửa chặn ở dưới giữ nguyên, và `pending` vẫn kín, vẫn có test.
+
+Điều làm vai admin không mâu thuẫn với `SRS` §2 là quyền của nó hẹp **bằng cấu trúc**, không bằng
+lời hứa. Admin không có mức nào trong `permissions.json`, và mọi chính sách đọc
 nội dung đều đi qua `memberships` hoặc `owner_account_id` — nên một admin đọc rỗng ngay cả khi tự
 cấp quyền admin cho chính mình. Có test đúng cho câu đó.
 
-Và điều làm nó có răng là chỗ đặt cửa chặn. Vết sẹo số 3 của bản đang chạy: *"Tài khoản chờ duyệt
+Và điều làm cái van có răng là chỗ đặt cửa chặn. Vết sẹo số 3 của bản đang chạy: *"Tài khoản chờ duyệt
 phải bị đăng xuất ngay, không chỉ ẩn giao diện."* Nên tên miền chưa duyệt bị chặn ở hai cửa, cả hai
 đều trong CSDL: đọc thì bốn hàm trợ giúp RLS đòi `status = 'active'`; ghi thì `app.record_event` từ
 chối — và không ghi được sự kiện thì theo luật cứng, hành vi không xảy ra. Vá ở `record_event` chứ
