@@ -103,3 +103,18 @@ Lý do: bản cũ tách `courses` khỏi lớp vì trọng tâm của nó là **
 hoạch buổi cho lớp đang chạy. `paths` là kế hoạch buổi; `courses` là nội dung đóng gói. Thêm cả hai
 là hai thứ gần giống nhau mà không ai biết nên đặt bài vào đâu.
 Đánh đổi: bán khoá học đóng gói (tự học, không có lớp) thì phải dựng thêm — chưa nằm trong `SRS`.
+
+### 2026-09-07 (chiều) · Tên miền tự duyệt; admin giữ van khoá, không giữ cổng
+Đổi mặc định của mục "admin duyệt" phía trên, sau khi hỏi tiếp "ai trực hàng chờ". Câu trả lời là
+chưa có ai. Một hàng chờ không người trực thì không phải cửa an toàn — nó là cô đăng ký xong ngồi
+đợi vô hạn rồi bỏ đi, và bỏ đi ở đúng phút cô còn hào hứng nhất.
+Đổi đúng một thứ: mặc định. Toàn bộ phần đắt của mục trên giữ nguyên — ba trạng thái, hai cửa chặn,
+lệnh khoá kèm lý do có hiệu lực tức thì với mọi người đang đăng nhập. Mất một người gác cổng, còn
+lại một cái van đóng được bất cứ lúc nào. Với sản phẩm chưa có người trực, van đáng hơn cổng.
+Tự duyệt vẫn là một hành vi nên vẫn vào nhật ký, và vai của nó là `system` — mà `ARCHITECTURE` §4
+chỉ cho máy sinh `draft`/`propose`/`auto:*`, nên nó tên là `tenant.auto:approve`. Nhờ vậy phân biệt
+được hai loại bút phê không cần thêm cột: admin ký có `approved_by`, máy duyệt thì không.
+Đánh đổi thật, không giấu: ai cũng mở được một tên miền. Chống lạm dụng lùi về phát hiện (khoá) chứ
+không còn là phòng ngừa (duyệt). Chấp nhận được ở giai đoạn này vì tên miền rỗng không hại ai và
+`suspend_tenant` là một câu lệnh. Đông người thì bật lại hàng chờ — chỗ phải sửa là **một dòng**
+trong `app.register_tenant`, cửa chặn đã kín sẵn và đã có test cho trạng thái `pending`.

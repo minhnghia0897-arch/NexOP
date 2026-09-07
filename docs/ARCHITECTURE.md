@@ -22,8 +22,9 @@ Kiểm tra quyền ở middleware/`can()`, không ở component.
 ```
 accounts        id, phone, email, name                       ← toàn cục, 1 người = 1 dòng
 tenants         id, subdomain, owner_account_id, status(pending|active|suspended),
-                approved_at?, approved_by?, status_reason?   ← chưa duyệt thì đọc rỗng, ghi hỏng
-platform_admins account_id                                   ← chỉ duyệt/khoá tên miền, không thấy nội dung
+                approved_at?, approved_by?, status_reason?   ← không `active` thì đọc rỗng, ghi hỏng
+                                                             (approved_by trống = máy tự duyệt)
+platform_admins account_id                                   ← chỉ khoá/gỡ khoá tên miền, không thấy nội dung
 memberships     id, account_id, tenant_id, class_id?, role(owner|assistant|student|parent),
                 permissions jsonb, status(pending|active|left), invite_token?, invited_phone?
 classes         id, tenant_id, name, schedule, capacity, path_id, status

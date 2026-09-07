@@ -13,16 +13,25 @@ Mọi trạng thái dưới đây là **suy ra được** từ cột trong bản
 
 ### 1.0 tenant — tên miền
 ```
-(cô đăng ký) → pending ──admin duyệt──→ active ──admin khoá (kèm lý do)──→ suspended
-                                          ↑                                    │
-                                          └──────────admin duyệt lại───────────┘
+(cô đăng ký) → pending ──máy tự duyệt──→ active ──admin khoá (kèm lý do)──→ suspended
+                   ↑                       ↑                                    │
+            (không còn đường               └──────────admin duyệt lại───────────┘
+             nào đi vào đây)
 ```
 | Chuyển | Ai | Sự kiện | Ghi chú |
 |---|---|---|---|
-| → `pending` | owner | `tenant.create` | `app.register_tenant`; cô có ngay tư cách `owner`, nhưng tư cách đó chưa mở gì |
-| `pending` → `active` | admin | `tenant.approve` | ghi `approved_at` + `approved_by`; thiếu là ràng buộc chặn |
+| → `pending` | owner | `tenant.create` | `app.register_tenant`; trạng thái này chỉ tồn tại trong một khoảnh khắc của hàm |
+| `pending` → `active` | system | `tenant.auto:approve` | tự duyệt; `approved_at` có, `approved_by` **để trống** — không ai ký |
+| `pending` → `active` | admin | `tenant.approve` | duyệt tay; ghi cả `approved_by`. Từ 0010 chủ yếu dùng để **gỡ khoá** |
 | `active` → `suspended` | admin | `tenant.suspend` | **bắt buộc** có lý do, cô đọc được |
-| `suspended` → `active` | admin | `tenant.approve` | cùng một hàm; duyệt lại một tên miền đang chạy trả `false`, không ghi sự kiện thừa |
+| `suspended` → `active` | admin | `tenant.approve` | duyệt lại một tên miền đang chạy trả `false`, không ghi sự kiện thừa |
+
+Vai của lần tự duyệt là `system`, mà `ARCHITECTURE` §4 chỉ cho máy sinh `draft`/`propose`/`auto:*` —
+nên nó tên `tenant.auto:approve`, không phải `tenant.approve`. Ràng buộc ở 0001 tự ép: đặt tên sai
+thì migration không chạy nổi. Và nhờ vậy nhật ký phân biệt được hai loại bút phê mà không thêm cột.
+
+`pending` **vẫn là trạng thái hợp lệ và vẫn bị chặn đủ**, chỉ là không còn đường nào đi vào đó khi
+đăng ký. Bật lại hàng chờ là sửa một dòng trong `app.register_tenant`; cửa đã kín sẵn, có test.
 
 `status <> 'active'` chặn ở **hai cửa, cả hai trong CSDL**:
 
