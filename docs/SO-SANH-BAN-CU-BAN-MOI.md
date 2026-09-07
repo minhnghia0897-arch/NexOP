@@ -153,7 +153,7 @@ Câu hỏi "bản nào tốt hơn" đặt sai. Hai bản mạnh ở hai chỗ kh
 - **Vết sẹo bản cũ đáng giá hơn mọi đặc tả.** 15 dòng ở §12 là 15 lần hỏng thật.
 
 **Phương án: giữ nguyên kiến trúc bản mới, nhập bốn vết sẹo ở §3 vào trước khi dựng
-chặng 5.** Không phải chép tính năng — chép *bài học*.
+chặng 5.** Không phải chép tính năng — chép *bài học*. Cả bốn đã nhập xong (0007, 0011, 0012).
 
 Lý do phải làm ngay, không để sau: cả bốn đều là chỗ **hỏng mà không báo lỗi**. Bài giao
 đổi dưới chân học viên không ném exception. OTP bị dò không ai biết. Vượt ngân sách AI chỉ
@@ -165,8 +165,8 @@ lộ ra ở hoá đơn cuối tháng. Đúng loại lỗi mà cả hai tài li�
 |---|---|---|---|
 | 1 | Bài giao là ảnh chụp + lan truyền có điều kiện | Chặng 5 dựng ngay bây giờ; làm sai thì phải gỡ cả bảng | ✅ làm trong PR này |
 | 2 | Giới hạn tần suất đếm trong CSDL | Không mật khẩu, OTP là cánh cửa duy nhất, và đang không khoá | ✅ làm trong PR này |
-| 3 | Hạn mức trên tenant, kiểm trước khi gọi AI | Cần trước khi nối AI thật (chặng 4 phần OCR) | ⬜ chặng 4 |
-| 4 | Cache số hoá dùng chung theo băm tệp | Cần trước khi nối AI thật | ⬜ chặng 4 |
+| 3 | Hạn mức trên tenant, kiểm trước khi gọi AI | Cần trước khi nối AI thật (chặng 4 phần OCR) | ✅ migration 0011 |
+| 4 | Cache số hoá dùng chung theo băm tệp | Cần trước khi nối AI thật | ✅ migration 0012 |
 
 ### Ba chỗ bản cũ có mà bản mới cố ý bỏ — đã chốt 2026-09-07
 
