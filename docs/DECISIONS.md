@@ -57,3 +57,20 @@ Lý do: nỗi sợ lớn nhất của giáo viên là mất học viên vào tay
 ### 2026-09 · Be Vietnam Pro + Inter; token từ monday work-surface
 Lý do: dấu tiếng Việt đúng; Inter sắc ở 12–14px và số thẳng cột; ngôn ngữ thị giác monday đã duyệt tháng 8.
 Đánh đổi: bỏ Figtree/Poppins (Poppins không có bộ tiếng Việt).
+
+### 2026-09 · Bài đã giao là ảnh chụp câu hỏi, lan truyền chỉ khi chưa ai nộp
+Lý do: `ARCHITECTURE` §2 ban đầu để `assignments.exam_id` là liên kết sống — cô sửa đề lúc lớp
+đang làm là đổi câu hỏi dưới chân em. Bản OBLUE đang chạy đông cứng đề khi giao, và đã trả giá
+bằng nửa còn lại: cô thêm đoạn văn đọc hiểu, lưu, học viên không thấy — vì đang đọc ảnh chụp cũ.
+Cô không nghĩ mình sửa "bản gốc"; cô nghĩ mình sửa "cái đề".
+Đánh đổi: câu hỏi lưu hai nơi (ngân hàng và bài giao), tốn chỗ và phải giữ đồng bộ có kiểm soát.
+Khác bản cũ: bản cũ lan truyền xuống mọi bài giao khớp đề. Ở đây chỉ lan xuống bài **chưa ai nộp** —
+lan xuống bài đã có người nộp là đổi đề sau lưng người đã làm xong, điểm tính trên một bộ câu hỏi
+không còn tồn tại. Bài đã có người nộp thì giữ nguyên và báo cô, để cô quyết giao lại thành lần 2.
+
+### 2026-09 · Giới hạn tần suất đếm trong CSDL, không đếm ở trình duyệt
+Lý do: không có mật khẩu, nên OTP 6 chữ số là toàn bộ cánh cửa. `otp.ts` khai báo tối đa 5 lần thử
+nhưng không chỗ nào ép — hằng số không có răng. Bản đang chạy đếm trong CSDL đúng vì lý do này:
+đếm ở trình duyệt thì mở nhiều tab là lách được. Bản cũ vẫn đếm lần đăng nhập trong sessionStorage
+và tự nhận đó là chỗ yếu.
+Đánh đổi: mỗi lần thử tốn một lượt ghi; chấp nhận, vì đây là cửa vào.

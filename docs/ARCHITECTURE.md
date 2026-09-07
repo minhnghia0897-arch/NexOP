@@ -29,7 +29,8 @@ paths           id, tenant_id, name, sessions jsonb[{no, content, homework, exam
 exams           id, tenant_id, name, skill, level, tags[], duration, grading(auto|draft|manual), ocr_confidence
 questions       id, exam_id, no, type, text, options jsonb, answer, explanation, passage_id?, warning?
 passages        id, exam_id, text, range
-assignments     id, class_id, exam_id, due_at, grading, weight, published_at, attempt_no
+assignments     id, tenant_id, class_id, exam_id?, questions jsonb, due_at, grading, weight,
+                published_at, attempt_no        ← questions là ẢNH CHỤP lúc giao, xem DECISIONS 2026-09
 submissions     id, assignment_id, student_id, content, words, duration_s, submitted_at, late bool
 drafts          id, submission_id, band_by_criterion jsonb, errors jsonb, feedback_text,
                 confidence, flags[], by(system|assistant), expires_at                 ← lớp 3
@@ -45,6 +46,7 @@ attendance      id, class_id, session_no, student_id, present
 events          id, tenant_id, class_id?, actor_id, actor_role, action, object_type, object_id,
                 payload jsonb, visibility[], at                                          ← lớp 1
 teacher_edits   id, tenant_id, draft_id, review_id, diff jsonb                            ← nguyên liệu học giọng cô
+rate_limit_events id, key, at                   ← đếm lần thử trong CSDL, không ở trình duyệt
 ```
 
 ## 3. Ba lớp dữ liệu
