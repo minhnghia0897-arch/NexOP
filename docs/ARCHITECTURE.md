@@ -25,6 +25,10 @@ tenants         id, subdomain, owner_account_id, status(pending|active|suspended
                 approved_at?, approved_by?, status_reason?   ← không `active` thì đọc rỗng, ghi hỏng
                                                              (approved_by trống = máy tự duyệt)
 platform_admins account_id                                   ← chỉ khoá/gỡ khoá tên miền, không thấy nội dung
+ai_usage        id, tenant_id, task(digitize|grade|profile|suggest), est_cost_vnd,
+                actual_cost_vnd?, allowed, cache_hit, at    ← sổ tiền AI, chỉ quyết toán một lần
+digitize_cache  (file_sha256, model, prompt_version) → result jsonb
+                                                             ← KHÔNG có tenant_id, cố ý: xem DECISIONS
 memberships     id, account_id, tenant_id, class_id?, role(owner|assistant|student|parent),
                 permissions jsonb, status(pending|active|left), invite_token?, invited_phone?
 classes         id, tenant_id, name, schedule, capacity, path_id, status

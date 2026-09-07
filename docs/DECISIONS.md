@@ -118,3 +118,29 @@ chỉ cho máy sinh `draft`/`propose`/`auto:*`, nên nó tên là `tenant.auto:a
 không còn là phòng ngừa (duyệt). Chấp nhận được ở giai đoạn này vì tên miền rỗng không hại ai và
 `suspend_tenant` là một câu lệnh. Đông người thì bật lại hàng chờ — chỗ phải sửa là **một dòng**
 trong `app.register_tenant`, cửa chặn đã kín sẵn và đã có test cho trạng thái `pending`.
+
+### 2026-09-07 · Hạn mức AI đếm trong CSDL, trần theo số học viên hoạt động
+Lý do: `PLAN.md` §5 đặt ngân sách ≤3.000đ/học viên/tháng nhưng không có gì ép — con số trong tài
+liệu không chặn được ai, cùng lỗi với `OTP_SO_LAN_THU_TOI_DA`. Vết sẹo số 8 của bản đang chạy:
+*"Vượt gói vẫn tiêu tiền API"* — không exception, không cảnh báo, chỉ hoá đơn cuối tháng.
+Trần theo **học viên hoạt động** chứ không theo ghế, để khớp với cách tính phí đã chốt: cô nhiều
+học viên được tiêu nhiều hơn vì cô cũng trả nhiều hơn. Có **sàn 50.000đ/tháng** vì công thức thuần
+tuý phá đúng người mình muốn giữ — cô mới, 3 học viên, được 9.000đ, không đủ số hoá một quyển đề.
+Xin phép trước, quyết toán sau: ngân sách tính trên `coalesce(chi phí thật, ước tính)`, nếu không
+thì hai chục yêu cầu song song đều thấy ngân sách còn nguyên và cùng đi qua. Khoá tư vấn theo
+tenant để "đọc rồi ghi" là một khối. Lần bị chặn vẫn ghi lại (chi phí 0) và vẫn sinh sự kiện cô
+đọc được — hết hạn mức mà máy im lặng thì cô tưởng hệ thống hỏng, mất niềm tin chứ không mất tiền.
+Đánh đổi: mỗi lần gọi AI tốn thêm hai lượt ghi và một khoá ngắn theo tenant.
+
+### 2026-09-07 · Cache số hoá dùng chung liên tenant, khoá là (băm tệp, model, phiên bản prompt)
+Lý do: thị trường luyện thi Việt Nam dạy chung mấy bộ Cambridge/ETS/Oxford, nên tỉ lệ trúng rất
+cao và đây là cách rẻ nhất giữ ngân sách ở trên. Bản đang chạy đã làm và đúng.
+Ngoại lệ có chủ ý với luật "mọi query lọc theo `tenant_id`": bảng này không có `tenant_id`. Không
+phải rò rỉ, vì khoá là băm nội dung tệp — đọc được một dòng đòi hỏi đã cầm sẵn đúng tệp đó, mà có
+tệp thì đã có nội dung. Lưu là kết quả bóc, không có tên học viên, điểm hay nhận xét. Không chính
+sách RLS nào; chỉ máy chủ đọc.
+Model và phiên bản prompt nằm **trong** khoá: thiếu chúng thì nâng cấp model xong vẫn trả bản bóc
+cũ, và cô không hiểu vì sao máy "vẫn đọc sai y như hôm qua".
+Đánh đổi thật, không giấu: **thời gian phản hồi** để lộ việc đã có người số hoá đúng quyển đó
+(trúng cache trả về ngay, trượt mất vài chục giây). Không sửa được ở tầng CSDL. Thấy không chấp
+nhận được thì tầng ứng dụng làm trễ giả, hoặc tách cache theo tenant và chịu chi phí.

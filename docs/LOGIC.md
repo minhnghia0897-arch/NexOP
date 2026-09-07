@@ -291,6 +291,9 @@ Lớp mới chỉ mở khi đủ N người (cô đặt N). Học phí còn lạ
 10. Xoá tenant → không dòng nào của tenant đó còn sót ở bất kỳ bảng nào.
 11. Tên miền `status <> 'active'` → mọi thành viên đọc rỗng và không ghi được sự kiện nào, trừ dòng
     `tenants` của chính chủ. Chặn ở CSDL, không phải ẩn ở giao diện.
+12. Không lần gọi AI nào xảy ra mà không có `ai_usage` xin trước. Vượt trần → `claim_ai_call` trả
+    `NULL`, và `NULL` nghĩa là **không được gọi**.
+13. Trúng cache số hoá thì không tốn ngân sách: tra cache **trước**, xin ngân sách **sau**.
 
 ---
 

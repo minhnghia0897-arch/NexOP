@@ -184,7 +184,14 @@ Ba ràng buộc đáng chú ý, đều chặn kiểu hỏng **không kêu**:
 
 Học viên **không** đọc ngân hàng đề: em thấy đề qua bài giao. Mở ra là lộ cả đề chưa giao.
 
-**Chưa có:** OCR thật (AI điểm 1, cần khoá Anthropic) · wizard tạo đề 4 bước · màn ngân hàng đề.
+**Đã có (migration 0011–0012):** hạn mức AI đếm trong CSDL — trần theo số học viên hoạt động
+(3.000đ/em/tháng, sàn 50.000đ), xin phép trước khi gọi và quyết toán sau, lần bị chặn vẫn ghi
+lại và sinh sự kiện cô đọc được · cache số hoá dùng chung liên tenant, khoá `(băm tệp, model,
+phiên bản prompt)`. 30 test. Hai thứ này phải có **trước** khi nối AI thật, không phải sau —
+vượt ngân sách chỉ lộ ra ở hoá đơn cuối tháng.
+
+**Chưa có:** OCR thật (AI điểm 1, cần khoá Anthropic) · `lib/ai/*` gọi `claim_ai_call` /
+`settle_ai_call` · wizard tạo đề 4 bước · màn ngân hàng đề.
 
 Mô tả gốc:
 `exams · questions · passages` · Storage cho PDF/DOCX/ảnh ≤50MB · `lib/ai/read.ts` (model nhỏ, rẻ).
