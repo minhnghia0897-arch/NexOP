@@ -11,6 +11,34 @@ Mọi trạng thái dưới đây là **suy ra được** từ cột trong bản
 
 ## 1. Vòng đời
 
+### 1.0 tenant — tên miền
+```
+(cô đăng ký) → pending ──admin duyệt──→ active ──admin khoá (kèm lý do)──→ suspended
+                                          ↑                                    │
+                                          └──────────admin duyệt lại───────────┘
+```
+| Chuyển | Ai | Sự kiện | Ghi chú |
+|---|---|---|---|
+| → `pending` | owner | `tenant.create` | `app.register_tenant`; cô có ngay tư cách `owner`, nhưng tư cách đó chưa mở gì |
+| `pending` → `active` | admin | `tenant.approve` | ghi `approved_at` + `approved_by`; thiếu là ràng buộc chặn |
+| `active` → `suspended` | admin | `tenant.suspend` | **bắt buộc** có lý do, cô đọc được |
+| `suspended` → `active` | admin | `tenant.approve` | cùng một hàm; duyệt lại một tên miền đang chạy trả `false`, không ghi sự kiện thừa |
+
+`status <> 'active'` chặn ở **hai cửa, cả hai trong CSDL**:
+
+- **đọc** — `is_active_member` · `is_tenant_owner` · `is_class_member` · `owns_class` · `may_read_exam`
+  đều đòi tên miền đang hoạt động. Mọi chính sách RLS đi qua năm hàm này, nên không có chính sách nào
+  phải nhớ tự kiểm tra.
+- **ghi** — `app.record_event` từ chối ghi cho tên miền không `active`, trừ đúng ba hành vi về chính
+  vòng đời tên miền. Không ghi được sự kiện thì theo luật cứng của `CLAUDE.md`, hành vi không xảy ra.
+  Đặt cửa ở đây chứ không ở từng hàm mutation, vì hàm viết sau sẽ có cái quên.
+
+Chừa đúng một khe: cô luôn đọc được **dòng `tenants` của chính mình**, bất kể trạng thái. Chặn cả
+chỗ đó thì cô đăng ký xong nhìn vào trống trơn, không biết mình đang chờ duyệt hay đã bị từ chối.
+
+Vai `admin` không có mức nào trong `permissions.json` và không nên có: `can()` trả lời "thành viên
+của tên miền này được làm gì bên trong nó", còn admin không phải thành viên của tên miền nào.
+
 ### 1.1 membership — lời mời
 ```
 (cô nhập SĐT) → pending ──SĐT khớp + OTP──→ active ──cô gỡ / em nghỉ──→ left
@@ -252,6 +280,8 @@ Lớp mới chỉ mở khi đủ N người (cô đặt N). Học phí còn lạ
 8. Mọi truy vấn có `tenant_id`; bảng theo lớp có thêm `class_id`.
 9. Không màn nào của `student` chứa dữ liệu của học viên khác.
 10. Xoá tenant → không dòng nào của tenant đó còn sót ở bất kỳ bảng nào.
+11. Tên miền `status <> 'active'` → mọi thành viên đọc rỗng và không ghi được sự kiện nào, trừ dòng
+    `tenants` của chính chủ. Chặn ở CSDL, không phải ẩn ở giao diện.
 
 ---
 

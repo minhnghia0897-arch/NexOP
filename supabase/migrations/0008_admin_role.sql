@@ -1,0 +1,13 @@
+-- 0008 — thêm vai `admin` vào actor_role.
+--
+-- Chỉ có đúng một câu lệnh, và phải nằm một mình trong file này: Postgres không cho
+-- DÙNG một giá trị enum vừa thêm ở cùng transaction đã thêm nó. Migration chạy mỗi
+-- file một transaction, nên 0009 mới viết được `actor_role = 'admin'` trong ràng buộc.
+--
+-- Vì sao có vai này: cô chốt "admin duyệt" tên miền mới
+-- (docs/SO-SANH-BAN-CU-BAN-MOI.md §5). Duyệt là một hành vi, nên nó phải vào events —
+-- và events đòi actor_role. Không có 'admin' thì hoặc ghi sai vai, hoặc không ghi.
+--
+-- Quyền của vai này HẸP và không mở rộng được: xem docs/DECISIONS.md mục 2026-09-07.
+-- SRS §2 vẫn đúng — admin nền tảng không nhìn thấy nội dung bài học.
+alter type actor_role add value 'admin';

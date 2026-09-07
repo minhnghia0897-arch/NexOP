@@ -168,15 +168,26 @@ lộ ra ở hoá đơn cuối tháng. Đúng loại lỗi mà cả hai tài li�
 | 3 | Hạn mức trên tenant, kiểm trước khi gọi AI | Cần trước khi nối AI thật (chặng 4 phần OCR) | ⬜ chặng 4 |
 | 4 | Cache số hoá dùng chung theo băm tệp | Cần trước khi nối AI thật | ⬜ chặng 4 |
 
-### Ba chỗ bản cũ có mà bản mới cố ý bỏ — xác nhận lại
+### Ba chỗ bản cũ có mà bản mới cố ý bỏ — đã chốt 2026-09-07
 
-Không phải thiếu sót, nhưng nên biết mình đang bỏ gì:
-
-| Bản cũ có | Bản mới | Nhận xét |
+| Bản cũ có | Chốt | Đã làm |
 |---|---|---|
-| `super_admin` duyệt trung tâm mới | `SRS` §2: "Không có vai admin nền tảng nhìn nội dung bài" | Nhìn **nội dung** thì đúng là không nên. Nhưng **ai duyệt tên miền mới**? `app/(public)/dang-ky` hiện chưa nói. Cần chốt. |
-| Lịch + xuất ICS | Không có trong `SRS` | Bản mẫu `oblue-platform-demo.html` có mục "Tuần này · lịch dạy + hạn nộp". Cần chốt là bỏ hay hoãn. |
-| Khoá học tách khỏi lớp (`courses`) | `paths` (lộ trình) | Gần tương đương. `paths` thiên về *kế hoạch buổi*, `courses` thiên về *nội dung học*. Với khách hàng là giáo viên đã có lớp, `paths` hợp hơn. |
+| `super_admin` duyệt trung tâm mới | **Admin duyệt** — nhưng chỉ duyệt tên miền, không nhìn nội dung | ✅ migration 0008–0009, 27 test |
+| Lịch + xuất ICS | **Hoãn** — hạn nộp đã có ở bảng tin lớp; lịch buổi để sau | ⬜ chưa xếp chặng |
+| Khoá học tách khỏi lớp (`courses`) | **Giữ `paths`** — trọng tâm là lớp, không phải nội dung đóng gói | ✅ không đổi gì |
+
+Lý do đầy đủ của cả ba nằm ở `DECISIONS.md`, mục 2026-09-07.
+
+Riêng chuyện admin: điều làm nó không mâu thuẫn với `SRS` §2 là quyền của vai này hẹp **bằng cấu
+trúc**, không bằng lời hứa. Admin không có mức nào trong `permissions.json`, và mọi chính sách đọc
+nội dung đều đi qua `memberships` hoặc `owner_account_id` — nên một admin đọc rỗng ngay cả khi tự
+cấp quyền admin cho chính mình. Có test đúng cho câu đó.
+
+Và điều làm nó có răng là chỗ đặt cửa chặn. Vết sẹo số 3 của bản đang chạy: *"Tài khoản chờ duyệt
+phải bị đăng xuất ngay, không chỉ ẩn giao diện."* Nên tên miền chưa duyệt bị chặn ở hai cửa, cả hai
+đều trong CSDL: đọc thì bốn hàm trợ giúp RLS đòi `status = 'active'`; ghi thì `app.record_event` từ
+chối — và không ghi được sự kiện thì theo luật cứng, hành vi không xảy ra. Vá ở `record_event` chứ
+không vá từng hàm mutation, vì hàm viết sau sẽ có cái quên.
 
 ---
 

@@ -63,7 +63,8 @@ maybe('quyền theo lớp trên Postgres thật', () => {
       [CO, CO_KHAC, EM_A, EM_B, TRO_GIANG],
     )
     await db.query(
-      `insert into tenants (id, subdomain, owner_account_id) values ($1,'cothao',$3), ($2,'coanh',$4)`,
+      `insert into tenants (id, subdomain, owner_account_id, status, approved_at) values
+         ($1,'cothao',$3,'active',now()), ($2,'coanh',$4,'active',now())`,
       [TENANT, TENANT_KHAC, CO, CO_KHAC],
     )
     await db.query(

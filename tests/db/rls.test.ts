@@ -56,9 +56,13 @@ maybe('RLS và nhật ký trên Postgres thật', () => {
          ($5, null,                  '+84901000009', 'Người lạ')`,
       [CO, EM, EM_KHAC, TRO_GIANG, NGUOI_LA],
     )
-    await db.query('insert into tenants (id, subdomain, owner_account_id) values ($1, $2, $3)', [
-      TENANT, 'cothao', CO,
-    ])
+    // Tên miền đã được admin duyệt (0009). Chưa duyệt thì đọc rỗng và ghi không được,
+    // nên mọi test bên dưới sẽ đỏ — đó là ý đồ của cửa chặn, không phải phiền toái.
+    await db.query(
+      `insert into tenants (id, subdomain, owner_account_id, status, approved_at)
+       values ($1, $2, $3, 'active', now())`,
+      [TENANT, 'cothao', CO],
+    )
     await db.query(
       `insert into memberships (account_id, tenant_id, role, status) values
          ($1, $5, 'owner',     'active'),

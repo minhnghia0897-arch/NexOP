@@ -74,3 +74,32 @@ nhưng không chỗ nào ép — hằng số không có răng. Bản đang chạ
 đếm ở trình duyệt thì mở nhiều tab là lách được. Bản cũ vẫn đếm lần đăng nhập trong sessionStorage
 và tự nhận đó là chỗ yếu.
 Đánh đổi: mỗi lần thử tốn một lượt ghi; chấp nhận, vì đây là cửa vào.
+
+### 2026-09-07 · Tên miền mới phải qua admin duyệt, và chưa duyệt thì chặn ở CSDL
+Lý do: `SRS` §2 bỏ vai admin nền tảng **nhìn nội dung bài học** — đúng, và giữ nguyên. Nhưng bỏ
+người *duyệt tên miền* thì ai gõ subdomain nào cũng có một trường học chạy thật. Bản OBLUE đang
+chạy có `super_admin` duyệt trung tâm mới; giữ lại phần đó, cắt hết phần còn lại.
+Vai `admin` vì thế hẹp một cách có cấu trúc, không phải bằng thiện chí: nó không có mức nào trong
+`permissions.json` và không nên có — `can()` trả lời "thành viên của tên miền này được làm gì bên
+trong nó", còn admin không phải thành viên của tên miền nào. Mọi chính sách đọc nội dung đều đi qua
+`memberships` hoặc `owner_account_id`, nên admin đọc rỗng kể cả khi tự cấp quyền admin cho mình.
+Chặn ở CSDL chứ không ở giao diện, vì vết sẹo số 3 của bản đang chạy: *"Tài khoản chờ duyệt phải bị
+đăng xuất ngay, không chỉ ẩn giao diện."* Ẩn ở giao diện là vẫn còn khoá vào dữ liệu. Hai cửa:
+đọc — bốn hàm trợ giúp RLS đòi `tenants.status = 'active'`; ghi — `app.record_event` từ chối ghi cho
+tên miền chưa duyệt, mà không ghi được thì theo luật cứng, hành vi không xảy ra.
+Đánh đổi: có một hàng chờ phải có người trực. Đổi lại, khoá một tên miền là một câu lệnh, có hiệu
+lực tức thì với mọi người đang đăng nhập, và luôn kèm lý do cô đọc được.
+
+### 2026-09-07 · Hoãn lịch dạy và xuất ICS
+Lý do: bản mẫu `oblue-platform-demo.html` có mục "Tuần này · lịch dạy + hạn nộp bài" nhưng `SRS`
+không có use case nào cho nó. Hạn nộp bài đã nằm trong `assignments.due_at` và hiện được ở bảng tin
+lớp — phần còn thiếu chỉ là *lịch buổi dạy*, và đó là thứ cô đang quản bằng Google Calendar mà không
+kêu ca. Không bỏ hẳn: xuất ICS là đường một chiều ra ngoài, không kéo theo bảng mới nào.
+Đánh đổi: mục "Tuần này" ở bản mẫu chỉ hiện hạn nộp cho tới khi làm phần lịch.
+
+### 2026-09-07 · Giữ `paths` (lộ trình), không thêm `courses` (khoá học)
+Lý do: bản cũ tách `courses` khỏi lớp vì trọng tâm của nó là **nội dung**. Trọng tâm bản mới là
+**lớp học**, và khách hàng là giáo viên **đã có lớp** — họ không soạn khoá học để bán, họ lên kế
+hoạch buổi cho lớp đang chạy. `paths` là kế hoạch buổi; `courses` là nội dung đóng gói. Thêm cả hai
+là hai thứ gần giống nhau mà không ai biết nên đặt bài vào đâu.
+Đánh đổi: bán khoá học đóng gói (tự học, không có lớp) thì phải dựng thêm — chưa nằm trong `SRS`.
