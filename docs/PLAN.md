@@ -164,7 +164,24 @@ hiệu lực ngay không cần đăng nhập lại.
 **Xong khi:** rời lớp → không đọc được dữ liệu lớp đó ở bất kỳ đường nào (test rò rỉ chéo lớp);
 "Đề xuất" của trợ giảng chỉ sinh `draft`, không bao giờ `send`.
 
-### Chặng 4 — Ngân hàng đề + OCR · ~2 tuần · UC-03, UC-04 · **AI điểm 1**
+### Chặng 4 — Ngân hàng đề + OCR · 🔨 nền dữ liệu xong · UC-03, UC-04 · **AI điểm 1**
+
+**Đã có (migration 0006):** `exams` · `passages` · `questions`, RLS cho cả ba.
+Đề gắn vào tenant chứ không gắn vào lớp — xoá lớp thì đề còn (DECISIONS 2026-09).
+
+Ba ràng buộc đáng chú ý, đều chặn kiểu hỏng **không kêu**:
+- Câu chấm máy được mà thiếu đáp án **phải** mang cảnh báo. Không có luật này, một câu
+  OCR đọc hụt lặng lẽ thành câu không ai chấm — máy bỏ qua vì không có đáp án, cô bỏ
+  qua vì không thấy cảnh báo, em làm xong không bao giờ nhận điểm câu đó.
+- Đoạn văn phải phủ số câu và cùng đề — gán nhầm thì em đọc một đoạn không liên quan.
+- `ocr_confidence` trong 0–1. Ghi 94 thay vì 0.94 thì ngưỡng tự chốt ≥0.97 của UC-07
+  đúng cho mọi đề, kể cả đề đọc hỏng.
+
+Học viên **không** đọc ngân hàng đề: em thấy đề qua bài giao. Mở ra là lộ cả đề chưa giao.
+
+**Chưa có:** OCR thật (AI điểm 1, cần khoá Anthropic) · wizard tạo đề 4 bước · màn ngân hàng đề.
+
+Mô tả gốc:
 `exams · questions · passages` · Storage cho PDF/DOCX/ảnh ≤50MB · `lib/ai/read.ts` (model nhỏ, rẻ).
 Ra: cấu trúc câu + đáp án + % tin cậy + **vị trí trang**. Câu không tìm thấy đáp án → cảnh báo, mặc định chấm tay.
 Wizard tạo đề 4 bước là `modal` — chỗ duy nhất được dùng modal.
