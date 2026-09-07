@@ -130,9 +130,14 @@ xác định tư cách từ `memberships` · sinh và băm mã OTP. 82 test, 31 
 màn `/dang-nhap`, `/hoc-thu`, `/m/<token>` · `app.peek_invite` cho trang công khai đọc lời mời mà
 không cần khoá service.
 
-**Chưa có:** màn nhập OTP và màn chọn tư cách · các server action xử lý form (cần Supabase thật) ·
-nhà cung cấp OTP (đang sau interface `GuiOtp`; `taoKenhGui()` ném lỗi ở production để không âm thầm
-không gửi).
+**Đã thêm (migration 0008–0009, chốt 2026-09-07):** vòng đời tên miền `pending → active →
+suspended`, admin nền tảng duyệt · `app.register_tenant` / `approve_tenant` / `suspend_tenant` ·
+tên miền chưa duyệt bị chặn ở CSDL cả đọc lẫn ghi, không phải ẩn ở giao diện · admin thấy danh
+sách tên miền nhưng không thấy lớp, đề, bài đăng hay nhật ký (`SRS` §2 vẫn đúng). 27 test.
+
+**Chưa có:** màn nhập OTP và màn chọn tư cách · **màn "đang chờ duyệt"** cho cô vừa đăng ký và
+màn duyệt cho admin · các server action xử lý form (cần Supabase thật) · nhà cung cấp OTP (đang
+sau interface `GuiOtp`; `taoKenhGui()` ném lỗi ở production để không âm thầm không gửi).
 
 Mô tả gốc:
 Một ô SĐT, **không chọn vai** — vai tra từ `memberships`. Owner vào bằng email.
@@ -310,6 +315,7 @@ prompt caching cho rubric + cặp học. Đo chi phí mỗi task ngay từ chặ
 | 3 | `paid_via = platform` đi qua cổng nào (VNPay/Momo/chuyển khoản đối soát)? | 9 |
 | 4 | Có giáo viên pilot chưa? Cần 1–3 cô nhận bài thật ngay sau chặng 6 và cho mượn ≥50 bài đã chấm làm fixtures. | 6 |
 | 5 | Kho tên `NexOP`, sản phẩm tên `OBLUE` — đổi tên kho hay giữ? | 0 |
+| 6 | Ai trực hàng chờ duyệt tên miền, và duyệt trong bao lâu? Chốt "admin duyệt" rồi thì đây là việc vận hành, không phải việc mã. | 2 |
 
 ---
 

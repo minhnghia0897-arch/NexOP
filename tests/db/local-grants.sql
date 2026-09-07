@@ -9,3 +9,4 @@ grant execute on function app.is_active_member(uuid), app.is_tenant_owner(uuid) 
 grant execute on function app.is_class_member(uuid), app.owns_class(uuid) to anon, authenticated;
 grant execute on function app.may_read_exam(uuid) to anon, authenticated;
 grant execute on function app.check_rate_limit(text, int, int) to anon, authenticated;
+grant execute on function app.is_platform_admin(), app.tenant_is_live(uuid) to anon, authenticated;

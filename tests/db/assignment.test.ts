@@ -73,9 +73,13 @@ maybe('bài giao là ảnh chụp, trên Postgres thật', () => {
          ($3,null,'+84901000003','Trần Thu Hà')`,
       [CO, EM, EM_B],
     )
-    await db.query('insert into tenants (id, subdomain, owner_account_id) values ($1,$2,$3)', [
-      TENANT, 'cothao', CO,
-    ])
+    // Tên miền đã được admin duyệt (0009). Chưa duyệt thì đọc rỗng và ghi không được,
+    // nên mọi test bên dưới sẽ đỏ — đó là ý đồ của cửa chặn, không phải phiền toái.
+    await db.query(
+      `insert into tenants (id, subdomain, owner_account_id, status, approved_at)
+       values ($1,$2,$3,'active',now())`,
+      [TENANT, 'cothao', CO],
+    )
     await db.query(
       `insert into classes (id, tenant_id, name, status) values ($1,$3,'IELTS 6.5','running'),
                                                                      ($2,$3,'IELTS 5.5','running')`,
