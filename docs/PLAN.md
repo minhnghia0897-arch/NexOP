@@ -190,8 +190,17 @@ lại và sinh sự kiện cô đọc được · cache số hoá dùng chung li
 phiên bản prompt)`. 30 test. Hai thứ này phải có **trước** khi nối AI thật, không phải sau —
 vượt ngân sách chỉ lộ ra ở hoá đơn cuối tháng.
 
+**Đã có (migration 0013):** một **cửa ghi duy nhất** vào ngân hàng đề —
+`app.import_digitized_exam` (UC-03) và `app.save_exam_edit` (UC-04). Mỗi cửa ghi sự kiện trước
+rồi mới sửa, và `save_exam_edit` **gọi lan truyền bên trong** nên vế hai của luật ảnh chụp
+(0007) không còn là việc phải nhớ. Cảnh báo OCR tự tắt khi cô điền đáp án. 22 test.
+
+Chỗ này trước đó hở thật: 0006 có bảng, 0007 có hàm lan truyền, mà **không hàm nào sửa được
+câu hỏi** — nên đường duy nhất là ghi thẳng bằng khoá service, không sự kiện, không lan truyền.
+
 **Chưa có:** OCR thật (AI điểm 1, cần khoá Anthropic) · `lib/ai/*` gọi `claim_ai_call` /
-`settle_ai_call` · wizard tạo đề 4 bước · màn ngân hàng đề.
+`settle_ai_call` rồi đưa kết quả qua `import_digitized_exam` · wizard tạo đề 4 bước ·
+màn ngân hàng đề · Storage cho PDF/DOCX/ảnh.
 
 Mô tả gốc:
 `exams · questions · passages` · Storage cho PDF/DOCX/ảnh ≤50MB · `lib/ai/read.ts` (model nhỏ, rẻ).

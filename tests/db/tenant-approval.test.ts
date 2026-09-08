@@ -83,6 +83,8 @@ maybe('vòng đời tên miền — đăng ký, khoá, gỡ khoá', () => {
     await db.query('insert into platform_admins (account_id, note) values ($1, $2)', [
       ADMIN, 'người duyệt tên miền',
     ])
+    // Dựng dữ liệu mẫu, không đi qua cửa ghi ngân hàng đề của 0013.
+    await db.query(`select set_config('app.exam_write', 'on', false)`)
   })
 
   afterAll(async () => {
