@@ -162,3 +162,30 @@ mang cả đáp án lẫn cảnh báo, nên danh sách "cần xem lại" sẽ kh
 không bao giờ rỗng thì cô thôi nhìn, và lần sau máy cảnh báo thật cũng chìm theo.
 Đánh đổi: fixture trong test phải mở cửa tường minh (`set_config('app.exam_write','on')`), và mỗi
 lần sửa đề tốn thêm một lượt quét bài giao. Đổi lại, không có đường nào sửa đề mà không để lại dấu.
+
+### 2026-09-08 · Khung demo chạy dữ liệu giả, nhưng đi qua luật thật
+Lý do: cô cần thấy tính năng trước khi có Supabase, OTP và tên miền. Cách nhanh là để màn hình đọc
+thẳng mảng dữ liệu mẫu và bấm nút thì đổi state — dựng nhanh, demo đẹp, và sai. Sai vì lúc nối CSDL
+mới phát hiện quyền, sự kiện và ranh giới máy–người chưa từng chạy lần nào, nên không phải "thay
+chỗ lưu" mà là viết lại.
+Nên `lib/demo/kho.ts` giả ở CHỖ LƯU, thật ở CHỖ LUẬT: mọi ghi qua đúng `can()` (cùng
+`docs/permissions.json`), ghi `events` trước khi có hiệu lực, máy chỉ `draft`/`propose`/`auto:*`.
+Đổi sang Supabase là đổi thân hàm trong một file; server action và màn hình không đụng tới.
+Ba chỗ `can()` bắt bẻ ngay khi nối vào, và cả ba đều là bài học chứ không phải phiền toái:
+(1) actor của máy phải khai lớp nó đang xử lý — cửa 3 của `can()` là lưới bắt job chạy nhầm lớp,
+nới nó cho tiện là bỏ lưới; (2) sửa nháp là `propose` chứ không phải `update`, vì mức `propose` cô
+cấp cho trợ giảng chỉ mở {view, draft, propose} — và sửa nháp đúng là việc của trợ giảng; (3) lọc
+chồng bài phải hỏi `review.propose`, không phải `submission.view`, vì em xem được bài nộp của chính
+em nên lọc theo bài nộp là để em nhìn thấy band nháp của máy.
+Đánh đổi: dữ liệu nằm trong bộ nhớ tiến trình nên khởi động lại là về mẫu, và nền chạy nhiều tiến
+trình thì mỗi tiến trình một bản. Chấp nhận được cho demo, và là lý do file này không dùng ở bản thật.
+
+### 2026-09-08 · Trợ giảng ĐỀ XUẤT, không phải "gửi rồi bị chặn"
+Lý do: bản đầu để nút của trợ giảng gọi thẳng hàm gửi, `can()` chặn, màn hình hiện dòng lỗi. Cửa
+chặn đúng nhưng thiết kế sai: nhãn nút nói "Gửi nhận xét cho cô duyệt" mà hành vi lại là một lần
+gửi chắc chắn hỏng. Đặt nút vào chỗ chắc chắn hỏng là dạy người dùng rằng hệ thống hay lỗi.
+Nay trợ giảng có đường riêng `deXuatChoCo` ghi `review.propose`; bản soạn vẫn là lớp 3, em chưa thấy
+gì, và chồng bài của cô hiện dấu "Phạm Lan đã soạn · chờ cô gửi". Cửa chặn vẫn còn nguyên và vẫn có
+test — chỉ là không còn nằm trên đường đi bình thường của ai cả.
+Kèm theo: lời từ chối dịch sang tiếng của cô. `Không đủ quyền cho "review.send"` đúng nhưng vô nghĩa
+với người dùng; tên hành vi ở lại trong nhật ký cho người sửa lỗi, màn hình nói tiếng người.
