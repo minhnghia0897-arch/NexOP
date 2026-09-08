@@ -10,6 +10,26 @@ Kế hoạch này **không đổi** quyết định nào trong `DECISIONS.md`. M
 
 ## 0. Hiện trạng
 
+### Bản khung chạy được (2026-09-08)
+
+`pnpm dev` rồi mở `/tong-quan` là dùng được ngay — không cần Supabase, khoá AI hay tên miền.
+Bốn màn: **Tổng quan · Chấm bài · Lớp học · Nhật ký**, cộng công tắc đổi vai ở góc phải.
+
+Dữ liệu giả (`lib/demo/`), nhưng **luật thật**: mọi ghi qua `can()`, ghi `events` trước khi có
+hiệu lực, máy chỉ nháp. Đổi sang Supabase là đổi thân hàm trong `lib/demo/kho.ts`.
+
+Đáng thử theo thứ tự này:
+1. **Chấm bài** ở vai *Cô* — sửa nhận xét rồi bấm Gửi. Chồng bài ngắn lại một bài.
+2. Đổi sang **Trợ giảng** — dải cam hiện lên, nút đổi thành "Gửi nhận xét cho cô duyệt".
+   Bấm thử: bản soạn dừng ở hàng chờ của cô, em vẫn chưa thấy gì.
+3. Về **Cô** — chồng bài hiện dấu "Phạm Lan đã soạn · chờ cô gửi".
+4. **Nhật ký** ở ba vai — cùng một dữ liệu, ba danh sách khác nhau, lọc theo `visibility`
+   tính lúc ghi. Vai *Học viên* chỉ thấy dòng gửi cho chính em.
+5. **Chấm bài** ở vai *Học viên* — rỗng, và màn hình nói vì sao. Nháp là lớp 3.
+
+Chưa có: đăng nhập thật · wizard tạo đề · học phí · lộ trình · màn học viên đầy đủ.
+
+
 **Có:**
 - 6 tài liệu đặc tả đầy đủ (18 use case có tiêu chí chấp nhận, 20 bảng, 4 điểm AI, ma trận quyền JSON).
 - 3 bản mẫu HTML **đã duyệt** — là hợp đồng giao diện, không phải gợi ý:
