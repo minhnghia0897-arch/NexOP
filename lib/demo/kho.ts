@@ -439,12 +439,27 @@ export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): v
 
 // ───────────────────────────── đọc ─────────────────────────────
 
+/**
+ * "nộp hôm qua" dễ đọc hơn "nộp 21:04 07/09".
+ *
+ * Cô cần biết bài này CŨ tới đâu, không cần biết đúng phút nào. Nộp muộn thì nói thẳng là
+ * muộn — đó là thứ đổi cách cô viết nhận xét.
+ */
+function nopLucNoiSao(iso: string | null, muon: boolean): string {
+  if (!iso) return 'chưa nộp'
+  const ngay = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
+  const khi = ngay <= 0 ? 'nộp hôm nay' : ngay === 1 ? 'nộp hôm qua' : `nộp ${ngay} ngày trước`
+  return muon ? `${khi}, muộn` : khi
+}
+
 export interface BaiCanCham {
   baiNopId: string
   hocVien: { id: string; ten: string; mau: TaiKhoan['mau'] }
   lopId: string
   lopTen: string
   deTen: string
+  /** Dòng meta của bản mẫu: lớp · nhãn bài · số từ · nộp lúc nào. */
+  meta: string
   soTu: number
   muon: boolean
   nopLuc: string | null
@@ -498,6 +513,14 @@ export function baiCanCham(vai: VaiDemo): BaiCanCham[] {
       lopId: bg.lopId,
       lopTen: du.lop.find((l) => l.id === bg.lopId)?.ten ?? '',
       deTen: du.de.find((d) => d.id === bg.deId)?.ten ?? '',
+      meta: [
+        du.lop.find((l) => l.id === bg.lopId)?.ten,
+        bg.nhan,
+        `${bn.soTu} từ`,
+        nopLucNoiSao(bn.nopLuc, bn.muon),
+      ]
+        .filter(Boolean)
+        .join(' · '),
       soTu: bn.soTu,
       muon: bn.muon,
       nopLuc: bn.nopLuc,

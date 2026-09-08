@@ -15,7 +15,7 @@ import { useState } from 'react'
 import type { BaiDang, TaiKhoan, VaiDemo } from '@/lib/demo/du-lieu'
 import { dangBaiHanhVi } from '@/lib/demo/hanh-vi'
 
-import { Nhan, Nut } from './phan-tu'
+import { Khoi, Nhan, Nut } from './phan-tu'
 
 export function BangTin({
   lopId,
@@ -39,9 +39,7 @@ export function BangTin({
   }
 
   return (
-    <section className="rounded-box border border-border-light bg-surface p-5">
-      <h2 className="mb-3 font-display text-[15px] font-semibold text-text">Bảng tin lớp</h2>
-
+    <Khoi ten="Bảng tin lớp" phu="Chỗ cô nói với cả lớp. Bài máy tự đăng có nhãn riêng.">
       {vai !== 'student' ? (
         <div className="mb-4">
           <div
@@ -87,6 +85,6 @@ export function BangTin({
           ))}
         </ul>
       )}
-    </section>
+    </Khoi>
   )
 }

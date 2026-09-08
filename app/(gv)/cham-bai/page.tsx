@@ -1,9 +1,10 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 
-import { KhoiTrong, Nhan, TieuDeMan } from '@/components/ung-dung/phan-tu'
+import { DauMan, Wrap } from '@/components/ung-dung/khung'
+import { KhoiTrong, Pill, ThanhTienDo } from '@/components/ung-dung/phan-tu'
 import { TheCham } from '@/components/ung-dung/the-cham'
 import { VuaGui } from '@/components/ung-dung/vua-gui'
 import { useKho } from '@/lib/demo/dung-kho'
@@ -14,61 +15,77 @@ function ChamBaiNoi() {
   const lop = useSearchParams()?.get('lop') ?? null
   const vai = vaiHienTai()
   const du = duLieu()
+  const [chiCanDoc, datChiCanDoc] = useState(false)
 
-  // Lọc ở kho bằng can(), rồi mới lọc theo lớp cô đang chọn ở panel.
   const tatCa = baiCanCham(vai)
-  const ds = lop ? tatCa.filter((b) => b.lopId === lop) : tatCa
-  const canDoc = ds.filter((b) => b.ganCo.length > 0).length
+  const trongLop = lop ? tatCa.filter((b) => b.lopId === lop) : tatCa
+  const canDoc = trongLop.filter((b) => b.ganCo.length > 0)
+  const ds = chiCanDoc ? canDoc : trongLop
+
+  // Đã gửi bao nhiêu trong phiên này — thanh tiến độ nói bằng việc thật, không phải %.
+  const daGui = du.nhanXet.length
+  const tong = daGui + trongLop.length
+
+  if (vai === 'student') {
+    return (
+      <>
+        <DauMan
+          ten="Chấm bài"
+          phu="Em không thấy màn này — nháp chấm là việc của cô và trợ giảng."
+        />
+        <Wrap>
+          <KhoiTrong>
+            Band nháp của máy là việc nội bộ giữa cô và trợ giảng. Em chỉ nhận nhận xét sau khi cô
+            đã đọc và bấm gửi.
+          </KhoiTrong>
+        </Wrap>
+      </>
+    )
+  }
 
   return (
     <>
-      <TieuDeMan
+      <DauMan
         ten="Chấm bài"
-        phu={
-          vai === 'student'
-            ? 'Em không thấy màn này — nháp chấm là việc của cô và trợ giảng.'
-            : `${ds.length} bài máy đã nháp, chờ cô. ${canDoc} bài có cờ, cô đọc kỹ giúp.`
-        }
+        phu="Nhận xét nháp viết theo cách cô chấm — cô duyệt, sửa, hoặc viết lại. Không gửi gì khi cô chưa bấm."
+        song={`Nháp xong ${trongLop.length} bài · ${canDoc.length} bài cần mắt cô`}
       />
+      <Wrap>
+        <VuaGui />
 
-      <VuaGui />
+        <div className="mb-5 flex flex-wrap gap-2.5">
+          <Pill on={!chiCanDoc} dem={trongLop.length} onClick={() => datChiCanDoc(false)}>
+            Tất cả bài chờ
+          </Pill>
+          <Pill on={chiCanDoc} dem={canDoc.length} onClick={() => datChiCanDoc(true)}>
+            Cần mắt cô
+          </Pill>
+          {lop ? (
+            <span className="flex h-10 items-center text-[13px] text-text-2">
+              đang lọc theo <b className="ml-1 text-text">{du.lop.find((l) => l.id === lop)?.ten}</b>
+            </span>
+          ) : null}
+        </div>
 
-      {ds.length === 0 ? (
-        <KhoiTrong>
-          {vai === 'student' ? (
-            <>
-              Em không có gì ở đây. Band nháp của máy là việc nội bộ giữa cô và trợ giảng — em chỉ
-              nhận nhận xét sau khi cô đã đọc và bấm gửi.
-            </>
-          ) : (
-            <>Không còn bài nào chờ. Cô nghỉ tay.</>
-          )}
-        </KhoiTrong>
-      ) : (
-        <>
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-[13px] text-text-2">
-            <Nhan mau="purple">máy nháp {ds.length}</Nhan>
-            {canDoc > 0 ? <Nhan mau="orange">cần cô đọc kỹ {canDoc}</Nhan> : null}
-            {lop ? (
-              <span>
-                đang lọc theo <b className="text-text">{du.lop.find((l) => l.id === lop)?.ten}</b>
-              </span>
-            ) : null}
-          </div>
+        {tong > 0 ? <ThanhTienDo xong={daGui} tong={tong} /> : null}
 
-          <div className="space-y-4">
-            {ds.map((b) => (
-              <TheCham key={b.baiNopId} bai={b} laTroGiang={vai === 'assistant'} />
-            ))}
-          </div>
-        </>
-      )}
+        {ds.length === 0 ? (
+          <KhoiTrong>
+            {chiCanDoc
+              ? 'Không bài nào bị gắn cờ. Cô duyệt lướt phần còn lại là xong.'
+              : 'Không còn bài nào chờ. Cô nghỉ tay.'}
+          </KhoiTrong>
+        ) : (
+          ds.map((b) => <TheCham key={b.baiNopId} bai={b} laTroGiang={vai === 'assistant'} />)
+        )}
+      </Wrap>
     </>
   )
 }
+
 /*
- * `useSearchParams` phải nằm trong Suspense thì Next mới dựng sẵn được trang tĩnh: lúc
- * dựng chưa có query nào, nên phần phụ thuộc query phải hoãn tới khi chạy ở trình duyệt.
+ * `useSearchParams` phải nằm trong Suspense thì Next mới dựng sẵn được trang tĩnh: lúc dựng
+ * chưa có query nào, nên phần phụ thuộc query phải hoãn tới khi chạy ở trình duyệt.
  */
 export default function ChamBai() {
   return (

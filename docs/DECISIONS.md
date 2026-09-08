@@ -206,3 +206,20 @@ không nhận middleware và không nhận trang gọi `headers()` — mà cả 
 Bản tĩnh vì thế chỉ có bốn màn demo; đăng nhập và lời mời không có trong đó.
 Đánh đổi khác: `demo/` là mã sinh ra nhưng phải commit để Pages phục vụ được, nên eslint và
 check-tokens bỏ qua thư mục đó — soi nó là soi đầu ra của Next, không phải soi mã mình viết.
+
+### 2026-09-08 (tối) · Dựng lại giao diện theo đúng bản mẫu, không theo trí nhớ
+Lý do: cô mở bản chạy được rồi hỏi "sao giao diện không được như ban đầu". So hai ảnh chụp thì rõ —
+bản em dựng là một bản PHÁC: thiếu thanh tìm kiếm, rail 4 mục thay vì 9, panel không có nút mở lớp,
+không chấm màu, không nhóm Đang chạy/Sắp mở, không thẻ tiến độ; KPI không có dòng phụ; màn chấm bài
+không có pill lọc, không thanh rubric, không vạch màu theo loại lỗi, không đếm ký tự, không "Viết
+lại". `DESIGN.md` nói thẳng: **bản mẫu thắng**. Em đã đọc dòng đó và vẫn dựng theo trí nhớ.
+Cách sửa: lấy kích thước và khoảng cách từ CSS của bản mẫu (`.rail`, `.panel .cls`, `.kpi`, `.paper`,
+`.fix`, `.crit`) chứ không ước lượng bằng mắt, rồi so lại bằng ảnh chụp hai bên.
+Hai chỗ chỉ lộ khi so ảnh: tiêu đề khối trong thẻ chấm **không viết hoa** (em tự thêm `uppercase`),
+và chồng bài mẫu có 3–4 lỗi mỗi bài trong khi dữ liệu của em chỉ có 1 — bố cục hai cột trông rỗng
+một nửa. Lỗi thứ hai là lỗi DỮ LIỆU đội lốt lỗi giao diện, và chỉ thấy được khi nhìn cạnh bản mẫu.
+Chỗ cố ý khác bản mẫu, ghi ra để không ai tưởng là sót: bản mẫu đổi vai bằng cách bấm avatar, bản
+demo để nút ba nấc vì người xem không đoán được avatar bấm được. Nút "Mở lớp mới từ lộ trình" và ô
+tìm kiếm để trạng thái tắt — có trong bố cục nhưng chưa nối, và giả vờ bấm được thì tệ hơn là để tắt.
+Đánh đổi: dữ liệu mẫu phải giàu hơn thì bố cục mới đúng. Đó không phải trang trí — bố cục hai cột
+của bản mẫu được thiết kế cho một bài IELTS thật, và dữ liệu nghèo làm hỏng chính bố cục đó.

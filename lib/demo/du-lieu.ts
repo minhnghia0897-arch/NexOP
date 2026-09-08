@@ -23,8 +23,12 @@ export interface Lop {
   id: string
   ten: string
   lich: string
-  trangThai: 'running' | 'closed'
+  trangThai: 'running' | 'closed' | 'opening'
   hocVienIds: string[]
+  /** Chấm màu ở panel. Bản mẫu phân biệt lớp bằng màu, không bằng số thứ tự. */
+  mau: 'blue' | 'purple' | 'orange' | 'green' | 'indigo'
+  /** Với lớp sắp mở: dòng phụ thay cho sĩ số. */
+  ghiChu?: string
 }
 
 export interface CauHoi {
@@ -53,6 +57,8 @@ export interface BaiGiao {
   deId: string
   hanNop: string
   lanThu: number
+  /** Nhãn ngắn hiện ở đầu thẻ chấm, ví dụ "Task 2 — Education". */
+  nhan?: string
   /** Ảnh chụp câu hỏi lúc giao — không phải liên kết sống (migration 0007). */
   cauHoi: CauHoi[]
 }
@@ -67,11 +73,19 @@ export interface BaiNop {
   muon: boolean
 }
 
-/** Lỗi máy đánh dấu trong bài — có vị trí để gạch chân đúng chỗ. */
+/**
+ * Lỗi máy đánh dấu trong bài.
+ *
+ * `nhom` quyết định màu vạch bên trái ở bản mẫu: ngữ pháp, từ vựng, hay bố cục — ba loại
+ * lỗi khác nhau về bản chất, và cô sửa chúng theo ba cách khác nhau.
+ */
 export interface LoiDanhDau {
   trich: string
   sua: string
   loai: string
+  nhom: 'grammar' | 'vocab' | 'structure'
+  /** Dòng nhỏ dưới cùng, ví dụ "Lỗi này lặp 3 bài liên tiếp". Đây là thứ cô cần nhất. */
+  themY?: string
 }
 
 /** Lớp 3: nháp chấm của máy. Có hạn, cô quyết. Em KHÔNG bao giờ thấy dòng này. */
@@ -194,12 +208,14 @@ export function duLieuBanDau(): DuLieuDemo {
   ]
 
   const lop: Lop[] = [
-    { id: 'lop-65', ten: 'IELTS 6.5 · Thứ 3–5', lich: 'T3, T5 · 19:30', trangThai: 'running',
-      hocVienIds: HOC_VIEN.slice(0, 10).map((h) => h.id) },
+    { id: 'lop-65', ten: 'IELTS 6.5 · Tối T3/T5', lich: 'T3, T5 · 19:30', trangThai: 'running',
+      mau: 'blue', hocVienIds: HOC_VIEN.slice(0, 10).map((h) => h.id) },
     { id: 'lop-70', ten: 'IELTS 7.0 · Thứ 7', lich: 'T7 · 14:00', trangThai: 'running',
-      hocVienIds: HOC_VIEN.slice(10, 16).map((h) => h.id) },
-    { id: 'lop-nen', ten: 'Nền tảng B1 · Thứ 2–4', lich: 'T2, T4 · 18:00', trangThai: 'running',
-      hocVienIds: HOC_VIEN.slice(16).map((h) => h.id) },
+      mau: 'purple', hocVienIds: HOC_VIEN.slice(10, 16).map((h) => h.id) },
+    { id: 'lop-nen', ten: 'Nền tảng B1 · Sáng T2/T4', lich: 'T2, T4 · 18:00', trangThai: 'running',
+      mau: 'orange', hocVienIds: HOC_VIEN.slice(16).map((h) => h.id) },
+    { id: 'lop-moi', ten: 'IELTS 7.0+ · nhóm 6', lich: 'Khai giảng 22/9', trangThai: 'opening',
+      mau: 'indigo', hocVienIds: [], ghiChu: 'Khai giảng 22/9 · 2/6' },
   ]
 
   const de: De[] = [
@@ -210,9 +226,12 @@ export function duLieuBanDau(): DuLieuDemo {
   ]
 
   const baiGiao: BaiGiao[] = [
-    { id: 'bg-w1', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-1, 23), lanThu: 1, cauHoi: CAU_HOI_WRITING },
-    { id: 'bg-r1', lopId: 'lop-65', deId: 'de-r1', hanNop: luc(2, 23), lanThu: 1, cauHoi: CAU_HOI_READING },
-    { id: 'bg-w1-70', lopId: 'lop-70', deId: 'de-w1', hanNop: luc(1, 23), lanThu: 1, cauHoi: CAU_HOI_WRITING },
+    { id: 'bg-w1', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-1, 23), lanThu: 1,
+      nhan: 'Task 2 — Community service', cauHoi: CAU_HOI_WRITING },
+    { id: 'bg-r1', lopId: 'lop-65', deId: 'de-r1', hanNop: luc(2, 23), lanThu: 1,
+      nhan: 'Reading Test 1', cauHoi: CAU_HOI_READING },
+    { id: 'bg-w1-70', lopId: 'lop-70', deId: 'de-w1', hanNop: luc(1, 23), lanThu: 1,
+      nhan: 'Task 2 — Community service', cauHoi: CAU_HOI_WRITING },
   ]
 
   // Bảy em đã nộp bài Writing — đây là chồng bài "tối chủ nhật" của cô.
@@ -229,30 +248,52 @@ export function duLieuBanDau(): DuLieuDemo {
 
   const nhapCham: NhapCham[] = [
     nhapChoBai('bn-hv-01', { tr: 6.5, cc: 6.0, lr: 6.5, gra: 6.0 }, 0.91,
-      [{ trich: 'the goverment', sua: 'the government', loai: 'chính tả' },
-       { trich: 'people is', sua: 'people are', loai: 'hoà hợp chủ–vị' }],
+      [{ trich: 'the goverment', sua: 'the government', loai: 'chính tả', nhom: 'vocab' },
+       { trich: 'people is', sua: 'people are', loai: 'hoà hợp chủ–vị', nhom: 'grammar',
+         themY: 'Lỗi này lặp 3 bài liên tiếp' }],
       'Bài của em có bố cục rõ, hai thân bài đều có ví dụ. Chỗ cần sửa vẫn là hoà hợp chủ–vị — "people is" lặp lại lần thứ ba trong bốn bài gần đây. Em thử đọc to câu trước khi nộp, lỗi này nghe ra ngay.',
       []),
     nhapChoBai('bn-hv-02', { tr: 7.0, cc: 7.0, lr: 6.5, gra: 6.5 }, 0.88,
-      [{ trich: 'In conclusion, I think that', sua: 'To conclude,', loai: 'lặp mở đầu' }],
+      [{ trich: 'In conclusion, I think that', sua: 'To conclude,', loai: 'lặp mở đầu',
+         nhom: 'structure' },
+       { trich: 'important … significant … important', sua: 'pivotal, far-reaching',
+         loai: 'lặp nhóm từ', nhom: 'vocab', themY: 'Ba lần trong một bài' },
+       { trich: 'the same could be said of mathematics', sua: 'thêm một câu nối trước ý này',
+         loai: 'ý chuyển gấp', nhom: 'structure' }],
       'Lập luận của em chặt, phần phản biện ở đoạn 3 là điểm mạnh. Từ vựng còn lặp ở nhóm "important/significant" — thử thay bằng "pivotal", "far-reaching" cho đúng sắc thái.',
       []),
     nhapChoBai('bn-hv-03', { tr: 5.5, cc: 5.0, lr: 5.5, gra: 5.0 }, 0.74,
-      [{ trich: 'Firstly, secondly, finally', sua: 'dùng liên kết đa dạng hơn', loai: 'liên kết máy móc' },
-       { trich: 'I strongly believe strongly', sua: 'I strongly believe', loai: 'lặp từ' }],
+      [{ trich: 'Firstly, secondly, finally', sua: 'dùng liên kết đa dạng hơn',
+         loai: 'liên kết máy móc', nhom: 'structure', themY: 'Cả lớp sai chỗ này — 6/10 em' },
+       { trich: 'I strongly believe strongly', sua: 'I strongly believe', loai: 'lặp từ',
+         nhom: 'vocab' }],
       'Em trả lời đúng đề nhưng đoạn 2 mới có một ý, chưa có ví dụ đỡ. Liên kết đang dùng theo công thức "Firstly/Secondly" — giám khảo trừ chỗ này. Em viết lại đoạn 2 với một ví dụ thật từ trường mình.',
       ['Tin cậy 74% — dưới ngưỡng 85%, cô xem kỹ giúp em', 'Lệch 1.5 band so với bài trước của em này']),
-    nhapChoBai('bn-hv-04', { tr: 6.0, cc: 6.5, lr: 6.0, gra: 6.0 }, 0.93, [], 
+    nhapChoBai('bn-hv-04', { tr: 6.0, cc: 6.5, lr: 6.0, gra: 6.0 }, 0.93,
+      [{ trich: 'Opponents worry about the burden', sua: 'thêm số liệu hoặc ví dụ',
+         loai: 'phản biện chưa có đỡ', nhom: 'structure' }], 
       'Bố cục tốt, mở bài đi thẳng vào vấn đề. Em giữ được mạch đến hết bài. Lần sau thử thêm một câu nhượng bộ ở đoạn 3 để lập luận cân hơn.', []),
     nhapChoBai('bn-hv-05', { tr: 6.5, cc: 6.0, lr: 7.0, gra: 6.0 }, 0.86,
-      [{ trich: 'Despite of', sua: 'Despite', loai: 'giới từ thừa' }],
+      [{ trich: 'Despite of', sua: 'Despite', loai: 'giới từ thừa', nhom: 'grammar' },
+       { trich: 'schools compel attendance, homework and examinations',
+         sua: 'thêm ví dụ cụ thể sau câu này', loai: 'khẳng định chưa có đỡ',
+         nhom: 'structure' }],
       'Từ vựng của em là điểm sáng — "compulsory", "civic duty" dùng đúng chỗ. Ngữ pháp còn vướng "Despite of", em nhớ "despite" đứng một mình.',
       ['Nộp muộn 40 phút']),
     nhapChoBai('bn-hv-06', { tr: 6.0, cc: 6.0, lr: 6.0, gra: 5.5 }, 0.9,
-      [{ trich: 'student which', sua: 'students who', loai: 'đại từ quan hệ' }],
+      [{ trich: 'student which', sua: 'students who', loai: 'đại từ quan hệ', nhom: 'grammar' },
+       { trich: 'This is true but a few hours each month is not too much',
+         sua: 'This is true, but a few hours each month is not excessive',
+         loai: 'thiếu dấu phẩy + từ đời thường', nhom: 'vocab' },
+       { trich: 'In conclusion I agree', sua: 'In conclusion, I agree',
+         loai: 'thiếu dấu phẩy sau liên từ', nhom: 'grammar',
+         themY: 'Lỗi này lặp 2 bài liên tiếp' }],
       'Em bám sát đề và đủ 250 từ. Câu phức còn ít, chủ yếu là câu đơn nối bằng "and". Thử gộp hai câu ngắn thành một câu có mệnh đề quan hệ.',
       []),
-    nhapChoBai('bn-hv-07', { tr: 7.0, cc: 6.5, lr: 7.0, gra: 7.0 }, 0.95, [],
+    nhapChoBai('bn-hv-07', { tr: 7.0, cc: 6.5, lr: 7.0, gra: 7.0 }, 0.95,
+      [{ trich: 'Consider first what service actually teaches.',
+         sua: 'câu này mở đoạn tốt — giữ cách viết này',
+         loai: 'điểm mạnh, không phải lỗi', nhom: 'vocab' }],
       'Bài chắc tay. Lập luận có chiều sâu, ví dụ cụ thể, ngữ pháp gần như sạch. Em giữ nhịp này. Nếu muốn lên nữa thì để ý nhịp câu — vài câu dài liền nhau làm đoạn 2 hơi nặng.',
       []),
   ]

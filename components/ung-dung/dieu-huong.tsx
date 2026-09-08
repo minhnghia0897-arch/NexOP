@@ -1,18 +1,17 @@
 'use client'
 
 /**
- * Điều hướng: rail 104 trên màn rộng, tab đáy 60 dưới 768px (DESIGN.md §Bố cục).
+ * Rail 104 trên màn rộng, tab đáy 60 dưới 768px (DESIGN.md §Bố cục).
  *
- * Là thành phần client vì cần biết đang đứng ở màn nào. Next 15 không truyền đường dẫn
- * xuống layout máy chủ, và đoán bằng header thì sai lặng lẽ — mục đang mở không sáng lên
- * mà chẳng có lỗi nào để lần ra.
+ * Kích thước lấy từ CSS bản mẫu: nút rộng 76, ô icon 44×36 bo `--r-box`, mục đang mở thì
+ * ô icon nền `--primary-selected` kèm viền trong mảnh.
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { MUC } from './khung'
+import { Ico, MUC } from './khung'
 
-function Muc({ dang }: { dang: string }) {
+function Muc({ dang, day = false }: { dang: string; day?: boolean }) {
   return (
     <>
       {MUC.map((m) => {
@@ -22,22 +21,18 @@ function Muc({ dang }: { dang: string }) {
             key={m.href}
             href={m.href}
             aria-current={on ? 'page' : undefined}
-            className={`flex flex-col items-center justify-center gap-1.5 rounded-m px-1 py-2.5 transition-colors ${
-              on ? 'bg-primary-selected text-primary' : 'text-text-2 hover:bg-hover'
-            }`}
+            className={`flex flex-col items-center gap-1.5 rounded-m py-2 text-[12px] leading-4 transition-colors ${
+              day ? 'justify-center' : 'w-[76px]'
+            } ${on ? 'font-display font-semibold text-primary' : 'text-text-2 hover:bg-hover'}`}
           >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <span
+              className={`grid h-9 w-11 place-items-center rounded-box ${
+                on ? 'bg-primary-selected shadow-[inset_0_0_0_1px_var(--primary-selected-hover)]' : ''
+              }`}
             >
-              <path d={m.icon} />
-            </svg>
-            <span className="font-display text-[11px] font-medium leading-none">{m.ten}</span>
+              <Ico d={m.d} />
+            </span>
+            {m.ten}
           </Link>
         )
       })}
@@ -50,7 +45,7 @@ export function Rail() {
   return (
     <nav
       aria-label="Điều hướng chính"
-      className="hidden w-rail flex-none flex-col gap-1 border-r border-border-light bg-surface px-2 py-3 md:flex"
+      className="hidden w-rail flex-none flex-col items-center gap-1 overflow-auto border-r border-border-light bg-surface py-4 md:flex"
     >
       <Muc dang={dang} />
     </nav>
@@ -62,9 +57,9 @@ export function TabDay() {
   return (
     <nav
       aria-label="Điều hướng chính"
-      className="sticky bottom-0 z-20 grid h-[60px] grid-cols-4 border-t border-border-light bg-surface md:hidden"
+      className="grid h-[60px] flex-none grid-cols-4 border-t border-border-light bg-surface md:hidden"
     >
-      <Muc dang={dang} />
+      <Muc dang={dang} day />
     </nav>
   )
 }
