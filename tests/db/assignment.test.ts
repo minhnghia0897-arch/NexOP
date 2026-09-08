@@ -92,6 +92,8 @@ maybe('bài giao là ảnh chụp, trên Postgres thật', () => {
          ($3,$4,$5,'student','active')`,
       [CO, EM, EM_B, TENANT, LOP],
     )
+    // Dựng sẵn dữ liệu mẫu, không đi qua cửa ghi của 0013 — xem tests/db/exam-write.test.ts.
+    await db.query(`select set_config('app.exam_write', 'on', false)`)
     await db.query(
       `insert into exams (id, tenant_id, name, skill) values ($1,$2,'Cambridge 19 · Reading','reading')`,
       [DE, TENANT],

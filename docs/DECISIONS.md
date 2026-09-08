@@ -144,3 +144,21 @@ cũ, và cô không hiểu vì sao máy "vẫn đọc sai y như hôm qua".
 Đánh đổi thật, không giấu: **thời gian phản hồi** để lộ việc đã có người số hoá đúng quyển đó
 (trúng cache trả về ngay, trượt mất vài chục giây). Không sửa được ở tầng CSDL. Thấy không chấp
 nhận được thì tầng ứng dụng làm trễ giả, hoặc tách cache theo tenant và chịu chi phí.
+
+### 2026-09-08 · Ngân hàng đề chỉ có một cửa ghi; lan truyền nằm trong hàm sửa
+Lý do: soát lại chặng 4 thì thấy 0006 dựng bảng và ràng buộc, 0007 dựng `propagate_exam_edit`,
+nhưng **không hàm nào sửa được câu hỏi** — nên đường duy nhất còn lại là ứng dụng ghi thẳng bằng
+khoá service. Ghi thẳng thì không sự kiện nào được ghi (toàn kho không có một action `exam.*`), và
+lan truyền thành việc phải NHỚ gọi. Quên là đúng lại vết sẹo số 1: cô thêm đoạn văn, lưu, học viên
+mở ra không thấy, không ai báo gì.
+Chữa bằng cách bịt đường chứ không dặn dò: `app.import_digitized_exam` (UC-03) và
+`app.save_exam_edit` (UC-04) là hai cửa duy nhất, mỗi cửa ghi sự kiện trước rồi mới sửa, và
+`save_exam_edit` gọi lan truyền **bên trong** nên không quên được. Trigger trên `exams`/`passages`/
+`questions` chặn mọi ghi ngoài hai cửa đó.
+Nói rõ giới hạn của trigger: nó **không** phải hàng rào an ninh — khoá service tắt được nó. Việc của
+nó là chặn TAI NẠN, bằng một lỗi chỉ thẳng sang hàm đúng, thay vì im lặng rồi hỏng ở lớp học.
+Kèm theo: cô điền đáp án cho câu OCR đọc hụt thì cảnh báo **tự tắt**. Ràng buộc cũ cho phép một câu
+mang cả đáp án lẫn cảnh báo, nên danh sách "cần xem lại" sẽ không bao giờ rỗng — mà một danh sách
+không bao giờ rỗng thì cô thôi nhìn, và lần sau máy cảnh báo thật cũng chìm theo.
+Đánh đổi: fixture trong test phải mở cửa tường minh (`set_config('app.exam_write','on')`), và mỗi
+lần sửa đề tốn thêm một lượt quét bài giao. Đổi lại, không có đường nào sửa đề mà không để lại dấu.

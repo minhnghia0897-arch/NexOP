@@ -35,6 +35,7 @@ classes         id, tenant_id, name, schedule, capacity, path_id, status
 paths           id, tenant_id, name, sessions jsonb[{no, content, homework, exam_id?, weight?}]
 exams           id, tenant_id, name, skill, level, tags[], duration, grading(auto|draft|manual), ocr_confidence
 questions       id, exam_id, no, type, text, options jsonb, answer, explanation, passage_id?, warning?
+                          ← exams/passages/questions chỉ ghi qua import_digitized_exam | save_exam_edit
 passages        id, exam_id, text, range
 assignments     id, tenant_id, class_id, exam_id?, questions jsonb, due_at, grading, weight,
                 published_at, attempt_no        ← questions là ẢNH CHỤP lúc giao, xem DECISIONS 2026-09

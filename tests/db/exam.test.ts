@@ -86,6 +86,14 @@ maybe('ngân hàng đề trên Postgres thật', () => {
          ($3,$4,$5,'assistant','active')`,
       [CO, EM, TRO_GIANG, TENANT, LOP],
     )
+    /*
+     * Mở cửa ghi thẳng cho riêng phiên test này (0013).
+     *
+     * Test ở đây soi RÀNG BUỘC của bảng — "mcq thiếu lựa chọn thì bị chặn" — nên phải chèn
+     * được đúng dòng hỏng mà hàm app.import_digitized_exam sẽ chặn từ trước. Cửa chặn tai
+     * nạn có test riêng ở tests/db/exam-write.test.ts.
+     */
+    await db.query(`select set_config('app.exam_write', 'on', false)`)
     await db.query(
       `insert into exams (id, tenant_id, name, skill, grading, ocr_confidence)
        values ($1,$2,'Cambridge 19 · Reading Test 1','reading','auto',0.94)`,

@@ -64,6 +64,25 @@ của tên miền này được làm gì bên trong nó", còn admin không ph�
 SĐT lệch → **không** đổi trạng thái, chỉ `membership.reject` + hiện trong nhật ký của cô.
 SĐT đã có `account` ở tên miền khác → gắn account đó, **không** tạo dòng `accounts` mới.
 
+### 1.1b exam — đề trong ngân hàng
+```
+(số hoá / soạn tay) ──app.import_digitized_exam──→ đề trong ngân hàng
+                                                        │
+                              app.save_exam_edit ───────┤ ghi exam.update
+                                                        ├─ sửa câu hỏi
+                                                        └─ lan truyền xuống bài giao chưa ai nộp
+```
+| Chuyển | Ai | Sự kiện | Ghi chú |
+|---|---|---|---|
+| → đề mới | owner | `exam.create` | cả đề hoặc không gì cả; đề rỗng bị từ chối |
+| sửa đề | owner | `exam.update` | trả về `(updated, skipped)` của lan truyền, để cô biết lớp nào không nhận được |
+
+Vai là `owner` chứ không phải `system`, kể cả khi đề đến từ OCR: máy chỉ bóc và đề xuất, cô soát
+rồi mới bấm lưu. Kết quả OCR chưa qua tay cô còn ở lớp 3, chưa được vào ngân hàng.
+
+Ba bảng này nằm sau một **cửa ghi** (trigger, 0013). Ghi thẳng bị chặn kèm lời chỉ đường sang hàm
+đúng. Cửa đó chặn tai nạn, không phải chặn kẻ gian — khoá service tắt được nó.
+
 ### 1.2 assignment — bài giao
 ```
 draft → published ──quá hạn──→ published(muộn) → closed
@@ -294,6 +313,10 @@ Lớp mới chỉ mở khi đủ N người (cô đặt N). Học phí còn lạ
 12. Không lần gọi AI nào xảy ra mà không có `ai_usage` xin trước. Vượt trần → `claim_ai_call` trả
     `NULL`, và `NULL` nghĩa là **không được gọi**.
 13. Trúng cache số hoá thì không tốn ngân sách: tra cache **trước**, xin ngân sách **sau**.
+14. Không dòng `exams` · `passages` · `questions` nào đổi mà không qua `app.import_digitized_exam`
+    hoặc `app.save_exam_edit` — nên không lần sửa đề nào thiếu `events`, và không lần nào quên
+    lan truyền xuống bài giao.
+15. Câu hỏi có `answer` thì không còn `warning`, trừ khi cô tự ghi cảnh báo.
 
 ---
 
