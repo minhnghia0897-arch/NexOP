@@ -1,57 +1,86 @@
-/**
- * Khung làm việc của cô: topbar 56 · rail 104 · panel 260 · canvas (max 1180).
- * Bám design/_reference/oblue-platform-demo.html và DESIGN.md §Bố cục.
- */
 'use client'
 
+/**
+ * Khung làm việc: topbar 56 · rail 104 · panel 260 · canvas (max 1180).
+ *
+ * Bám sát design/_reference/oblue-platform-demo.html. DESIGN.md nói rõ: khi mâu thuẫn thì
+ * **bản mẫu thắng** — nên kích thước và khoảng cách ở đây lấy từ CSS của bản mẫu chứ không
+ * ước lượng bằng mắt.
+ *
+ * Chỗ cố ý khác bản mẫu, và vì sao: bản mẫu đổi vai bằng cách bấm avatar (`#rolebtn`). Ở
+ * bản demo em để một nút ba nấc, vì người xem demo không đoán được rằng avatar bấm được —
+ * mà cả sản phẩm này bán ở chỗ "cùng một màn, ba vai thấy ba thứ khác nhau".
+ */
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import type { VaiDemo } from '@/lib/demo/du-lieu'
 import { doiVaiXem } from '@/lib/demo/hanh-vi'
 
-import { Avatar } from './phan-tu'
-
 export const MUC = [
-  { href: '/tong-quan', ten: 'Tổng quan', icon: 'M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
-  { href: '/cham-bai', ten: 'Chấm bài', icon: 'M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm10 1v5h5M8 14h8M8 17h5' },
-  { href: '/lop-hoc', ten: 'Lớp học', icon: 'M4 6h16M4 12h16M4 18h10' },
-  { href: '/nhat-ky', ten: 'Nhật ký', icon: 'M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z' },
+  {
+    href: '/tong-quan',
+    ten: 'Tổng quan',
+    d: 'M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z',
+  },
+  { href: '/cham-bai', ten: 'Chấm bài', d: 'M4 20l4-1 10-10-3-3L5 16zM13 7l3 3' },
+  { href: '/lop-hoc', ten: 'Lớp học', d: 'M3 4h18v16H3zM3 10h18M9 4v16' },
+  {
+    href: '/nhat-ky',
+    ten: 'Nhật ký',
+    d: 'M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
+  },
 ] as const
 
-const TEN_VAI: Record<VaiDemo, string> = {
-  owner: 'Cô Thảo · chủ lớp',
-  assistant: 'Phạm Lan · trợ giảng',
-  student: 'Nguyễn Minh Anh · học viên',
+export function Ico({ d, s = false }: { d: string; s?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={s ? 'h-4 w-4' : 'h-[22px] w-[22px]'}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d={d} />
+    </svg>
+  )
 }
 
-/**
- * Dải cam khi đang ở vai trợ giảng (DESIGN.md §Thành phần `tabanner`).
- * Người đang làm việc phải luôn biết mình đang đứng ở vai nào, vì cùng một nút
- * ("Gửi nhận xét" / "Gửi cho cô duyệt") mang hai nghĩa khác nhau.
- */
-function DaiVai({ vai }: { vai: VaiDemo }) {
-  if (vai === 'owner') return null
+/** Ba vạch màu — dấu hiệu nhận ra sản phẩm ở bản mẫu. */
+function Logo() {
   return (
-    <div className="border-b border-st-orange-line bg-st-orange-soft px-6 py-2 text-[13px] leading-[19px] text-ta-text">
-      {vai === 'assistant' ? (
-        <>
-          Đang xem ở vai <b className="font-display font-semibold">trợ giảng</b>. Nhận xét gửi đi
-          sẽ về hàng chờ của cô, không tới thẳng học viên.
-        </>
-      ) : (
-        <>
-          Đang xem ở vai <b className="font-display font-semibold">học viên</b>. Em chỉ thấy dữ
-          liệu của em, và không bao giờ thấy band nháp của máy.
-        </>
-      )}
-    </div>
+    <span aria-hidden className="flex flex-none items-end gap-[3px]">
+      <i
+        className="block h-[22px] w-[9px] rounded-[6px]"
+        style={{ background: 'var(--st-brand-red)' }}
+      />
+      <i
+        className="block h-[26px] w-[9px] rounded-[6px]"
+        style={{ background: 'var(--st-yellow)' }}
+      />
+      <i
+        className="block h-[22px] w-[9px] rounded-[6px]"
+        style={{ background: 'var(--st-green)' }}
+      />
+    </span>
   )
+}
+
+const NHAN_VAI: Record<VaiDemo, string> = {
+  owner: 'Cô',
+  assistant: 'Trợ giảng',
+  student: 'Học viên',
 }
 
 function DoiVai({ vai }: { vai: VaiDemo }) {
   return (
-    <div className="flex items-center gap-1 rounded-pill bg-field p-1">
+    <div
+      role="group"
+      aria-label="Đổi vai"
+      className="flex flex-none items-center gap-1 rounded-pill bg-field p-1"
+    >
       {(['owner', 'assistant', 'student'] as const).map((v) => (
         <button
           key={v}
@@ -62,63 +91,136 @@ function DoiVai({ vai }: { vai: VaiDemo }) {
             vai === v ? 'bg-surface text-text shadow-[var(--sh-s)]' : 'text-text-2 hover:text-text'
           }`}
         >
-          {v === 'owner' ? 'Cô' : v === 'assistant' ? 'Trợ giảng' : 'Học viên'}
+          {NHAN_VAI[v]}
         </button>
       ))}
     </div>
   )
 }
 
-export function Topbar({ tenant, vai }: { tenant: string; vai: VaiDemo }) {
+export function Topbar({
+  tenTenant,
+  vai,
+  soCho,
+}: {
+  tenTenant: string
+  vai: VaiDemo
+  soCho: number
+}) {
   return (
-    <header className="sticky top-0 z-20 flex h-topbar items-center gap-4 border-b border-border-light bg-surface px-5">
-      <Link href="/tong-quan" className="flex items-center gap-2.5">
-        <span aria-hidden className="h-7 w-7 rounded-m" style={{ background: 'var(--grad-me)' }} />
-        <b className="font-display text-[15px] font-semibold text-text">OBLUE</b>
-      </Link>
-      <span className="rounded-pill bg-field px-2.5 py-1 text-[12px] text-text-2">
-        {tenant}.oblue.vn
+    <div className="flex h-topbar flex-none items-center gap-4 border-b border-border-light bg-surface px-5">
+      <Logo />
+      <span className="ml-1.5 hidden border-l border-border-light pl-4 font-display font-semibold text-text sm:inline">
+        {tenTenant}
       </span>
 
-      <div className="ml-auto flex items-center gap-3">
-        <span className="hidden text-[13px] text-text-2 sm:inline">{TEN_VAI[vai]}</span>
+      {/* Ô tìm kiếm của bản mẫu là chỗ dành sẵn — chưa nối gì, nên không giả vờ bấm được. */}
+      <div
+        aria-hidden
+        className="mx-auto hidden h-9 max-w-[520px] flex-1 items-center gap-2.5 rounded-[18px] bg-field px-4 text-[13px] text-text-3 md:flex"
+      >
+        <Ico s d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14m9 16-3.5-3.5" />
+        Tìm học viên, lớp, đề, bài nộp…
+      </div>
+
+      <div className="ml-auto flex flex-none items-center gap-4">
+        {soCho > 0 ? (
+          <span className="hidden rounded-s bg-st-green-soft px-2 py-0.5 font-display text-[11px] font-semibold leading-[18px] text-st-green-deep lg:inline">
+            Máy đã nháp sẵn {soCho} bài
+          </span>
+        ) : null}
         <DoiVai vai={vai} />
       </div>
-    </header>
+    </div>
   )
 }
 
 /**
- * Panel 260 — danh sách lớp là bộ lọc chung cho mọi màn (DESIGN.md §Bố cục).
- * Là thành phần client vì "lớp đang chọn" nằm ở query string của trang hiện tại.
+ * Dải cam khi đang ở vai khác cô (DESIGN.md §Thành phần `tabanner`).
+ * Nói rõ vai đó KHÔNG làm được gì — đó mới là câu người dùng cần, không phải "bạn là ai".
  */
-export { PanelLop } from './panel-lop'
+export function DaiVai({ vai }: { vai: VaiDemo }) {
+  if (vai === 'owner') return null
+  return (
+    <div className="flex-none border-b border-st-orange-line bg-st-orange-soft px-5 py-2 text-[13px] leading-[19px] text-ta-text">
+      {vai === 'assistant' ? (
+        <>
+          <b className="font-display font-semibold">Đang xem như trợ giảng Lan</b> — chỉ lớp IELTS
+          6.5 · soạn nhận xét, không gửi · không thấy học phí, rubric, ghi chú của cô
+        </>
+      ) : (
+        <>
+          <b className="font-display font-semibold">Đang xem như học viên Minh Anh</b> — chỉ dữ liệu
+          của em · không thấy band nháp của máy · không thấy bạn cùng lớp
+        </>
+      )}
+    </div>
+  )
+}
 
 export function Canvas({ children }: { children: ReactNode }) {
   return (
     <main
-      className="min-w-0 flex-1 px-6 py-6"
+      className="min-w-0 flex-1 overflow-auto"
       style={{
         background:
           'radial-gradient(900px 500px at 12% -8%, var(--canvas-a), transparent 60%),' +
           'radial-gradient(760px 460px at 92% 0%, var(--canvas-b), transparent 62%)',
       }}
     >
-      <div className="mx-auto max-w-[var(--content-max)]">{children}</div>
+      {children}
     </main>
   )
 }
 
-export { DaiVai }
-
-export function DongNguoi({ ten, mau, phu }: { ten: string; mau: string; phu?: string }) {
+/** Đầu màn: tên, dòng phụ nói bằng sự việc, và hành động chính bên phải. */
+export function DauMan({
+  ten,
+  phu,
+  song,
+  hanhDong,
+}: {
+  ten: string
+  phu?: string
+  song?: string
+  hanhDong?: ReactNode
+}) {
   return (
-    <span className="flex items-center gap-2.5">
-      <Avatar ten={ten} mau={mau} co={32} />
-      <span className="min-w-0">
-        <b className="block truncate font-display text-[13px] font-semibold text-text">{ten}</b>
-        {phu ? <small className="block truncate text-[12px] text-text-3">{phu}</small> : null}
-      </span>
-    </span>
+    <div className="flex flex-wrap items-center gap-3.5 px-8 pt-5">
+      <div className="min-w-0">
+        <h1 className="font-display text-[24px] font-semibold leading-[30px] text-text">{ten}</h1>
+        {phu ? <div className="mt-0.5 text-[13px] leading-[19px] text-text-2">{phu}</div> : null}
+      </div>
+      {song || hanhDong ? (
+        <div className="ml-auto flex items-center gap-5">
+          {song ? (
+            <span className="flex items-center gap-[7px] text-[13px] text-text-2">
+              <i aria-hidden className="h-2 w-2 flex-none rounded-full bg-st-green" />
+              {song}
+            </span>
+          ) : null}
+          {hanhDong}
+        </div>
+      ) : null}
+    </div>
   )
 }
+
+export function Wrap({ children }: { children: ReactNode }) {
+  return <div className="mx-auto max-w-[var(--content-max)] px-8 pb-16 pt-6">{children}</div>
+}
+
+/** Hành động chính ở đầu màn, kiểu nút chữ của bản mẫu. */
+export function NutLien({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href as never}
+      className="flex items-center gap-2 font-display text-[14px] font-medium text-text transition-colors hover:text-primary"
+    >
+      {children}
+    </Link>
+  )
+}
+
+export { PanelLop } from './panel-lop'
+export { Avatar, DongNguoi } from './phan-tu'

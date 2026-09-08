@@ -12,8 +12,18 @@ const NEN_AVATAR: Record<string, string> = {
   off: 'linear-gradient(135deg,var(--av-off-a),var(--av-off-b))',
 }
 
-/** Phân biệt người bằng màu và chữ đầu, không bằng emoji (DESIGN.md, anti-pattern). */
-export function Avatar({ ten, mau, co = 36 }: { ten: string; mau: string; co?: number }) {
+/** Phân biệt người bằng màu và chữ đầu, không bằng emoji (DESIGN.md §Anti-pattern). */
+export function Avatar({
+  ten,
+  mau,
+  co = 38,
+  vuong = true,
+}: {
+  ten: string
+  mau: string
+  co?: number
+  vuong?: boolean
+}) {
   const chu = ten
     .split(' ')
     .slice(-2)
@@ -24,15 +34,29 @@ export function Avatar({ ten, mau, co = 36 }: { ten: string; mau: string; co?: n
   return (
     <span
       aria-hidden
-      className="inline-flex flex-none items-center justify-center rounded-full font-display font-semibold text-surface"
+      className={`inline-grid flex-none place-items-center font-display font-semibold text-surface ${
+        vuong ? 'rounded-[12px]' : 'rounded-full'
+      }`}
       style={{
         width: co,
         height: co,
-        fontSize: co * 0.36,
+        fontSize: co * 0.34,
         background: NEN_AVATAR[mau] ?? NEN_AVATAR.off,
       }}
     >
       {chu}
+    </span>
+  )
+}
+
+export function DongNguoi({ ten, mau, phu }: { ten: string; mau: string; phu?: string }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2.5">
+      <Avatar ten={ten} mau={mau} co={32} />
+      <span className="min-w-0">
+        <b className="block truncate font-display text-[13px] font-semibold text-text">{ten}</b>
+        {phu ? <small className="block truncate text-[12px] text-text-3">{phu}</small> : null}
+      </span>
     </span>
   )
 }
@@ -52,28 +76,76 @@ const NHAN: Record<SacDo, string> = {
 export function Nhan({ mau = 'blue', children }: { mau?: SacDo; children: ReactNode }) {
   return (
     <span
-      className={`inline-flex items-center rounded-s px-2 py-0.5 font-display text-[12px] font-semibold ${NHAN[mau]}`}
+      className={`inline-flex items-center rounded-s px-2 py-0.5 font-display text-[11px] font-semibold leading-[18px] ${NHAN[mau]}`}
     >
       {children}
     </span>
   )
 }
 
-/** Số trần, không tô nền màu (DESIGN.md). */
-export function ChiSo({ so, nhan, phu }: { so: ReactNode; nhan: string; phu?: string }) {
+/** Nhãn tím "theo giọng cô" — dấu của việc máy làm (bản mẫu: `.ai`). */
+export function NhanMay({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-box border border-border-light bg-surface px-4 py-3.5">
-      <div className="font-display text-[26px] font-bold tabular-nums leading-none text-text">
+    <span className="inline-flex items-center gap-1.5 rounded-s bg-st-purple-soft px-2 py-0.5 font-display text-[11px] font-semibold text-st-purple-deep">
+      {children}
+    </span>
+  )
+}
+
+/** Số trần, không tô nền màu. Dòng phụ nói bằng sự việc, không phải nhắc lại con số. */
+export function ChiSo({
+  nhan,
+  so,
+  phu,
+  sac,
+}: {
+  nhan: string
+  so: ReactNode
+  phu?: string
+  sac?: 'good' | 'warn'
+}) {
+  return (
+    <div className="rounded-l border border-border-light bg-surface px-5 py-[18px]">
+      <div className="font-display text-[13px] text-text-2">{nhan}</div>
+      <div
+        className={`mt-1.5 font-display text-[28px] font-semibold leading-[38px] tabular-nums ${
+          sac === 'good' ? 'text-st-green' : sac === 'warn' ? 'text-st-red' : 'text-text'
+        }`}
+      >
         {so}
       </div>
-      <div className="mt-1.5 font-display text-[13px] font-medium text-text-2">{nhan}</div>
-      {phu ? <div className="mt-0.5 text-[12px] leading-[18px] text-text-3">{phu}</div> : null}
+      {phu ? <div className="text-[12px] text-text-3">{phu}</div> : null}
     </div>
   )
 }
 
-/** Hộp "vì sao" — mỗi việc máy làm phải nói được lý do (DESIGN.md, Copy). */
-export function ViSao({ mau = 'green', children }: { mau?: 'green' | 'orange'; children: ReactNode }) {
+/** Khối trắng có tiêu đề — `blkc` của bản mẫu. */
+export function Khoi({
+  ten,
+  phu,
+  children,
+}: {
+  ten: string
+  phu?: string
+  children: ReactNode
+}) {
+  return (
+    <section className="rounded-l border border-border-light bg-surface p-6">
+      <h3 className="font-display text-[18px] font-semibold text-text">{ten}</h3>
+      {phu ? <p className="mb-5 mt-1 text-[13px] text-text-2">{phu}</p> : <div className="mb-5" />}
+      {children}
+    </section>
+  )
+}
+
+/** Hộp "vì sao" — mỗi việc máy làm phải nói được lý do (DESIGN.md §Copy). */
+export function ViSao({
+  mau = 'green',
+  children,
+}: {
+  mau?: 'green' | 'orange'
+  children: ReactNode
+}) {
   return (
     <div
       className={`rounded-m border px-3 py-2 text-[13px] leading-[19px] ${
@@ -87,60 +159,73 @@ export function ViSao({ mau = 'green', children }: { mau?: 'green' | 'orange'; c
   )
 }
 
-/** Thanh tin cậy của máy. Dưới 85% thì đổi màu — ngưỡng của UC-07. */
-export function ThanhTinCay({ ti }: { ti: number }) {
-  const pct = Math.round(ti * 100)
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span className="h-1.5 w-[72px] overflow-hidden rounded-pill bg-field">
-        <span
-          className="block h-full rounded-pill"
-          style={{
-            width: `${pct}%`,
-            background: pct >= 85 ? 'var(--st-purple)' : 'var(--st-orange)',
-          }}
-        />
-      </span>
-      <span className="font-display text-[12px] font-semibold tabular-nums text-text-2">
-        {pct}%
-      </span>
-    </span>
-  )
-}
-
 export function Nut({
   children,
   kieu = 'phu',
   ...rest
-}: { children: ReactNode; kieu?: 'chinh' | 'phu' | 'nhe' } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const lop = {
-    chinh: 'bg-primary text-surface hover:bg-primary-hover',
-    phu: 'border border-border bg-surface text-text hover:bg-hover',
-    nhe: 'text-text-2 hover:bg-hover',
-  }[kieu]
+}: { children: ReactNode; kieu?: 'chinh' | 'phu' } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const lop =
+    kieu === 'chinh'
+      ? 'bg-primary text-surface hover:bg-primary-hover'
+      : 'border border-border text-text-2 hover:border-text-3 hover:text-text'
   return (
     <button
       {...rest}
-      className={`inline-flex h-9 items-center gap-1.5 rounded-m px-3.5 font-display text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${lop}`}
+      className={`inline-flex h-9 items-center gap-1.5 rounded-s px-[18px] font-display text-[14px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${lop}`}
     >
       {children}
     </button>
   )
 }
 
-export function TieuDeMan({ ten, phu }: { ten: string; phu?: string }) {
+export function KhoiTrong({ children }: { children: ReactNode }) {
   return (
-    <div className="mb-5">
-      <h1 className="font-display text-[22px] font-semibold leading-tight text-text">{ten}</h1>
-      {phu ? <p className="mt-1 text-[13px] leading-[19px] text-text-2">{phu}</p> : null}
+    <div className="rounded-l border border-dashed border-border bg-surface px-5 py-10 text-center text-[13px] leading-[19px] text-text-2">
+      {children}
     </div>
   )
 }
 
-export function KhoiTrong({ children }: { children: ReactNode }) {
+/** Thanh tiến độ duyệt — `prog` của bản mẫu. */
+export function ThanhTienDo({ xong, tong }: { xong: number; tong: number }) {
+  const pct = tong === 0 ? 0 : Math.round((xong / tong) * 100)
   return (
-    <div className="rounded-box border border-dashed border-border bg-surface px-5 py-10 text-center text-[13px] leading-[19px] text-text-2">
-      {children}
+    <div className="mb-[18px] flex items-center gap-3.5">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-[3px] bg-field">
+        <i
+          className="block h-full bg-st-green transition-[width] duration-150"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="whitespace-nowrap text-[13px] text-text-2">
+        Đã gửi {xong} / {tong}
+      </span>
     </div>
+  )
+}
+
+/** Pill lọc — `route` của bản mẫu. Cái đang chọn nền mực, chữ trắng. */
+export function Pill({
+  on,
+  dem,
+  children,
+  ...rest
+}: { on: boolean; dem?: number; children: ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      {...rest}
+      type="button"
+      aria-pressed={on}
+      className={`flex h-10 items-center gap-[9px] rounded-pill border px-[18px] font-display font-medium transition-colors ${
+        on
+          ? 'border-transparent bg-ink text-surface'
+          : 'border-border bg-surface text-text hover:border-text-3'
+      }`}
+    >
+      {children}
+      {dem === undefined ? null : (
+        <span className="text-[12px] font-bold opacity-70">{dem}</span>
+      )}
+    </button>
   )
 }

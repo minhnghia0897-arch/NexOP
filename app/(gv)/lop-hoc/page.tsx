@@ -4,8 +4,8 @@ import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 
 import { BangTin } from '@/components/ung-dung/bang-tin'
-import { DongNguoi } from '@/components/ung-dung/khung'
-import { ChiSo, Nhan, TieuDeMan } from '@/components/ung-dung/phan-tu'
+import { DauMan, DongNguoi, Wrap } from '@/components/ung-dung/khung'
+import { ChiSo, Khoi, Nhan } from '@/components/ung-dung/phan-tu'
 import { useKho } from '@/lib/demo/dung-kho'
 import { duLieu, vaiHienTai } from '@/lib/demo/kho'
 
@@ -28,8 +28,10 @@ function LopHocNoi() {
   if (!dangXem) {
     return (
       <>
-        <TieuDeMan ten="Lớp học" />
-        <p className="text-[13px] text-text-2">Chưa có lớp nào.</p>
+        <DauMan ten="Lớp học" />
+        <Wrap>
+          <p className="text-[13px] text-text-2">Chưa có lớp nào.</p>
+        </Wrap>
       </>
     )
   }
@@ -39,63 +41,71 @@ function LopHocNoi() {
     .filter((t): t is NonNullable<typeof t> => Boolean(t))
 
   const baiCuaLop = du.baiGiao.filter((b) => b.lopId === dangXem.id)
+  const daNop = du.baiNop.filter((b) => baiCuaLop.some((g) => g.id === b.baiGiaoId))
 
   return (
     <>
-      <TieuDeMan ten={dangXem.ten} phu={`${dangXem.lich} · ${em.length} học viên`} />
+      <DauMan
+        ten={dangXem.ten}
+        phu={`${dangXem.lich} · ${em.length} học viên`}
+        song={dangXem.trangThai === 'opening' ? 'chưa khai giảng' : 'đang chạy'}
+      />
+      <Wrap>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <ChiSo nhan="Học viên" so={em.length} phu={dangXem.ghiChu ?? dangXem.lich} />
+          <ChiSo nhan="Bài đã giao" so={baiCuaLop.length} phu="tính cả bài đã quá hạn" />
+          <ChiSo
+            nhan="Lượt đã nộp"
+            so={daNop.length}
+            phu={`còn ${Math.max(0, em.length * baiCuaLop.length - daNop.length)} lượt chưa nộp`}
+          />
+        </div>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        <ChiSo so={em.length} nhan="học viên" />
-        <ChiSo so={baiCuaLop.length} nhan="bài đã giao" />
-        <ChiSo
-          so={du.baiNop.filter((b) => baiCuaLop.some((g) => g.id === b.baiGiaoId)).length}
-          nhan="bài đã nộp"
-        />
-      </div>
+        <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_340px]">
+          <BangTin
+            lopId={dangXem.id}
+            vai={vai}
+            baiDang={du.baiDang.filter((b) => b.lopId === dangXem.id)}
+            taiKhoan={du.taiKhoan}
+          />
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
-        <BangTin
-          lopId={dangXem.id}
-          vai={vai}
-          baiDang={du.baiDang.filter((b) => b.lopId === dangXem.id)}
-          taiKhoan={du.taiKhoan}
-        />
-
-        <section className="rounded-box border border-border-light bg-surface p-5">
-          <h2 className="mb-3 font-display text-[15px] font-semibold text-text">
-            {vai === 'student' ? 'Lớp của em' : 'Học viên'}
-          </h2>
-          {vai === 'student' ? (
-            // CLAUDE.md: không màn nào so sánh học viên này với học viên khác cho em xem.
-            <p className="text-[13px] leading-[19px] text-text-2">
-              Em không xem được danh sách và điểm của bạn cùng lớp. Màn này chỉ có việc của em.
-            </p>
-          ) : (
-            <ul className="space-y-2.5">
-              {em.map((t) => {
-                const daNop = du.baiNop.some(
-                  (b) => b.hocVienId === t.id && baiCuaLop.some((g) => g.id === b.baiGiaoId),
-                )
-                return (
-                  <li key={t.id} className="flex items-center gap-2">
-                    <DongNguoi ten={t.ten} mau={t.mau} />
-                    <span className="ml-auto">
-                      {daNop ? <Nhan mau="green">đã nộp</Nhan> : <Nhan mau="orange">chưa nộp</Nhan>}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-        </section>
-      </div>
+          <Khoi ten={vai === 'student' ? 'Lớp của em' : 'Học viên'}>
+            {vai === 'student' ? (
+              // CLAUDE.md: không màn nào so sánh học viên này với học viên khác cho em xem.
+              <p className="text-[13px] leading-[19px] text-text-2">
+                Em không xem được danh sách và điểm của bạn cùng lớp. Màn này chỉ có việc của em.
+              </p>
+            ) : em.length === 0 ? (
+              <p className="text-[13px] text-text-3">Lớp chưa có ai — còn đang tuyển.</p>
+            ) : (
+              <ul className="flex flex-col gap-2.5">
+                {em.map((t) => {
+                  const nop = du.baiNop.some(
+                    (b) => b.hocVienId === t.id && baiCuaLop.some((g) => g.id === b.baiGiaoId),
+                  )
+                  return (
+                    <li key={t.id} className="flex items-center gap-2">
+                      <DongNguoi ten={t.ten} mau={t.mau} />
+                      <span className="ml-auto">
+                        {nop ? (
+                          <Nhan mau="green">đã nộp</Nhan>
+                        ) : (
+                          <Nhan mau="orange">chưa nộp</Nhan>
+                        )}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </Khoi>
+        </div>
+      </Wrap>
     </>
   )
 }
-/*
- * `useSearchParams` phải nằm trong Suspense thì Next mới dựng sẵn được trang tĩnh: lúc
- * dựng chưa có query nào, nên phần phụ thuộc query phải hoãn tới khi chạy ở trình duyệt.
- */
+
+/* Xem ghi chú Suspense ở màn Chấm bài. */
 export default function LopHoc() {
   return (
     <Suspense fallback={null}>
