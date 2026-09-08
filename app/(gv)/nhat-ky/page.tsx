@@ -1,10 +1,16 @@
-import { TieuDeMan, KhoiTrong, Nhan } from '@/components/ung-dung/phan-tu'
-import { duLieu, nhatKy } from '@/lib/demo/kho'
-import { vaiHienTai } from '@/lib/demo/phien'
+'use client'
 
-export const dynamic = 'force-dynamic'
+import { KhoiTrong, Nhan, TieuDeMan } from '@/components/ung-dung/phan-tu'
+import { useKho } from '@/lib/demo/dung-kho'
+import { duLieu, nhatKy, vaiHienTai } from '@/lib/demo/kho'
 
-const MAU_VAI = { owner: 'green', assistant: 'orange', student: 'blue', system: 'purple', parent: 'blue' } as const
+const MAU_VAI = {
+  owner: 'green',
+  assistant: 'orange',
+  student: 'blue',
+  system: 'purple',
+  parent: 'blue',
+} as const
 
 /**
  * Nhật ký sự kiện — UC-17, và là thứ bản OBLUE cũ không có.
@@ -13,8 +19,9 @@ const MAU_VAI = { owner: 'green', assistant: 'orange', student: 'blue', system: 
  * xuống thành một dòng tại đây, kèm ai làm và ai được nhìn thấy. Lọc theo `visibility` đúng
  * như bản thật, nên đổi vai sang học viên là danh sách ngắn lại ngay.
  */
-export default async function NhatKyMan() {
-  const vai = await vaiHienTai()
+export default function NhatKyMan() {
+  useKho()
+  const vai = vaiHienTai()
   const du = duLieu()
   const toi = du.vai[vai]
   const ds = nhatKy().filter((e) => e.visibility.includes(toi))

@@ -1,3 +1,5 @@
+'use client'
+
 import { duLieu } from '@/lib/demo/kho'
 
 /**

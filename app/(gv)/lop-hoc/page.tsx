@@ -1,18 +1,18 @@
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
+
+import { BangTin } from '@/components/ung-dung/bang-tin'
 import { DongNguoi } from '@/components/ung-dung/khung'
 import { ChiSo, Nhan, TieuDeMan } from '@/components/ung-dung/phan-tu'
-import { BangTin } from '@/components/ung-dung/bang-tin-server'
-import { duLieu } from '@/lib/demo/kho'
-import { vaiHienTai } from '@/lib/demo/phien'
+import { useKho } from '@/lib/demo/dung-kho'
+import { duLieu, vaiHienTai } from '@/lib/demo/kho'
 
-export const dynamic = 'force-dynamic'
-
-export default async function LopHoc({
-  searchParams,
-}: {
-  searchParams: Promise<{ lop?: string }>
-}) {
-  const vai = await vaiHienTai()
-  const { lop } = await searchParams
+function LopHocNoi() {
+  useKho()
+  const lop = useSearchParams()?.get('lop') ?? null
+  const vai = vaiHienTai()
   const du = duLieu()
 
   // Vai nào thấy lớp nào: cô thấy hết, trợ giảng thấy lớp được giao, em thấy lớp mình học.
@@ -44,22 +44,6 @@ export default async function LopHoc({
     <>
       <TieuDeMan ten={dangXem.ten} phu={`${dangXem.lich} · ${em.length} học viên`} />
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {cua.map((l) => (
-          <a
-            key={l.id}
-            href={`?lop=${l.id}`}
-            className={`rounded-pill px-3.5 py-1.5 font-display text-[13px] font-semibold transition-colors ${
-              l.id === dangXem.id
-                ? 'bg-primary-selected text-primary'
-                : 'bg-field text-text-2 hover:text-text'
-            }`}
-          >
-            {l.ten}
-          </a>
-        ))}
-      </div>
-
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <ChiSo so={em.length} nhan="học viên" />
         <ChiSo so={baiCuaLop.length} nhan="bài đã giao" />
@@ -70,7 +54,12 @@ export default async function LopHoc({
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
-        <BangTin lopId={dangXem.id} vai={vai} />
+        <BangTin
+          lopId={dangXem.id}
+          vai={vai}
+          baiDang={du.baiDang.filter((b) => b.lopId === dangXem.id)}
+          taiKhoan={du.taiKhoan}
+        />
 
         <section className="rounded-box border border-border-light bg-surface p-5">
           <h2 className="mb-3 font-display text-[15px] font-semibold text-text">
@@ -101,5 +90,16 @@ export default async function LopHoc({
         </section>
       </div>
     </>
+  )
+}
+/*
+ * `useSearchParams` phải nằm trong Suspense thì Next mới dựng sẵn được trang tĩnh: lúc
+ * dựng chưa có query nào, nên phần phụ thuộc query phải hoãn tới khi chạy ở trình duyệt.
+ */
+export default function LopHoc() {
+  return (
+    <Suspense fallback={null}>
+      <LopHocNoi />
+    </Suspense>
   )
 }

@@ -1,5 +1,3 @@
-import 'server-only'
-
 /**
  * Kho dữ liệu của bản demo: giả ở CHỖ LƯU, thật ở CHỖ LUẬT.
  *
@@ -13,9 +11,19 @@ import 'server-only'
  *   2. Ghi `events` TRƯỚC khi có hiệu lực; ghi hỏng thì hành vi không xảy ra.
  *   3. Máy chỉ `draft`/`propose`/`auto:*`. Không API nào cho máy "gửi cho học viên".
  *
- * Chỗ duy nhất khác bản thật: dữ liệu nằm trong bộ nhớ tiến trình. Nghĩa là khởi động lại
- * là về mẫu ban đầu, và trên nền chạy nhiều tiến trình thì mỗi tiến trình một bản. Chấp
- * nhận được cho demo; đó cũng là lý do file này không được dùng ở bản chạy thật.
+ * ── Vì sao file này chạy được ở trình duyệt ──
+ *
+ * Bản đầu có `import 'server-only'` và mọi ghi đi qua server action, đúng hình dạng bản
+ * thật. Nhưng GitHub Pages chỉ phục vụ file tĩnh, không có máy chủ nào chạy server action,
+ * nên bản demo lúc đó không ai mở được nếu không tự cài môi trường.
+ *
+ * Đánh đổi đã chọn (DECISIONS 2026-09-08): bỏ `server-only`, cho kho chạy ngay trên trình
+ * duyệt. Cái GIỮ được là toàn bộ luật — `can()`, `events`, ba lớp dữ liệu, và cả bộ test.
+ * Cái MẤT là hình dạng đường ghi: bản thật gửi ý định lên máy chủ rồi máy chủ mới kiểm
+ * quyền, còn ở đây trình duyệt tự kiểm. Với dữ liệu mẫu thì không có gì để mất, nhưng nó
+ * nghĩa là lúc nối Supabase phải dựng lại đường ghi cho từng màn, không phải đổi một file.
+ *
+ * Dữ liệu nằm trong bộ nhớ tab, lưu thêm vào localStorage để tải lại trang không mất.
  */
 import { can, type Actor, type TargetObject } from '@/lib/auth/can'
 
@@ -47,6 +55,9 @@ interface TrangThai {
   events: SuKien[]
 }
 
+/** Vai đang xem. Ở trong kho luôn để đổi vai cũng là một thay đổi có người nghe. */
+let vaiDangXem: VaiDemo = 'owner'
+
 /*
  * Một bản duy nhất cho cả tiến trình. Gắn lên globalThis để lần nạp lại nóng của
  * `next dev` không thổi bay dữ liệu cô vừa bấm — nếu không thì mỗi lần sửa một dòng CSS
@@ -65,6 +76,86 @@ function trangThai(): TrangThai {
 export function datLai(): void {
   const g = globalThis as CoKho
   g[KHOA] = { du: duLieuBanDau(), events: [] }
+  vaiDangXem = 'owner'
+  luuLai()
+  bao()
+}
+
+// ───────────────────────── nghe thay đổi ─────────────────────────
+//
+// Màn hình là thành phần client, nên chúng phải biết lúc nào dữ liệu đổi. Dùng
+// useSyncExternalStore của React: kho giữ một số phiên bản, mỗi lần ghi thì tăng lên.
+
+let phienBan = 0
+const nguoiNghe = new Set<() => void>()
+
+function bao(): void {
+  phienBan += 1
+  for (const f of nguoiNghe) f()
+}
+
+export function dangKyNghe(f: () => void): () => void {
+  nguoiNghe.add(f)
+  return () => nguoiNghe.delete(f)
+}
+
+export function soPhienBan(): number {
+  return phienBan
+}
+
+// ───────────────────────── giữ qua lần tải lại ─────────────────────────
+//
+// Không có localStorage thì tải lại trang là mất bài cô vừa gửi — và người xem demo sẽ
+// tưởng hệ thống hỏng chứ không nghĩ là mình vừa làm mới trang.
+
+const KHOA_LUU = 'oblue-demo-v1'
+
+function luuLai(): void {
+  if (typeof localStorage === 'undefined') return
+  try {
+    const st = (globalThis as CoKho)[KHOA]
+    if (st) localStorage.setItem(KHOA_LUU, JSON.stringify({ ...st, vai: vaiDangXem }))
+  } catch {
+    // Chế độ riêng tư hoặc hết chỗ. Demo vẫn chạy, chỉ là tải lại thì về mẫu.
+  }
+}
+
+function doTuBoNho(): TrangThai | null {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(KHOA_LUU)
+    if (!raw) return null
+    const x = JSON.parse(raw) as TrangThai & { vai?: VaiDemo }
+    if (x.vai) vaiDangXem = x.vai
+    return { du: x.du, events: x.events }
+  } catch {
+    return null
+  }
+}
+
+/*
+ * Nạp bản đã lưu — gọi SAU khi trang đã gắn xong, không gọi lúc dựng.
+ *
+ * Trang tĩnh dựng sẵn bằng dữ liệu mẫu. Nếu lần vẽ đầu ở trình duyệt đã đọc localStorage
+ * thì hai bên lệch nhau và React kêu hydrat hoá sai. Nạp trong effect thì lần vẽ đầu khớp,
+ * rồi mới đổi sang bản của người xem.
+ */
+export function napTuBoNho(): void {
+  const cu = doTuBoNho()
+  if (!cu) return
+  const g = globalThis as CoKho
+  g[KHOA] = cu
+  bao()
+}
+
+export function vaiHienTai(): VaiDemo {
+  return vaiDangXem
+}
+
+export function doiVai(v: VaiDemo): void {
+  vaiDangXem = v
+  luuLai()
+  bao()
 }
 
 export function duLieu(): DuLieuDemo {
@@ -157,7 +248,10 @@ function ghi<T>(
     luc: new Date().toISOString(),
   })
 
-  return thayDoi(st.du)
+  const ket = thayDoi(st.du)
+  luuLai()
+  bao()
+  return ket
 }
 
 // ───────────────────────────── việc của máy ─────────────────────────────

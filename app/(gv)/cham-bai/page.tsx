@@ -1,18 +1,18 @@
-import { TieuDeMan, KhoiTrong, Nhan } from '@/components/ung-dung/phan-tu'
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
+
+import { KhoiTrong, Nhan, TieuDeMan } from '@/components/ung-dung/phan-tu'
 import { TheCham } from '@/components/ung-dung/the-cham'
 import { VuaGui } from '@/components/ung-dung/vua-gui'
-import { baiCanCham, duLieu } from '@/lib/demo/kho'
-import { vaiHienTai } from '@/lib/demo/phien'
+import { useKho } from '@/lib/demo/dung-kho'
+import { baiCanCham, duLieu, vaiHienTai } from '@/lib/demo/kho'
 
-export const dynamic = 'force-dynamic'
-
-export default async function ChamBai({
-  searchParams,
-}: {
-  searchParams: Promise<{ lop?: string }>
-}) {
-  const vai = await vaiHienTai()
-  const { lop } = await searchParams
+function ChamBaiNoi() {
+  useKho()
+  const lop = useSearchParams()?.get('lop') ?? null
+  const vai = vaiHienTai()
   const du = duLieu()
 
   // Lọc ở kho bằng can(), rồi mới lọc theo lớp cô đang chọn ở panel.
@@ -64,5 +64,16 @@ export default async function ChamBai({
         </>
       )}
     </>
+  )
+}
+/*
+ * `useSearchParams` phải nằm trong Suspense thì Next mới dựng sẵn được trang tĩnh: lúc
+ * dựng chưa có query nào, nên phần phụ thuộc query phải hoãn tới khi chạy ở trình duyệt.
+ */
+export default function ChamBai() {
+  return (
+    <Suspense fallback={null}>
+      <ChamBaiNoi />
+    </Suspense>
   )
 }

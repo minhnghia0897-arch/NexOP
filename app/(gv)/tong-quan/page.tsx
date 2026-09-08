@@ -1,23 +1,24 @@
+'use client'
+
 import Link from 'next/link'
 
 import { DongNguoi } from '@/components/ung-dung/khung'
 import { ChiSo, Nhan, TieuDeMan, ViSao } from '@/components/ung-dung/phan-tu'
-import { baiCanCham, duLieu } from '@/lib/demo/kho'
-import { vaiHienTai } from '@/lib/demo/phien'
-
-export const dynamic = 'force-dynamic'
+import { useKho } from '@/lib/demo/dung-kho'
+import { baiCanCham, duLieu, vaiHienTai } from '@/lib/demo/kho'
 
 function gioViet(iso: string): string {
   const d = new Date(iso)
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} ${d.getDate()}/${d.getMonth() + 1}`
+  const hai = (n: number) => String(n).padStart(2, '0')
+  return `${hai(d.getHours())}:${hai(d.getMinutes())} ${d.getDate()}/${d.getMonth() + 1}`
 }
 
-export default async function TongQuan() {
-  const vai = await vaiHienTai()
+export default function TongQuan() {
+  useKho()
+  const vai = vaiHienTai()
   const du = duLieu()
   const cho = baiCanCham(vai)
   const soEm = new Set(du.lop.flatMap((l) => l.hocVienIds)).size
-  const daGui = du.nhanXet.length
 
   const sapHan = du.baiGiao
     .filter((b) => new Date(b.hanNop).getTime() > Date.now())
@@ -41,7 +42,7 @@ export default async function TongQuan() {
           nhan="bài có cờ"
           phu="tin cậy thấp hoặc lệch band"
         />
-        <ChiSo so={daGui} nhan="nhận xét đã gửi" phu="trong phiên này" />
+        <ChiSo so={du.nhanXet.length} nhan="nhận xét đã gửi" phu="trong phiên này" />
         <ChiSo so={soEm} nhan="học viên" phu={`${du.lop.length} lớp`} />
       </div>
 
@@ -63,7 +64,11 @@ export default async function TongQuan() {
                 key={b.baiNopId}
                 className="flex flex-wrap items-center gap-3 border-b border-border-light px-5 py-3 last:border-0"
               >
-                <DongNguoi ten={b.hocVien.ten} mau={b.hocVien.mau} phu={`${b.lopTen} · ${b.soTu} từ`} />
+                <DongNguoi
+                  ten={b.hocVien.ten}
+                  mau={b.hocVien.mau}
+                  phu={`${b.lopTen} · ${b.soTu} từ`}
+                />
                 <span className="ml-auto flex items-center gap-3">
                   {b.ganCo.length > 0 ? <Nhan mau="orange">cần đọc kỹ</Nhan> : null}
                   {b.muon ? <Nhan mau="red">nộp muộn</Nhan> : null}
@@ -90,7 +95,9 @@ export default async function TongQuan() {
                     <b className="block truncate font-display font-semibold text-text">
                       {du.de.find((d) => d.id === b.deId)?.ten}
                     </b>
-                    <small className="text-text-3">{du.lop.find((l) => l.id === b.lopId)?.ten}</small>
+                    <small className="text-text-3">
+                      {du.lop.find((l) => l.id === b.lopId)?.ten}
+                    </small>
                   </span>
                   <span className="ml-auto whitespace-nowrap text-text-2">{gioViet(b.hanNop)}</span>
                 </li>
@@ -103,8 +110,8 @@ export default async function TongQuan() {
           <h2 className="mb-3 font-display text-[15px] font-semibold text-text">Máy đang làm gì</h2>
           <div className="space-y-2.5">
             <ViSao>
-              Máy chỉ nháp và đề xuất. Không có đường nào cho máy gửi thẳng tới học viên — thử đổi
-              vai sang trợ giảng rồi bấm Gửi ở màn chấm bài để thấy cửa chặn nói gì.
+              Máy chỉ nháp và đề xuất. Không có đường nào cho máy gửi thẳng tới học viên — đổi vai
+              sang trợ giảng ở góc phải để thấy cùng một màn đổi thế nào.
             </ViSao>
             <ViSao mau="orange">
               Bài gắn cờ là bài máy không chắc: tin cậy dưới 85%, hoặc lệch hơn 1.0 band so với bài

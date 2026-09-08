@@ -12,8 +12,11 @@ Kế hoạch này **không đổi** quyết định nào trong `DECISIONS.md`. M
 
 ### Bản khung chạy được (2026-09-08)
 
-`pnpm dev` rồi mở `/tong-quan` là dùng được ngay — không cần Supabase, khoá AI hay tên miền.
+Xem ngay trên mạng: **<https://minhnghia0897-arch.github.io/NexOP/demo/tong-quan/>**
+(hoặc `pnpm dev` rồi mở `/tong-quan`). Không cần Supabase, khoá AI hay tên miền.
 Bốn màn: **Tổng quan · Chấm bài · Lớp học · Nhật ký**, cộng công tắc đổi vai ở góc phải.
+
+Bản tĩnh dựng bằng `pnpm demo:tinh`, xuất ra `demo/` và commit để Pages phục vụ.
 
 Dữ liệu giả (`lib/demo/`), nhưng **luật thật**: mọi ghi qua `can()`, ghi `events` trước khi có
 hiệu lực, máy chỉ nháp. Đổi sang Supabase là đổi thân hàm trong `lib/demo/kho.ts`.
