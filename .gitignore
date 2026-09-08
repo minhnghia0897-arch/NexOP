@@ -9,3 +9,6 @@ build/
 next-env.d.ts
 .DS_Store
 coverage/
+
+# Thư mục tạm của scripts/dung-ban-tinh.mjs
+.ban-tinh/

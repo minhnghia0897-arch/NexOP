@@ -189,3 +189,20 @@ gì, và chồng bài của cô hiện dấu "Phạm Lan đã soạn · chờ c�
 test — chỉ là không còn nằm trên đường đi bình thường của ai cả.
 Kèm theo: lời từ chối dịch sang tiếng của cô. `Không đủ quyền cho "review.send"` đúng nhưng vô nghĩa
 với người dùng; tên hành vi ở lại trong nhật ký cho người sửa lỗi, màn hình nói tiếng người.
+
+### 2026-09-08 (chiều) · Bản demo xuất tĩnh cho GitHub Pages; kho chạy ở trình duyệt
+Lý do: bản khung ban đầu là ứng dụng có máy chủ (server action, middleware, cookie), nên chỉ ai tự
+dựng môi trường mới mở được. Thử đưa lên Vercel thì token nối sẵn **không có quyền tạo project**
+(403, hai lần, hai tên khác nhau). Cô chốt: chuyển sang HTML tĩnh cho Pages.
+Đổi: `lib/demo/kho.ts` bỏ `server-only`, chạy thẳng ở trình duyệt, giữ trạng thái trong bộ nhớ tab
+và `localStorage`. Server action thành `lib/demo/hanh-vi.ts` — cùng tên hàm, cùng kiểu trả về
+`{ loi?: string }`, chỉ khác thân hàm, để sau này nối Supabase thì đổi ngược lại không đụng màn hình.
+**Cái giữ được:** toàn bộ luật. `can()`, `events`, ba lớp dữ liệu, và cả bộ test — không dòng nào
+đổi. **Cái mất:** hình dạng đường ghi. Bản thật gửi ý định lên máy chủ rồi máy chủ mới kiểm quyền;
+ở đây trình duyệt tự kiểm. Với dữ liệu mẫu thì không có gì để mất, nhưng nó nghĩa là lúc nối
+Supabase phải dựng lại đường ghi cho từng màn, không phải đổi một file như dự tính ban đầu.
+Xuất bằng `scripts/dung-ban-tinh.mjs` chép sang thư mục tạm rồi mới dựng, vì `output: 'export'`
+không nhận middleware và không nhận trang gọi `headers()` — mà cả hai đều PHẢI giữ ở bản thật.
+Bản tĩnh vì thế chỉ có bốn màn demo; đăng nhập và lời mời không có trong đó.
+Đánh đổi khác: `demo/` là mã sinh ra nhưng phải commit để Pages phục vụ được, nên eslint và
+check-tokens bỏ qua thư mục đó — soi nó là soi đầu ra của Next, không phải soi mã mình viết.

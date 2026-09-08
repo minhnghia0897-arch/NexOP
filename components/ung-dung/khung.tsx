@@ -2,11 +2,13 @@
  * Khung làm việc của cô: topbar 56 · rail 104 · panel 260 · canvas (max 1180).
  * Bám design/_reference/oblue-platform-demo.html và DESIGN.md §Bố cục.
  */
+'use client'
+
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-import { doiVai } from '@/app/(gv)/actions'
 import type { VaiDemo } from '@/lib/demo/du-lieu'
+import { doiVaiXem } from '@/lib/demo/hanh-vi'
 
 import { Avatar } from './phan-tu'
 
@@ -49,12 +51,13 @@ function DaiVai({ vai }: { vai: VaiDemo }) {
 
 function DoiVai({ vai }: { vai: VaiDemo }) {
   return (
-    <form action={doiVai} className="flex items-center gap-1 rounded-pill bg-field p-1">
+    <div className="flex items-center gap-1 rounded-pill bg-field p-1">
       {(['owner', 'assistant', 'student'] as const).map((v) => (
         <button
           key={v}
-          name="vai"
-          value={v}
+          type="button"
+          onClick={() => doiVaiXem(v)}
+          aria-pressed={vai === v}
           className={`rounded-pill px-3 py-1 font-display text-[12px] font-semibold transition-colors ${
             vai === v ? 'bg-surface text-text shadow-[var(--sh-s)]' : 'text-text-2 hover:text-text'
           }`}
@@ -62,7 +65,7 @@ function DoiVai({ vai }: { vai: VaiDemo }) {
           {v === 'owner' ? 'Cô' : v === 'assistant' ? 'Trợ giảng' : 'Học viên'}
         </button>
       ))}
-    </form>
+    </div>
   )
 }
 

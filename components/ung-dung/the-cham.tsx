@@ -8,12 +8,13 @@
  *   • vì sao bài này cần cô đọc kỹ (cờ), thay vì chỉ hiện một con số;
  *   • cô sửa rồi bấm gửi — và chỉ tới lúc bấm gửi thì em mới thấy.
  *
- * Là thành phần client vì cô gõ vào ô nhận xét. Nhưng mọi thay đổi vẫn đi qua server
- * action: trình duyệt gửi ý định, máy chủ kiểm quyền và ghi sự kiện.
+ * Mọi thay đổi đi qua `lib/demo/hanh-vi.ts` — một chỗ duy nhất nhận ý định rồi mới chạm
+ * vào kho, để màn hình không tự gọi kho lung tung. Đó cũng là chỗ sau này thành server
+ * action khi nối Supabase.
  */
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 
-import { deXuatChoCoAction, guiNhanXetAction, suaNhapAction } from '@/app/(gv)/actions'
+import { deXuatChoCoHanhVi, guiNhanXetHanhVi, suaNhapHanhVi } from '@/lib/demo/hanh-vi'
 import type { BaiCanCham } from '@/lib/demo/kho'
 
 import { Avatar, Nhan, Nut, ThanhTinCay, ViSao } from './phan-tu'
@@ -30,34 +31,32 @@ function Band({ nhan, so }: { nhan: string; so: number }) {
 export function TheCham({ bai, laTroGiang }: { bai: BaiCanCham; laTroGiang: boolean }) {
   const [nhanXet, datNhanXet] = useState(bai.nhanXet)
   const [loi, datLoi] = useState<string | null>(null)
-  const [dangChay, batDau] = useTransition()
 
   const daSua = nhanXet !== bai.nhanXet
 
   function gui() {
     datLoi(null)
-    batDau(async () => {
-      // Hai vai, hai việc khác nhau — không phải cùng một nút rồi để cửa chặn từ chối.
-      if (laTroGiang) {
-        const r = await deXuatChoCoAction(bai.baiNopId, nhanXet)
-        return datLoi(r.loi ?? null)
-      }
 
-      if (daSua) {
-        const r = await suaNhapAction(bai.baiNopId, nhanXet)
-        if (r.loi) return datLoi(r.loi)
-      }
-      /*
-       * Gửi xong thì KHÔNG đặt trạng thái "đã gửi" ở đây.
-       *
-       * Gửi là xoá nháp, nên server dựng lại danh sách thiếu đúng thẻ này và thành phần bị
-       * tháo — mọi state cục bộ mất theo. Lời xác nhận vì thế đọc từ dữ liệu thật ở trang
-       * (dải "vừa gửi"), chứ không giữ trong đầu trình duyệt. Bản đầu em viết ở đây, và nó
-       * là mã chết: chạy thử trên trình duyệt mới lộ, đọc mã thì không.
-       */
-      const r = await guiNhanXetAction(bai.baiNopId)
-      if (r.loi) datLoi(r.loi)
-    })
+    // Hai vai, hai việc khác nhau — không phải cùng một nút rồi để cửa chặn từ chối.
+    if (laTroGiang) {
+      const r = deXuatChoCoHanhVi(bai.baiNopId, nhanXet)
+      return datLoi(r.loi ?? null)
+    }
+
+    if (daSua) {
+      const r = suaNhapHanhVi(bai.baiNopId, nhanXet)
+      if (r.loi) return datLoi(r.loi)
+    }
+
+    /*
+     * Gửi xong thì KHÔNG đặt trạng thái "đã gửi" ở đây.
+     *
+     * Gửi là xoá nháp, nên danh sách vẽ lại thiếu đúng thẻ này và thành phần bị tháo — mọi
+     * state cục bộ mất theo. Lời xác nhận vì thế đọc từ dữ liệu thật ở trang (dải "vừa
+     * gửi"). Bản đầu em viết ở đây, và nó là mã chết: chạy thử trên trình duyệt mới lộ.
+     */
+    const r = guiNhanXetHanhVi(bai.baiNopId)
+    if (r.loi) datLoi(r.loi)
   }
 
   return (
@@ -165,8 +164,8 @@ export function TheCham({ bai, laTroGiang }: { bai: BaiCanCham; laTroGiang: bool
           <p className="w-full rounded-m bg-st-red-soft px-3 py-2 text-[13px] text-st-red">{loi}</p>
         ) : null}
 
-        <Nut kieu="chinh" onClick={gui} disabled={dangChay}>
-          {dangChay ? 'Đang gửi…' : laTroGiang ? 'Gửi nhận xét cho cô duyệt' : 'Gửi nhận xét'}
+        <Nut kieu="chinh" onClick={gui}>
+          {laTroGiang ? 'Gửi nhận xét cho cô duyệt' : 'Gửi nhận xét'}
         </Nut>
       </footer>
     </article>

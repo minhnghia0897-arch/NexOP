@@ -5,13 +5,18 @@
  * Bỏ qua:
  *   design/tokens.css      — nguồn duy nhất, chỗ hex được phép nằm
  *   design/_reference/     — bản mẫu đã duyệt, là tài sản thiết kế chứ không phải mã nguồn
+ *   demo/                  — bản tĩnh do scripts/dung-ban-tinh.mjs sinh ra; hex trong đó
+ *                            là tokens.css đã biên dịch, soi nó là soi đầu ra chứ không
+ *                            phải soi mã nguồn
  *   *.md                   — tài liệu có trích giá trị token để giải thích
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 const ROOT = process.cwd()
-const SKIP_DIRS = new Set(['node_modules', '.next', '.git', 'out', 'coverage', '_reference'])
+const SKIP_DIRS = new Set([
+  'node_modules', '.next', '.git', 'out', 'coverage', '_reference', 'demo', '.ban-tinh',
+])
 const SCAN_EXT = /\.(ts|tsx|js|jsx|mjs|cjs|css|html)$/
 const ALLOW = new Set(['design/tokens.css'])
 const HEX = /#[0-9a-fA-F]{3,8}\b/g

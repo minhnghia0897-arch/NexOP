@@ -10,14 +10,14 @@
  * mình về nguyên tắc, nhưng bảng tin lớp trong bản mẫu là chỗ cô nói với lớp. Nút bị ẩn
  * không phải là hàng rào — kho vẫn kiểm quyền, ẩn chỉ để màn hình không mời gọi nhầm.
  */
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 
-import { dangBaiAction } from '@/app/(gv)/actions'
 import type { BaiDang, TaiKhoan, VaiDemo } from '@/lib/demo/du-lieu'
+import { dangBaiHanhVi } from '@/lib/demo/hanh-vi'
 
 import { Nhan, Nut } from './phan-tu'
 
-export function BangTinKhung({
+export function BangTin({
   lopId,
   vai,
   baiDang,
@@ -30,15 +30,12 @@ export function BangTinKhung({
 }) {
   const [noiDung, datNoiDung] = useState('')
   const [loi, datLoi] = useState<string | null>(null)
-  const [dangChay, batDau] = useTransition()
 
   function dang() {
     datLoi(null)
-    batDau(async () => {
-      const r = await dangBaiAction(lopId, noiDung)
-      if (r.loi) return datLoi(r.loi)
-      datNoiDung('')
-    })
+    const r = dangBaiHanhVi(lopId, noiDung)
+    if (r.loi) return datLoi(r.loi)
+    datNoiDung('')
   }
 
   return (
@@ -66,8 +63,8 @@ export function BangTinKhung({
             <p className="mt-2 rounded-m bg-st-red-soft px-3 py-2 text-[13px] text-st-red">{loi}</p>
           ) : null}
           <div className="mt-2 flex justify-end">
-            <Nut kieu="chinh" onClick={dang} disabled={dangChay || !noiDung.trim()}>
-              {dangChay ? 'Đang đăng…' : 'Đăng lên bảng tin'}
+            <Nut kieu="chinh" onClick={dang} disabled={!noiDung.trim()}>
+              Đăng lên bảng tin
             </Nut>
           </div>
         </div>

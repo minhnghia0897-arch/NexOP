@@ -1,0 +1,14 @@
+<!-- Biểu tượng tab. Không hex ở đây: `currentColor` cho nền (trình duyệt cho ra màu chữ
+     mặc định, tức gần như đen) và từ khoá `white` cho nét chữ. Luật cứng của CLAUDE.md là
+     không có hex ngoài design/tokens.css, mà file .svg thì không nạp được token — nên
+     dùng màu không-hex thay vì lách bằng chỗ scripts/check-tokens.mjs không soi tới. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="8" fill="currentColor" />
+  <path
+    d="M9 21V11h4.4a3.3 3.3 0 0 1 0 6.6H9m0 0h5.1a3.4 3.4 0 0 1 0 3.4H9Z"
+    fill="none"
+    stroke="white"
+    stroke-width="2"
+    stroke-linejoin="round"
+  />
+</svg>
