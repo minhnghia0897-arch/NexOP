@@ -223,3 +223,18 @@ demo để nút ba nấc vì người xem không đoán được avatar bấm đ
 tìm kiếm để trạng thái tắt — có trong bố cục nhưng chưa nối, và giả vờ bấm được thì tệ hơn là để tắt.
 Đánh đổi: dữ liệu mẫu phải giàu hơn thì bố cục mới đúng. Đó không phải trang trí — bố cục hai cột
 của bản mẫu được thiết kế cho một bài IELTS thật, và dữ liệu nghèo làm hỏng chính bố cục đó.
+
+### 2026-09-09 · Dựng đủ chín màn của bản mẫu, mục chưa có thì hiện chứ không giấu
+Lý do: cô chỉ vào link bản mẫu và nói "về bản như thế này". Không phải chỉ Trang lớp — là toàn bộ.
+Bản trước có bốn màn, bản mẫu có chín; rail bốn mục thì bố cục lệch hẳn khỏi bản gốc.
+Dựng thêm: Trang lớp (5 tab: bảng tin · bài tập · học viên · điểm · chấm bài), Học viên, Lộ trình,
+Ngân hàng đề, Học phí, Bảng tin. Rail đủ chín mục, có gạch chia ba nhóm như bản mẫu.
+Quyết định nhỏ nhưng quan trọng: **thứ chưa nối thì hiện ở trạng thái tắt, không giấu**. Ô tìm
+kiếm, nút "Mở lớp mới từ lộ trình", các chip gợi ý trong ô đăng bài — tất cả có trong bố cục, nhìn
+thấy được, bấm không được. Giấu đi thì bố cục lệch khỏi bản mẫu; cho bấm vào màn trống thì dạy người
+dùng rằng sản phẩm hay lỗi. Hiện-mà-tắt nói đúng sự thật: chỗ này có trong sản phẩm, chưa có trong bản demo.
+Mỗi màn mới vẫn đi qua `can()` thật, nên ba vai thấy ba thứ khác nhau và điều đó kiểm được: trợ giảng
+bị chặn ở Học phí bởi **trần cứng** (cửa 5 của `can()`, trước cả khi xét mức quyền cô cấp), học viên
+bị chặn ở Lộ trình và ở danh sách bạn cùng lớp.
+Kèm theo: dữ liệu mẫu phải giàu thêm — lịch sử bốn bài đã chấm, hồ sơ mười tám em, lộ trình, học phí.
+Bảng điểm một cột thì "band tăng hay tụt" vô nghĩa, mà đó mới là thứ cô mở bảng điểm để tìm.
