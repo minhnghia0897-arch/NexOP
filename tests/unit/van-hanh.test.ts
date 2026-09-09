@@ -182,10 +182,10 @@ describe('luật xuyên suốt mọi bước', () => {
   })
 })
 
-describe('thực thể trong ARCHITECTURE §2 mà permissions.json chưa phủ', () => {
-  // can() mặc định đóng, nên object không có trong permissions.json thì mọi vai đều
-  // bị từ chối — kể cả máy làm đúng việc của nó. Test này liệt kê chỗ hổng để nó
-  // không lặng lẽ chặn nguyên một bước của vòng vận hành.
+describe('năm thực thể của vòng vận hành, chốt theo LOGIC.md §8.1', () => {
+  // can() mặc định đóng: object không có trong permissions.json thì MỌI vai bị từ chối,
+  // kể cả máy làm đúng việc OPERATIONS.md giao — và không chỗ nào báo, bước vận hành
+  // chỉ lặng lẽ đứng im. Trước đây năm dòng này còn trống; nay đã chốt.
   const THUC_THE_CUA_VONG_VAN_HANH = [
     'proposal',     // bước 7 và 8: máy đề xuất, cô quyết
     'draft',        // bước 3: nháp chấm
@@ -194,23 +194,49 @@ describe('thực thể trong ARCHITECTURE §2 mà permissions.json chưa phủ',
     'path',         // đầu vào của bước 1 và 8
   ]
 
-  /**
-   * Danh sách chỗ hổng ĐÃ BIẾT, chờ chốt. Không phải chuyện tôi tự quyết được:
-   * thêm một dòng vào permissions.json là đặt ra chính sách quyền cho một thực thể,
-   * mà file đó là nguồn duy nhất và `DECISIONS.md` mới là chỗ đổi cách làm.
-   */
-  const CHO_CHOT = ['proposal', 'draft', 'practice_set', 'attendance', 'path']
-
-  it('chỗ hổng đúng bằng danh sách đã biết — có cái mới thì đỏ ở đây', () => {
-    const chuaPhu = THUC_THE_CUA_VONG_VAN_HANH.filter((t) => !(t in DEFAULTS))
-    expect(chuaPhu.sort()).toEqual([...CHO_CHOT].sort())
+  it('không còn thực thể nào của vòng vận hành nằm ngoài permissions.json', () => {
+    expect(THUC_THE_CUA_VONG_VAN_HANH.filter((t) => !(t in DEFAULTS))).toEqual([])
   })
 
-  it('can() từ chối chúng — đóng chứ không mở, nhưng bước vận hành đứng im', () => {
+  it('máy đề xuất được nháp, bài luyện, đề xuất — nhưng không chạm lộ trình và điểm danh', () => {
     const may: Actor = { accountId: 'system', tenantId: TENANT, role: 'system', classIds: [LOP] }
-    for (const type of CHO_CHOT) {
-      // Máy đang làm đúng việc OPERATIONS.md giao mà vẫn bị chặn.
+    for (const type of ['draft', 'practice_set', 'proposal']) {
+      expect(can(may, `${type}.propose`, trongLop(type)), type).toBe(true)
+    }
+    // Lộ trình là tài sản của cô; điểm danh là việc của người có mặt trong buổi học.
+    for (const type of ['path', 'attendance']) {
       expect(can(may, `${type}.propose`, trongLop(type)), type).toBe(false)
     }
+  })
+
+  it('máy vẫn không GỬI được gì — cửa 1 chặn trước mọi mức quyền', () => {
+    const may: Actor = { accountId: 'system', tenantId: TENANT, role: 'system', classIds: [LOP] }
+    expect(can(may, 'draft.send', trongLop('draft'))).toBe(false)
+    expect(can(may, 'practice_set.create', trongLop('practice_set'))).toBe(false)
+  })
+
+  it('em không thấy nháp chấm, dù đó là nháp của chính bài em', () => {
+    const em: Actor = { accountId: EM, tenantId: TENANT, role: 'student', classIds: [LOP] }
+    const nhapCuaEm = { ...trongLop('draft'), ownerId: EM }
+    expect(can(em, 'draft.view', nhapCuaEm)).toBe(false)
+  })
+
+  it('em làm được bài luyện của em, không đụng bài luyện của bạn', () => {
+    const em: Actor = { accountId: EM, tenantId: TENANT, role: 'student', classIds: [LOP] }
+    expect(can(em, 'practice_set.update', { ...trongLop('practice_set'), ownerId: EM })).toBe(true)
+    expect(can(em, 'practice_set.view', { ...trongLop('practice_set'), ownerId: 'hv-khac' })).toBe(false)
+  })
+
+  it('trợ giảng điểm danh tự có hiệu lực, nhưng không đụng lộ trình của cô', () => {
+    const tg: Actor = { accountId: TRO_GIANG, tenantId: TENANT, role: 'assistant', classIds: [LOP] }
+    expect(can(tg, 'attendance.update', trongLop('attendance'))).toBe(true)
+    expect(can(tg, 'path.view', trongLop('path'))).toBe(false)
+  })
+
+  it('em chỉ LÀ CHỦ ĐỀ của điểm danh — xem được, sửa thì không', () => {
+    const em: Actor = { accountId: EM, tenantId: TENANT, role: 'student', classIds: [LOP] }
+    const cuaEm = { ...trongLop('attendance'), ownerId: EM }
+    expect(can(em, 'attendance.view', cuaEm)).toBe(true)
+    expect(can(em, 'attendance.update', cuaEm)).toBe(false)
   })
 })

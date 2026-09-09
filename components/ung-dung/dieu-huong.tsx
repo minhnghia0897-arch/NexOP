@@ -5,16 +5,21 @@
  *
  * Kích thước lấy từ CSS bản mẫu: nút rộng 76, ô icon 44×36 bo `--r-box`, mục đang mở thì
  * ô icon nền `--primary-selected` kèm viền trong mảnh.
+ *
+ * Rail co theo vai. Không phải để giấu — mà vì một mục bấm vào là bị chặn thì nó dạy người
+ * dùng rằng sản phẩm hay hỏng. Mục nào vai này không có việc gì để làm thì không đứng đó.
  */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import type { VaiDemo } from '@/lib/demo/du-lieu'
+
 import { Ico, MUC } from './khung'
 
-/** Bốn mục quan trọng nhất cho tab đáy — màn hẹp không chứa nổi chín mục. */
-const MUC_DAY = ['/tong-quan', '/cham-bai', '/lop-hoc', '/nhat-ky']
+/** Bốn mục quan trọng nhất cho tab đáy — màn hẹp không chứa nổi mười một mục. */
+const MUC_DAY = ['/tong-quan', '/cham-bai', '/lop-hoc', '/cau-hinh']
 
-function Muc({ dang, day = false }: { dang: string; day?: boolean }) {
+function Muc({ dang, vai, day = false }: { dang: string; vai: VaiDemo; day?: boolean }) {
   return (
     <>
       {MUC.map((m, i) => {
@@ -23,6 +28,7 @@ function Muc({ dang, day = false }: { dang: string; day?: boolean }) {
             <hr key={`ngan-${i}`} className="my-2.5 w-11 border-t border-border-light" />
           )
         }
+        if ('chiVai' in m && m.chiVai !== vai) return null
         if (day && !MUC_DAY.includes(m.href)) return null
 
         const on = dang.startsWith(m.href)
@@ -52,26 +58,26 @@ function Muc({ dang, day = false }: { dang: string; day?: boolean }) {
   )
 }
 
-export function Rail() {
+export function Rail({ vai }: { vai: VaiDemo }) {
   const dang = usePathname() ?? ''
   return (
     <nav
       aria-label="Điều hướng chính"
       className="hidden w-rail flex-none flex-col items-center gap-1 overflow-auto border-r border-border-light bg-surface py-4 md:flex"
     >
-      <Muc dang={dang} />
+      <Muc dang={dang} vai={vai} />
     </nav>
   )
 }
 
-export function TabDay() {
+export function TabDay({ vai }: { vai: VaiDemo }) {
   const dang = usePathname() ?? ''
   return (
     <nav
       aria-label="Điều hướng chính"
       className="grid h-[60px] flex-none grid-cols-4 border-t border-border-light bg-surface md:hidden"
     >
-      <Muc dang={dang} day />
+      <Muc dang={dang} vai={vai} day />
     </nav>
   )
 }

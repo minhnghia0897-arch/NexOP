@@ -116,6 +116,41 @@ export interface NhanXet {
   guiLuc: string
   /** Cô đã sửa bao nhiêu so với nháp của máy — nguyên liệu cho "giọng cô". */
   suaTuNhap: boolean
+  /** Ai nháp bản này: máy, hay trợ giảng. Chuỗi nháp là thứ màn "Việc của tôi" đọc. */
+  nhapBoi?: string
+  /** Band bản nháp đề xuất, để so với band cô chốt. Bằng nhau = cô giữ nguyên. */
+  bandNhap?: number
+  /**
+   * Lỗi cô đã duyệt và gửi kèm. Sao chép từ nháp lúc GỬI, không trỏ ngược về nháp:
+   * nháp là lớp 3 và bị xoá sau khi gửi; em phải còn đọc được chỗ cô đánh dấu sau đó.
+   */
+  co?: LoiDanhDau[]
+}
+
+/**
+ * Bài luyện 5 phút — `practice_set` trong permissions.json.
+ *
+ * Sinh ra từ một lỗi LẶP, không phải từ một bài. Đó là lý do nó có `viLoi`: bài luyện không
+ * nói được vì sao em phải làm thì em không làm.
+ */
+export interface BaiLuyen {
+  id: string
+  hocVienId: string
+  lopId: string
+  ten: string
+  viLoi: string
+  giaoBoi: string
+  cau: CauLuyen[]
+  /** Chỉ có sau khi em làm xong. Trước đó là null, và đó là thông tin thật. */
+  ketQua?: { dung: number; luc: string }
+}
+
+export interface CauLuyen {
+  cau: string
+  luaChon: string[]
+  dung: number
+  giaiThichDung: string
+  giaiThichSai: string
 }
 
 /**
@@ -162,6 +197,20 @@ export interface HocPhi {
   trangThai: 'da_dong' | 'sap_han' | 'qua_han'
 }
 
+/**
+ * Một công tắc trong "Luật của cô".
+ *
+ * `khoa: true` = không có công tắc, đây là luật của nền tảng. Hiện chung một chỗ với các
+ * công tắc bật/tắt được là cố ý: cô cần thấy ranh giới giữa "cô quyết" và "không ai quyết".
+ */
+export interface LuatMay {
+  id: string
+  ten: string
+  phu: string
+  bat: boolean
+  khoa?: boolean
+}
+
 export interface BaiDang {
   id: string
   lopId: string
@@ -184,6 +233,8 @@ export interface DuLieuDemo {
   hoSo: HoSoHocVien[]
   loTrinh: LoTrinh[]
   hocPhi: HocPhi[]
+  baiLuyen: BaiLuyen[]
+  luat: LuatMay[]
   /** Ai đang đăng nhập ở mỗi vai — cho công tắc đổi vai của bản demo. */
   vai: Record<VaiDemo, string>
 }
@@ -227,6 +278,14 @@ const CAU_HOI_WRITING: CauHoi[] = [
     no: 1,
     loai: 'essay',
     de: 'Some people believe that unpaid community service should be a compulsory part of high school programmes. To what extent do you agree or disagree?',
+  },
+]
+
+const CAU_HOI_EDUCATION: CauHoi[] = [
+  {
+    no: 1,
+    loai: 'essay',
+    de: 'Some people believe that university education should be free for all students, while others think students should pay for their own tuition. Discuss both views and give your own opinion.',
   },
 ]
 
@@ -280,6 +339,8 @@ export function duLieuBanDau(): DuLieuDemo {
       cachCham: 'auto', tinCayOcr: 0.99, cauHoi: CAU_HOI_READING },
     { id: 'de-l1', ten: 'Cambridge 18 · Listening Test 2', kyNang: 'listening', trinhDo: 'B2',
       cachCham: 'auto', tinCayOcr: 0.71, cauHoi: CAU_HOI_READING },
+    { id: 'de-w3', ten: 'Cambridge 19 · Test 2 — Task 2 Education', kyNang: 'writing',
+      trinhDo: 'B2–C1', cachCham: 'draft', cauHoi: CAU_HOI_EDUCATION },
   ]
 
   /*
@@ -299,6 +360,8 @@ export function duLieuBanDau(): DuLieuDemo {
       nhan: 'Task 1 — Bar chart', trongSo: 5, daXong: true, cauHoi: CAU_HOI_WRITING },
     { id: 'bg-w1', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-1, 23), lanThu: 1,
       nhan: 'Task 2 — Community service', trongSo: 10, cauHoi: CAU_HOI_WRITING },
+    { id: 'bg-w2', lopId: 'lop-65', deId: 'de-w3', hanNop: luc(2, 19), lanThu: 1,
+      nhan: 'Task 2 — Education', trongSo: 10, cauHoi: CAU_HOI_EDUCATION },
     { id: 'bg-r1', lopId: 'lop-65', deId: 'de-r1', hanNop: luc(2, 23), lanThu: 1,
       nhan: 'Reading Test 1', trongSo: 5, cauHoi: CAU_HOI_READING },
     { id: 'bg-w1-70', lopId: 'lop-70', deId: 'de-w1', hanNop: luc(1, 23), lanThu: 1,
@@ -369,11 +432,18 @@ export function duLieuBanDau(): DuLieuDemo {
       []),
   ]
 
+  /** Lớp 1: nhận xét cô đã gửi. Bơm ở dưới, sau khi có đủ bài nộp lịch sử. */
+  const nhanXet: NhanXet[] = []
+
   const baiDang: BaiDang[] = [
     { id: 'bd-1', lopId: 'lop-65', tacGiaId: CO_THAO, loai: 'post',
       noiDung: 'Buổi tới cô chữa Writing Task 2 theo bài các em vừa nộp. Em nào chưa nộp thì nộp trước 21h mai nhé.', luc: luc(-1, 8) },
     { id: 'bd-2', lopId: 'lop-65', tacGiaId: null, loai: 'system',
       noiDung: 'Bài mới: Cambridge 19 · Reading Test 1 — hạn nộp 23:00 ngày kia.', luc: luc(0, 7) },
+    // Câu hỏi chưa ai trả lời: đầu vào của màn "Việc của tôi" bên trợ giảng.
+    { id: 'bd-3', lopId: 'lop-65', tacGiaId: 'hv-03', loai: 'post',
+      noiDung: 'Cô ơi đề Education này em viết theo hướng "đồng ý một phần" có được không ạ?',
+      luc: luc(0, 21) },
   ]
 
   /*
@@ -496,6 +566,168 @@ export function duLieuBanDau(): DuLieuDemo {
     }
   })
 
+  /*
+   * Lịch sử của em Minh Anh — nguyên liệu của app học viên.
+   *
+   * Bốn bài đã chấm xong của em, kèm nhận xét CÔ ĐÃ GỬI. Đây là lớp 1: chỉ thêm. App của
+   * em đọc đúng những dòng này, nên "Bài của tôi" không phải bảng trang trí — bỏ một dòng
+   * ở đây là app của em mất một bài, y như thật.
+   *
+   * Band lấy thẳng từ `hoSo['hv-01'].diem` để hai màn không kể hai câu chuyện khác nhau.
+   */
+  const LOI_LAP: LoiDanhDau = {
+    trich: 'people is often surprised', sua: 'people are often surprised',
+    loai: 'hoà hợp chủ–vị', nhom: 'grammar', themY: 'Lỗi này lặp 3 bài liên tiếp',
+  }
+
+  const LICH_SU_MINH_ANH: [string, number, string, boolean, string | null, number | null, LoiDanhDau[]][] = [
+    ['bg-t1a', 5.5,
+      'Bài đầu tiên của em cô đọc kỹ. Bố cục có, nhưng phần mô tả xu hướng còn liệt kê số liệu thay vì nói xu hướng. Lần sau em thử viết một câu tổng quát trước rồi mới dẫn số.',
+      false, null, null,
+      [{ trich: 'The number of visitors were rising', sua: 'was rising',
+         loai: 'hoà hợp chủ–vị', nhom: 'grammar' },
+       { trich: 'go up, go up, go up', sua: 'rose · climbed · increased sharply',
+         loai: 'lặp động từ', nhom: 'vocab' }]],
+    ['bg-mock1', 6.0,
+      'Em lên rõ ở phần mở bài — đi thẳng vào câu hỏi, không vòng vo. Vẫn còn "people is" một lần ở đoạn 2. Cô đánh dấu để em nhớ: danh từ số nhiều thì động từ bỏ -s.',
+      true, 'system', 5.5,
+      [LOI_LAP,
+       { trich: 'Firstly, Secondly, Finally', sua: 'dùng liên kết đa dạng hơn',
+         loai: 'liên kết máy móc', nhom: 'structure' }]],
+    ['bg-t2tech', 6.0,
+      'Lập luận của em có chiều. Hai chỗ hoà hợp chủ–vị lặp lại lần thứ hai rồi — cô giao cho em một bài luyện 5 phút, làm xong cô sẽ thấy trong hồ sơ.',
+      true, 'system', 6.5,
+      [LOI_LAP,
+       { trich: 'the goverment', sua: 'the government', loai: 'chính tả', nhom: 'vocab' },
+       { trich: 'Technology make our life easier', sua: 'Technology makes',
+         loai: 'hoà hợp chủ–vị', nhom: 'grammar', themY: 'Cùng loại lỗi, lần thứ hai' }]],
+    ['bg-t1bar', 6.5,
+      'Bài này chắc tay nhất từ đầu khoá. Em giữ đúng cấu trúc này. Chỉ còn hoà hợp chủ–vị — dứt được lỗi đó là Grammar của em lên 6.0, và band chung lên theo.',
+      false, 'system', 6.5,
+      [{ trich: 'A range of subjects are offered', sua: 'is offered',
+         loai: 'hoà hợp chủ–vị', nhom: 'grammar',
+         themY: 'Lần thứ ba — cô giao bài luyện 5 phút ở mục Luyện thêm' },
+       { trich: 'In conclusion, I think that', sua: 'To conclude,',
+         loai: 'mở đoạn kết quen tay', nhom: 'structure' }]],
+  ]
+
+  for (const [bgId, band, noiDung, suaTuNhap, nhapBoi, bandNhap, co] of LICH_SU_MINH_ANH) {
+    const bnId = `bn-hv-01-${bgId}`
+    // Mốc thời gian bám theo hạn của chính bài giao đó, để "nhận xét mới nhất" là bài mới
+    // nhất thật — không phải bốn dòng cùng một giờ rồi sắp theo thứ tự khai báo.
+    const han = baiGiao.find((g) => g.id === bgId)!.hanNop
+    const ngayHan = Math.round((new Date(han).getTime() - Date.now()) / (24 * 3600_000))
+    baiNop.push({
+      id: bnId, baiGiaoId: bgId, hocVienId: 'hv-01',
+      noiDung: BAI_MAU[0]!, soTu: 250 + band * 10, nopLuc: luc(ngayHan, 21), muon: false,
+    })
+    nhanXet.push({
+      id: `nx-${bgId}-hv-01`, baiNopId: bnId, band, noiDung,
+      guiLuc: luc(ngayHan + 1, 22), suaTuNhap, co,
+      ...(nhapBoi ? { nhapBoi } : {}),
+      ...(bandNhap === null ? {} : { bandNhap }),
+    })
+  }
+
+  /*
+   * Hai bài trợ giảng Lan đã nháp và cô đã chốt — nguyên liệu màn "Việc của tôi".
+   *
+   * Cần cả hai kết cục: một bài cô giữ nguyên band của Lan nhưng viết thêm, một bài cô hạ
+   * band. Chỉ có bài "cô giữ nguyên" thì màn đó thành lời khen, không nói được Lan cần sửa gì.
+   */
+  const NHAP_CUA_LAN: [string, string, number, number, string][] = [
+    ['bg-t1bar', 'hv-06', 5.5, 5.5,
+      'Lan nháp sát bài. Cô giữ nguyên band, chỉ thêm một câu: em làm rất nhanh — đọc lại đề trước khi viết.'],
+    ['bg-t2tech', 'hv-09', 5.5, 5.0,
+      'Cô hạ 0.5 so với nháp của Lan: cả hai đoạn thân đều thiếu ví dụ, Task Response không thể 6 khi lập luận chưa có gì đỡ.'],
+  ]
+
+  for (const [bgId, hvId, bandNhap, band, noiDung] of NHAP_CUA_LAN) {
+    const bnId = `bn-${hvId}-${bgId}`
+    baiNop.push({
+      id: bnId, baiGiaoId: bgId, hocVienId: hvId,
+      noiDung: BAI_MAU[2]!, soTu: 261, nopLuc: luc(-2), muon: false,
+    })
+    nhanXet.push({
+      id: `nx-${bgId}-${hvId}`, baiNopId: bnId, band, noiDung,
+      guiLuc: luc(-2, 20), suaTuNhap: band !== bandNhap, nhapBoi: TRO_GIANG, bandNhap,
+    })
+  }
+
+  /*
+   * Bài luyện của em — sinh ra từ LỖI LẶP, không phải từ một bài.
+   *
+   * Câu 4 cố tình là bẫy ngược: ở đó "is considering" mới đúng. Bài luyện chỉ dạy "đừng dùng
+   * số nhiều với -s" thì em học thành phản xạ máy móc, và phản xạ máy móc sai chỗ khác.
+   */
+  const baiLuyen: BaiLuyen[] = [
+    {
+      id: 'bl-hv-01-chuvi',
+      hocVienId: 'hv-01',
+      lopId: 'lop-65',
+      ten: '5 câu hoà hợp chủ ngữ – động từ',
+      viLoi: 'Lỗi "people is" lặp 3 bài liên tiếp — cô đánh dấu ở Mock 1, Task 2 Technology và bài vừa nộp',
+      giaoBoi: CO_THAO,
+      cau: [
+        {
+          cau: 'Many people ___ that community service teaches responsibility.',
+          luaChon: ['believes', 'believe', 'is believing', 'believing'],
+          dung: 1,
+          giaiThichDung: 'Đúng. "People" là số nhiều nên động từ bỏ -s. Đây chính là câu em viết sai ở Mock 1.',
+          giaiThichSai: '"People" đã là số nhiều — không thêm -s vào động từ. Câu em viết ở Mock 1 là "people is", cùng một lỗi.',
+        },
+        {
+          cau: 'The government ___ a new policy on tuition fees every year.',
+          luaChon: ['announces', 'announce', 'are announcing', 'have announced'],
+          dung: 0,
+          giaiThichDung: 'Đúng. "The government" là danh từ tập hợp số ít trong tiếng Anh học thuật — động từ có -s.',
+          giaiThichSai: 'Tập hợp nhưng số ít: "the government announces". Bài Community service em viết "the goverment" cũng chính là chỗ này.',
+        },
+        {
+          cau: 'A society in which students volunteer regularly ___ lower crime rates.',
+          luaChon: ['have', 'are having', 'has', 'having'],
+          dung: 2,
+          giaiThichDung: 'Đúng — và em vượt được cái bẫy: chủ ngữ là "a society", không phải "students". Mệnh đề xen giữa không đổi chủ ngữ.',
+          giaiThichSai: 'Chủ ngữ là "a society" (số ít), không phải "students". Mệnh đề "in which students volunteer" chỉ xen vào giữa — đây là bẫy hay gặp nhất.',
+        },
+        {
+          cau: 'Right now the ministry ___ three different proposals.',
+          luaChon: ['considers', 'consider', 'are considering', 'is considering'],
+          dung: 3,
+          giaiThichDung: 'Đúng — câu này ngược lại. "Right now" là hành động đang diễn ra nên tiếp diễn mới đúng, và "the ministry" số ít nên "is".',
+          giaiThichSai: 'Câu này cố tình ngược: "right now" = đang diễn ra, nên tiếp diễn đúng. Không phải cứ tránh tiếp diễn là an toàn — phải nhìn nghĩa.',
+        },
+        {
+          cau: 'Neither the students nor the teacher ___ satisfied with the new timetable.',
+          luaChon: ['are', 'is', 'were', 'being'],
+          dung: 1,
+          giaiThichDung: 'Đúng. Với "neither … nor", động từ theo danh từ ĐỨNG GẦN nhất — ở đây là "the teacher", số ít.',
+          giaiThichSai: 'Với "neither … nor", động từ chia theo danh từ đứng gần nó nhất: "the teacher" → "is". Đây là mức 6.5, cô đưa vào để em thấy đích.',
+        },
+      ],
+    },
+  ]
+
+  const luat: LuatMay[] = [
+    { id: 'nhac-nop', bat: true, ten: 'Nhắc nộp bài, nhắc lịch',
+      phu: 'Chỉ với học viên đã bật tài khoản · 9:00–21:30' },
+    { id: 'chot-mcq', bat: true, ten: 'Chốt điểm trắc nghiệm khi tin cậy ≥ 97%',
+      phu: 'Câu chữ mờ vẫn hỏi cô' },
+    { id: 'sinh-bai-luyen', bat: true, ten: 'Sinh bài luyện 5 phút khi lỗi lặp ≥ 2 bài',
+      phu: 'Gắn kèm nhận xét cô đã duyệt' },
+    { id: 'gui-tu-luan', bat: false, ten: 'Gửi nhận xét tự luận không cần cô duyệt',
+      phu: 'Cô đang tắt — mọi nhận xét tự luận đều qua tay cô' },
+    { id: 'nhan-phu-huynh', bat: false, ten: 'Nhắn phụ huynh',
+      phu: 'Chỉ khi cô bật cho từng em; gửi tiến bộ và việc cụ thể, không gửi điểm' },
+    { id: 'khoa-hoc-phi', bat: false, khoa: true,
+      ten: 'Gửi tin dính học phí khi cô chưa duyệt',
+      phu: 'Không có công tắc. `send_actions_owner_only` trong permissions.json chặn ở tầng quyền.' },
+    { id: 'khoa-so-sanh', bat: false, khoa: true, ten: 'So sánh em này với em khác cho em xem',
+      phu: 'Không có công tắc. Bảng điểm cả lớp là mức `none` với vai học viên.' },
+    { id: 'khoa-xuat', bat: true, khoa: true, ten: 'Cô xuất toàn bộ dữ liệu bất cứ lúc nào',
+      phu: 'Không tắt được. Học viên thuộc về cô, không thuộc về nền tảng.' },
+  ]
+
   return {
     tenant: { id: 'tn-cothao', subdomain: 'cothao', ten: 'Lớp IELTS của cô Thảo' },
     taiKhoan,
@@ -504,11 +736,13 @@ export function duLieuBanDau(): DuLieuDemo {
     baiGiao,
     baiNop,
     nhapCham,
-    nhanXet: [],
+    nhanXet,
     baiDang,
     hoSo,
     loTrinh,
     hocPhi,
+    baiLuyen,
+    luat,
     vai: { owner: CO_THAO, assistant: TRO_GIANG, student: 'hv-01' },
   }
 }

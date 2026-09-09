@@ -238,3 +238,43 @@ bị chặn ở Học phí bởi **trần cứng** (cửa 5 của `can()`, trư�
 bị chặn ở Lộ trình và ở danh sách bạn cùng lớp.
 Kèm theo: dữ liệu mẫu phải giàu thêm — lịch sử bốn bài đã chấm, hồ sơ mười tám em, lộ trình, học phí.
 Bảng điểm một cột thì "band tăng hay tụt" vô nghĩa, mà đó mới là thứ cô mở bảng điểm để tìm.
+
+### 2026-09-09 · Áp năm dòng quyền còn thiếu thay vì để chúng chặn tiếp
+Lý do: `can()` mặc định đóng. Object không có trong `permissions.json` thì **mọi vai** bị từ chối —
+kể cả máy làm đúng việc `OPERATIONS.md` giao. Năm thực thể `proposal · draft · practice_set ·
+attendance · path` nằm ngoài file, nên bước 3, 5, 7, 8 của vòng vận hành đứng im mà không chỗ nào báo.
+Trước đây em ghi rõ là không tự quyết: thêm một dòng vào file đó là đặt ra chính sách quyền.
+Nay áp dụng vì bài luyện của học viên (`practice_set`) là màn của bản mẫu, không dựng được nếu thiếu,
+và vì bảng ở `LOGIC.md` §8.1 không phải em nghĩ ra: nó suy từ `ARCHITECTURE` §3 và `OPERATIONS.md`.
+**Cô là người chốt cuối** — đổi ý thì sửa `docs/permissions.json`, cả hệ thống đọc từ đúng file đó.
+Hai chỗ chỉ lộ ra khi áp thật:
+`attendance` phải vào `own_is_subject_not_author`, nếu không mức `own` cho em tự sửa buổi vắng của mình
+— em **là chủ đề** của điểm danh chứ không phải người ghi ra nó.
+Và `baiCanCham` bỏ được chỗ lách: trước hỏi `review.propose` để chặn em thấy chồng bài chấm, nay hỏi
+`draft.view`. Cùng kết quả, khác lý do — và lý do mới là lý do thật, nên nó không vỡ khi chính sách đổi.
+
+### 2026-09-09 · App học viên tách khung riêng, và ba màn còn thiếu của bản mẫu
+Lý do: bản mẫu có ba thứ bản demo chưa dựng — **Cấu hình** (5 tab), **Việc của tôi** (màn nhà của
+trợ giảng), và **app học viên 7 màn** với tab đáy 60px. Cô chỉ vào link bản mẫu và nói "toàn bộ
+các trang", nên thiếu ba chỗ này là chưa xong.
+App của em ở `app/(em)`, khung riêng, **không đọc `vaiHienTai()`**. Cô mở app của em để xem thử thì
+vẫn thấy đúng những gì em thấy: mọi câu đọc đi qua `can()` với actor học viên thật. Để nó co theo vai
+đang xem thì app này thành cửa hậu — cô mở ra, thấy đủ, rồi tưởng em cũng thấy đủ như vậy.
+Hai màn sinh thẳng từ `docs/permissions.json` chứ không gõ tay: ma trận quyền ở tab Quyền, và khối
+"Lan không thấy gì". Bản mẫu viết tay 12 dòng HTML. Gõ tay thì hôm nào cô đổi chính sách, màn hình
+vẫn hứa với người đọc đúng những thứ cũ — kiểu sai không ai phát hiện ra, vì màn trông vẫn đúng.
+Rail co theo vai: "Việc của tôi" chỉ hiện với trợ giảng, đúng như bản mẫu (`body.ta .rail button`).
+"Nhật ký" thôi làm mục riêng, thành một tab của Cấu hình — bản mẫu xếp thế, và nhật ký đọc cùng lúc
+với luật của cô thì mới trả lời được câu "máy vừa tự làm gì sau lưng tôi".
+Bốn chỗ chỉ lộ ra khi bấm thật, không lộ khi đọc mã:
+`post` mức `own` với vai học viên nói về quyền VIẾT. Hỏi `post.view` từng bài thì em bị chặn ở bài
+của cô và bảng tin lớp rỗng trơn. Phạm vi ĐỌC của bảng tin là phạm vi lớp → hỏi `class.view`.
+Màn xác nhận nộp bài phải xét TRƯỚC cửa "hết bài": nộp xong thì không còn bài nào, nên xét cửa kia
+trước là em nộp xong nhìn thấy "em đã nộp hết bài", còn màn xác nhận thành mã chết.
+Năm câu bài luyện ban đầu đáp án đều ở vị trí B — bấm B năm lần là 5/5 mà không đọc câu nào.
+Và `den="/nhat-ky"` trỏ tới màn đã xoá vẫn dựng được, vì component ép kiểu `as never` khi truyền cho
+`<Link>`. Ép kiểu ở đâu thì mù ở đó — nay `den` khai kiểu `Route`, trình biên dịch bắt được.
+Chỗ cố ý khác bản mẫu, ghi ra để không ai tưởng là sót: bản mẫu để tiêu đề màn sát mép trái còn nội
+dung căn giữa ở 760 — trên màn 1440 tiêu đề trôi hẳn khỏi cột nội dung, trông như chỗ hỏng; app của
+em cho tiêu đề vào cùng cột. Và bản mẫu cho Tổng quan với Việc của tôi **cùng một icon bốn ô**; rail
+được quét bằng icon chứ không đọc chữ, nên Việc của tôi đổi sang icon danh sách-có-tích.

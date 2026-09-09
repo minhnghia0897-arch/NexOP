@@ -32,8 +32,8 @@ function actor(overrides: Partial<Actor> = {}): Actor {
 }
 
 describe('ma trận quyền', () => {
-  it('permissions.json phủ đủ 13 object × 5 vai', () => {
-    expect(OBJECT_TYPES).toHaveLength(13)
+  it('permissions.json phủ đủ 18 object × 5 vai', () => {
+    expect(OBJECT_TYPES).toHaveLength(18)
     for (const type of OBJECT_TYPES) {
       for (const role of ROLES) {
         expect(DEFAULTS[type]?.[role], `${type}.${role}`).toBeDefined()

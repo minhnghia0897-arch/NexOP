@@ -9,6 +9,7 @@
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-selected: var(--primary-selected);
+  --color-primary-selected-hover: var(--primary-selected-hover);
 
   --color-text: var(--text);
   --color-text-2: var(--text-2);

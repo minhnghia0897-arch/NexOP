@@ -15,16 +15,18 @@ import {
   baiCanCham,
   dangBai,
   datLai,
+  datLuat,
   deXuatChoCo,
   duLieu,
   guiNhanXet,
   actorMay,
+  lamBaiLuyen,
   mayChamNhap,
   nhatKy,
   nopBai,
   suaNhap,
 } from '@/lib/demo/kho'
-import { can } from '@/lib/auth/can'
+import { can, type Actor } from '@/lib/auth/can'
 
 const BAI = 'bn-hv-01'
 
@@ -92,7 +94,8 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
       const truoc = nhatKy().length
       expect(() => guiNhanXet('assistant', BAI)).toThrow()
       expect(nhatKy()).toHaveLength(truoc)
-      expect(duLieu().nhanXet).toHaveLength(0)
+      // Dữ liệu mẫu đã có nhận xét cũ của em; điều phải đúng là KHÔNG có thêm cái nào cho bài này.
+      expect(duLieu().nhanXet.some((n) => n.baiNopId === BAI)).toBe(false)
       // Nháp vẫn còn nguyên — hành vi không xảy ra, không phải xảy ra một nửa.
       expect(duLieu().nhapCham.find((n) => n.baiNopId === BAI)).toBeDefined()
     })
@@ -109,8 +112,8 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
       const n = duLieu().nhapCham.find((x) => x.baiNopId === BAI)!
       expect(n.nhanXet).toBe('Trợ giảng soạn: em chú ý liên kết đoạn.')
       expect(n.choCoDuyet?.boiId).toBe('acc-pham-lan')
-      // Vẫn chưa có nhận xét nào tới em — đó là điểm của cả cơ chế.
-      expect(duLieu().nhanXet).toHaveLength(0)
+      // Vẫn chưa có nhận xét nào tới em cho bài này — đó là điểm của cả cơ chế.
+      expect(duLieu().nhanXet.some((x) => x.baiNopId === BAI)).toBe(false)
     })
 
     it('sự kiện là propose, và chỉ cô nhìn thấy', () => {
@@ -148,12 +151,12 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
     it('cô gửi bản trợ giảng sửa, và hệ thống biết là đã sửa từ nháp máy', () => {
       suaNhap('assistant', BAI, 'Bản đã sửa')
       guiNhanXet('owner', BAI)
-      expect(duLieu().nhanXet[0]!.suaTuNhap).toBe(true)
+      expect(duLieu().nhanXet.find((n) => n.baiNopId === BAI)!.suaTuNhap).toBe(true)
     })
 
     it('gửi thẳng nháp máy thì ghi là chưa sửa', () => {
       guiNhanXet('owner', BAI)
-      expect(duLieu().nhanXet[0]!.suaTuNhap).toBe(false)
+      expect(duLieu().nhanXet.find((n) => n.baiNopId === BAI)!.suaTuNhap).toBe(false)
     })
   })
 
@@ -206,7 +209,8 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
     it('nộp muộn được đánh dấu là muộn', () => {
       // bg-w1 đã quá hạn từ hôm qua.
       nopBai('hv-09', 'bg-w1', 'Em nộp muộn')
-      expect(duLieu().baiNop.find((b) => b.hocVienId === 'hv-09')!.muon).toBe(true)
+      const vua = duLieu().baiNop.find((b) => b.hocVienId === 'hv-09' && b.baiGiaoId === 'bg-w1')!
+      expect(vua.muon).toBe(true)
     })
   })
 
@@ -220,6 +224,64 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
     it('bài tin cậy thấp có cờ nói rõ vì sao', () => {
       const thap = baiCanCham('owner').find((b) => b.tinCay < 0.85)!
       expect(thap.ganCo.join(' ')).toMatch(/85%|Lệch/)
+    })
+  })
+
+  describe('luật của cô — công tắc thật, không phải trang trí', () => {
+    it('cô tắt được, và việc đó để lại một dòng nhật ký', () => {
+      const truoc = nhatKy().length
+      datLuat('owner', 'nhac-nop', false)
+      expect(duLieu().luat.find((l) => l.id === 'nhac-nop')!.bat).toBe(false)
+      expect(nhatKy()).toHaveLength(truoc + 1)
+      expect(nhatKy()[0]!.action).toBe('rubric.update')
+    })
+
+    it('trợ giảng không bật/tắt được, và không đổi gì', () => {
+      expect(() => datLuat('assistant', 'nhac-nop', false)).toThrow(KhongDuQuyen)
+      expect(duLieu().luat.find((l) => l.id === 'nhac-nop')!.bat).toBe(true)
+    })
+
+    it('chặn vì TRẦN CỨNG — cô có cấp full cho rubric cũng vẫn chặn', () => {
+      /*
+       * Test trên chưa chứng minh được điều này: bỏ cửa 5 đi thì trợ giảng vẫn bị cửa 6
+       * chặn (mức mặc định của rubric là `none`), nên nó xanh vì hai lý do khác nhau và
+       * không phân biệt được. Muốn soi đúng cửa 5 thì phải CẤP quyền rồi xem có lọt không.
+       */
+      const duocCap: Actor = {
+        accountId: 'acc-pham-lan',
+        tenantId: 'tn-cothao',
+        role: 'assistant',
+        classIds: ['lop-65'],
+        permissions: { 'lop-65': { rubric: 'full' } },
+      }
+      // classId phải có: quyền cô cấp là cấp THEO LỚP, không có lớp thì cửa 6 không đọc tới.
+      const obj = { type: 'rubric', tenantId: 'tn-cothao', classId: 'lop-65' }
+      expect(can(duocCap, 'rubric.update', obj)).toBe(false)
+    })
+
+    it('luật khoá thì không ai chạm được, kể cả cô', () => {
+      const truoc = nhatKy().length
+      datLuat('owner', 'khoa-hoc-phi', true)
+      expect(duLieu().luat.find((l) => l.id === 'khoa-hoc-phi')!.bat).toBe(false)
+      // Không đổi gì thì cũng không ghi gì — nhật ký không phải chỗ ghi ý định.
+      expect(nhatKy()).toHaveLength(truoc)
+    })
+  })
+
+  describe('bài luyện là của em, và chỉ của em', () => {
+    const LUYEN = 'bl-hv-01-chuvi'
+
+    it('em làm bài luyện của em, kết quả về hồ sơ và chỉ cô thấy', () => {
+      lamBaiLuyen('hv-01', LUYEN, 4)
+      expect(duLieu().baiLuyen.find((b) => b.id === LUYEN)!.ketQua?.dung).toBe(4)
+      const ev = nhatKy()[0]!
+      expect(ev.action).toBe('practice_set.update')
+      expect(ev.visibility.sort()).toEqual(['acc-co-thao', 'hv-01'])
+    })
+
+    it('bạn cùng lớp không làm hộ được — cửa 7 so chủ sở hữu', () => {
+      expect(() => lamBaiLuyen('hv-02', LUYEN, 5)).toThrow(KhongDuQuyen)
+      expect(duLieu().baiLuyen.find((b) => b.id === LUYEN)!.ketQua).toBeUndefined()
     })
   })
 })

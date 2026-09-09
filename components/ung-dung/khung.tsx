@@ -11,6 +11,7 @@
  * bản demo em để một nút ba nấc, vì người xem demo không đoán được rằng avatar bấm được —
  * mà cả sản phẩm này bán ở chỗ "cùng một màn, ba vai thấy ba thứ khác nhau".
  */
+import type { Route } from 'next'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
@@ -18,17 +19,27 @@ import type { VaiDemo } from '@/lib/demo/du-lieu'
 import { doiVaiXem } from '@/lib/demo/hanh-vi'
 
 /*
- * Chín mục của bản mẫu, chia ba nhóm bằng gạch ngang.
+ * Mười một mục của bản mẫu, chia ba nhóm bằng gạch ngang.
  *
- * Mục nào chưa dựng màn thì `chuaCo: true` — hiện mờ và không bấm được. Giấu chúng đi thì
- * rail chỉ còn bốn mục và bố cục lệch hẳn khỏi bản mẫu; cho bấm vào màn trống thì tệ hơn
- * nữa. Hiện mà mờ là nói đúng sự thật: chỗ này có trong sản phẩm, chưa có trong bản demo.
+ * `chiVai` giới hạn mục theo vai đang xem: "Việc của tôi" là màn nhà của trợ giảng, cô
+ * không có mục đó (cô đã có Tổng quan). Bản mẫu làm y hệt — `body.ta .rail button[data-s=
+ * "tahome"]{display:flex}` — nghĩa là rail cũng co theo quyền, không chỉ nội dung màn.
+ *
+ * Chỗ cố ý khác bản mẫu: bản mẫu cho Tổng quan và Việc của tôi **cùng một icon bốn ô**.
+ * Rail được quét bằng icon chứ không đọc chữ, nên hai mục trùng icon là hai mục không phân
+ * biệt được. Việc của tôi dùng icon danh sách-có-tích.
  */
 export const MUC = [
   {
     href: '/tong-quan',
     ten: 'Tổng quan',
     d: 'M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z',
+  },
+  {
+    href: '/viec-cua-toi',
+    ten: 'Việc của tôi',
+    chiVai: 'assistant',
+    d: 'M4 6h2l1 1 2-2M4 12h2l1 1 2-2M4 18h2l1 1 2-2M13 6h7M13 12h7M13 18h7',
   },
   { href: '/cham-bai', ten: 'Chấm bài', d: 'M4 20l4-1 10-10-3-3L5 16zM13 7l3 3' },
   {
@@ -44,13 +55,16 @@ export const MUC = [
   { href: '/bang-tin', ten: 'Bảng tin', d: 'M4 5h16v11H8l-4 4z' },
   { ngan: true },
   {
-    href: '/nhat-ky',
-    ten: 'Nhật ký',
-    d: 'M12 8v4l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
+    href: '/cau-hinh',
+    ten: 'Cấu hình',
+    d: [
+      'M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
+      'M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
+    ],
   },
 ] as const
 
-export function Ico({ d, s = false }: { d: string; s?: boolean }) {
+export function Ico({ d, s = false }: { d: string | readonly string[]; s?: boolean }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -61,7 +75,9 @@ export function Ico({ d, s = false }: { d: string; s?: boolean }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d={d} />
+      {(typeof d === 'string' ? [d] : d).map((nét) => (
+        <path key={nét} d={nét} />
+      ))}
     </svg>
   )
 }
@@ -169,7 +185,10 @@ export function DaiVai({ vai }: { vai: VaiDemo }) {
       ) : (
         <>
           <b className="font-display font-semibold">Đang xem như học viên Minh Anh</b> — chỉ dữ liệu
-          của em · không thấy band nháp của máy · không thấy bạn cùng lớp
+          của em · không thấy band nháp của máy · không thấy bạn cùng lớp{' '}
+          <Link href="/em/hom-nay" className="font-display font-semibold underline">
+            Mở app của em →
+          </Link>
         </>
       )}
     </div>
@@ -229,10 +248,10 @@ export function Wrap({ children }: { children: ReactNode }) {
 }
 
 /** Hành động chính ở đầu màn, kiểu nút chữ của bản mẫu. */
-export function NutLien({ href, children }: { href: string; children: ReactNode }) {
+export function NutLien({ href, children }: { href: Route; children: ReactNode }) {
   return (
     <Link
-      href={href as never}
+      href={href}
       className="flex items-center gap-2 font-display text-[14px] font-medium text-text transition-colors hover:text-primary"
     >
       {children}

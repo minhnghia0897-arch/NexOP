@@ -37,14 +37,16 @@ export default function KhungLamViec({ children }: { children: React.ReactNode }
         : du.lop
 
   const soEm = new Set(du.lop.flatMap((l) => l.hocVienIds)).size
-  const coTaiKhoan = du.taiKhoan.filter((t) => t.phone).length
+  // Đếm từ hồ sơ, không từ "có số điện thoại": mọi em đều có số, nhưng chưa em nào cũng
+  // BẬT tài khoản — và thanh thiết lập lớp đang nói về việc bật tài khoản.
+  const coTaiKhoan = du.hoSo.filter((h) => h.coTaiKhoan).length
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-surface">
       <Topbar tenTenant={du.tenant.ten} vai={vai} soCho={cho.length} />
       <DaiVai vai={vai} />
       <div className="flex min-h-0 flex-1">
-        <Rail />
+        <Rail vai={vai} />
         {/* Panel đọc query để biết lớp đang chọn — cần Suspense thì mới dựng tĩnh được. */}
         <Suspense fallback={null}>
           <PanelLop
@@ -56,7 +58,7 @@ export default function KhungLamViec({ children }: { children: React.ReactNode }
         </Suspense>
         <Canvas>{children}</Canvas>
       </div>
-      <TabDay />
+      <TabDay vai={vai} />
     </div>
   )
 }

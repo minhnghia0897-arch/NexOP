@@ -376,6 +376,9 @@ export function guiNhanXet(vai: VaiDemo, baiNopId: string): void {
         noiDung: nhap.nhanXet,
         guiLuc: new Date().toISOString(),
         suaTuNhap: nhap.nhanXet !== nhapGoc?.nhanXet,
+        // Đóng băng lỗi vào lớp 1. Nháp bị xoá ngay dưới đây — không sao chép thì em mở
+        // nhận xét ra chỉ thấy một đoạn văn, không thấy chỗ nào trong bài cần sửa.
+        co: nhap.co,
       })
       d.nhapCham = d.nhapCham.filter((n) => n.baiNopId !== baiNopId)
     },
@@ -437,6 +440,69 @@ export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): v
   )
 }
 
+/**
+ * Bật/tắt một luật của cô.
+ *
+ * Hỏi `rubric.update`: "máy được tự làm gì" là một phần của cách cô chấm, và `rubric` là
+ * trần cứng của trợ giảng — nên trợ giảng bị chặn ở cửa 5, trước cả khi xét mức quyền cô cấp.
+ * Luật `khoa` thì không hàm nào chạm được: nó không phải công tắc, nó là luật nền tảng.
+ */
+export function datLuat(vai: VaiDemo, id: string, bat: boolean): void {
+  const du = duLieu()
+  const l = du.luat.find((x) => x.id === id)
+  if (!l || l.khoa) return
+
+  ghi(
+    actorCuaVai(vai),
+    'rubric.update',
+    { type: 'rubric', tenantId: du.tenant.id },
+    { luat: id, bat },
+    [du.vai.owner],
+    (d) => {
+      const m = d.luat.find((x) => x.id === id)
+      if (m) m.bat = bat
+    },
+  )
+}
+
+/**
+ * Em làm xong một bài luyện.
+ *
+ * `practice_set` mức `own` cho vai học viên, nên `can()` chặn ngay nếu bài luyện là của bạn
+ * khác — cửa 7 so `ownerId` với người đang làm. Kết quả về hồ sơ của em, và cô thấy;
+ * bạn cùng lớp thì không, nên `visibility` chỉ có hai người.
+ */
+export function lamBaiLuyen(hocVienId: string, baiLuyenId: string, dung: number): void {
+  const du = duLieu()
+  const bl = du.baiLuyen.find((b) => b.id === baiLuyenId)
+  if (!bl) return
+
+  const actor: Actor = {
+    accountId: hocVienId,
+    tenantId: du.tenant.id,
+    role: 'student',
+    classIds: [bl.lopId],
+  }
+
+  ghi(
+    actor,
+    'practice_set.update',
+    {
+      type: 'practice_set',
+      id: baiLuyenId,
+      tenantId: du.tenant.id,
+      classId: bl.lopId,
+      ownerId: bl.hocVienId,
+    },
+    { dung, tong: bl.cau.length },
+    [du.vai.owner, hocVienId],
+    (d) => {
+      const m = d.baiLuyen.find((b) => b.id === baiLuyenId)
+      if (m) m.ketQua = { dung, luc: new Date().toISOString() }
+    },
+  )
+}
+
 // ───────────────────────────── đọc ─────────────────────────────
 
 /**
@@ -490,16 +556,13 @@ export function baiCanCham(vai: VaiDemo): BaiCanCham[] {
     /*
      * Lọc bằng đúng hàm quyền, không phải bằng `if vai === ...` rải rác.
      *
-     * Và lọc bằng `review.propose`, không phải `submission.view`: em XEM ĐƯỢC bài nộp của
-     * chính em, nên lọc theo bài nộp thì em nhìn thấy chồng bài chấm — mà nháp là lớp 3,
-     * em không bao giờ được thấy band máy đoán. Ai sửa được nháp thì mới thấy chồng bài.
-     *
-     * Đây là chỗ lẽ ra nên hỏi `draft.view`. `draft` là một trong năm thực thể còn thiếu
-     * trong permissions.json (docs/LOGIC.md §8.1), nên tạm hỏi câu gần nhất mà đã có
-     * chính sách thật, thay vì tự đặt ra một chính sách mới ở đây.
+     * Hỏi `draft.view`, không hỏi `submission.view`: em XEM ĐƯỢC bài nộp của chính em, nên
+     * lọc theo bài nộp thì em nhìn thấy cả chồng bài chấm — mà nháp là lớp 3, em không bao
+     * giờ được thấy band máy đoán. Chính sách `draft` (permissions.json) cho em mức `none`,
+     * nên câu hỏi này chặn đúng chỗ thay vì chặn nhờ một câu hỏi gần đúng.
      */
-    const doc = can(actor, 'review.propose', {
-      type: 'review',
+    const doc = can(actor, 'draft.view', {
+      type: 'draft',
       tenantId: du.tenant.id,
       classId: bg.lopId,
       ownerId: bn.hocVienId,
