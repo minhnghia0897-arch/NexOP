@@ -7,7 +7,7 @@
  *
  * Nên test ở đây soi đúng ba điều CSDL thật đang ép, không soi giao diện.
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {
   KhongDuQuyen,
@@ -22,10 +22,12 @@ import {
   actorMay,
   lamBaiLuyen,
   mayChamNhap,
+  napTuBoNho,
   nhatKy,
   nopBai,
   suaNhap,
 } from '@/lib/demo/kho'
+import { duLieuBanDau } from '@/lib/demo/du-lieu'
 import { can, type Actor } from '@/lib/auth/can'
 
 const BAI = 'bn-hv-01'
@@ -283,5 +285,80 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
       expect(() => lamBaiLuyen('hv-02', LUYEN, 5)).toThrow(KhongDuQuyen)
       expect(duLieu().baiLuyen.find((b) => b.id === LUYEN)!.ketQua).toBeUndefined()
     })
+  })
+})
+
+/**
+ * Bản đã lưu của phiên bản CŨ.
+ *
+ * Lỗi thật, cô gặp trên bản trực tuyến: bản demo thêm `luat` và `baiLuyen`, khoá lưu vẫn
+ * là `oblue-demo-v1`, nên người đã mở bản trước quay lại thì nạp một `du` thiếu hai mảng
+ * đó rồi cả trang trắng với "Application error".
+ *
+ * Bài kiểm bằng trình duyệt không bắt được: lần nào cũng mở bằng hồ sơ sạch, mà chỗ hỏng
+ * chỉ tồn tại với người ĐÃ dùng. Nên nó phải nằm ở đây, chỗ dựng được đúng tình huống đó.
+ */
+describe('bản lưu cũ không được làm vỡ bản mới', () => {
+  const KHOA = 'oblue-demo-v2'
+
+  function boNhoGia(): Storage {
+    const o = new Map<string, string>()
+    return {
+      getItem: (k: string) => o.get(k) ?? null,
+      setItem: (k: string, v: string) => void o.set(k, v),
+      removeItem: (k: string) => void o.delete(k),
+      clear: () => o.clear(),
+      key: (i: number) => [...o.keys()][i] ?? null,
+      get length() {
+        return o.size
+      },
+    } as Storage
+  }
+
+  beforeEach(() => {
+    ;(globalThis as { localStorage?: Storage }).localStorage = boNhoGia()
+    datLai()
+  })
+
+  afterEach(() => {
+    delete (globalThis as { localStorage?: Storage }).localStorage
+  })
+
+  it('bản lưu thiếu mảng mới thì bị bỏ, demo về dữ liệu mẫu', () => {
+    localStorage.setItem(
+      KHOA,
+      // Đúng hình dạng bản trước: có `hoSo`, chưa có `luat` và `baiLuyen`.
+      JSON.stringify({
+        du: { tenant: {}, taiKhoan: [], lop: [], de: [], baiGiao: [], baiNop: [],
+              nhapCham: [], nhanXet: [], baiDang: [], hoSo: [], loTrinh: [], hocPhi: [],
+              vai: { owner: 'x', assistant: 'y', student: 'z' } },
+        events: [],
+        vai: 'owner',
+      }),
+    )
+
+    napTuBoNho()
+
+    // Mảng mới phải có mặt — đây chính là chỗ trang cũ ném "Cannot read properties of undefined".
+    expect(Array.isArray(duLieu().baiLuyen)).toBe(true)
+    expect(Array.isArray(duLieu().luat)).toBe(true)
+    // Và bản lưu hỏng bị dọn, không để nó vấp lại ở lần tải sau.
+    expect(localStorage.getItem(KHOA)).toBeNull()
+  })
+
+  it('bản lưu đúng hình dạng thì vẫn được giữ nguyên', () => {
+    dangBai('owner', 'lop-65', 'Bài cô vừa đăng trước khi tải lại')
+    const truoc = duLieu().baiDang.length
+
+    datLai()
+    // datLai() ghi đè bản lưu bằng dữ liệu mẫu, nên dựng lại tình huống bằng chính bản vừa lưu.
+    localStorage.setItem(
+      KHOA,
+      JSON.stringify({ du: { ...duLieuBanDau(), baiDang: [] }, events: [], vai: 'owner' }),
+    )
+    napTuBoNho()
+
+    expect(duLieu().baiDang).toHaveLength(0)
+    expect(truoc).toBeGreaterThan(0)
   })
 })

@@ -278,3 +278,21 @@ Chỗ cố ý khác bản mẫu, ghi ra để không ai tưởng là sót: bản
 dung căn giữa ở 760 — trên màn 1440 tiêu đề trôi hẳn khỏi cột nội dung, trông như chỗ hỏng; app của
 em cho tiêu đề vào cùng cột. Và bản mẫu cho Tổng quan với Việc của tôi **cùng một icon bốn ô**; rail
 được quét bằng icon chứ không đọc chữ, nên Việc của tôi đổi sang icon danh sách-có-tích.
+
+### 2026-09-09 · Bản lưu của phiên bản cũ làm trắng trang, và vì sao bài kiểm không thấy
+Lý do: cô mở bản trực tuyến và thấy "Application error: a client-side exception has occurred".
+Bản demo vừa thêm `luat` và `baiLuyen` vào dữ liệu, nhưng khoá `localStorage` vẫn là
+`oblue-demo-v1` — nên trình duyệt của cô nạp lại bản đã lưu **của phiên bản trước**, thiếu hai
+mảng đó, rồi `du.baiLuyen.filter` ném lỗi và cả trang trắng.
+Chỗ đáng ghi không phải cái lỗi, mà là vì sao 43 lượt kiểm trong trình duyệt không thấy nó:
+lần nào em cũng mở bằng **hồ sơ sạch**. Chỗ hỏng chỉ tồn tại với người ĐÃ dùng bản trước —
+nghĩa là chỉ tồn tại với đúng người quan trọng nhất, và không tồn tại với người đi kiểm.
+Sửa hai lớp, không một:
+1. Đổi khoá sang `-v2` — sửa được lần này.
+2. So khoá của bản lưu với bản mẫu; thiếu cái nào thì bỏ cả bản lưu và về dữ liệu mẫu —
+   bắt được cả lần sau, khi em quên làm việc (1). Lỗi này có chính vì em đã quên.
+Bỏ bản lưu là mất vài thao tác người xem vừa bấm. Đổi lại là không có trang trắng, và trang
+trắng thì người dùng không biết là do đâu, cũng không biết bấm gì để thoát.
+Test nằm ở `tests/unit/kho-demo.test.ts`, dựng đúng tình huống bằng localStorage giả — chỗ
+duy nhất dựng lại được "người đã dùng bản cũ". Đã kiểm đột biến cả hai lớp: tắt cửa kiểm hình
+dạng thì đỏ, đổi khoá về `-v1` cũng đỏ.
