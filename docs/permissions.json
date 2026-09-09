@@ -65,12 +65,46 @@
         "system": "auto for mcq confidence>=0.97 if enabled"
       }
     },
+    "draft": {
+      "owner": "full",
+      "assistant": "propose",
+      "student": "none",
+      "parent": "none",
+      "system": "propose",
+      "notes": {
+        "student": "không bao giờ thấy band nháp của máy"
+      }
+    },
+    "proposal": {
+      "owner": "full",
+      "assistant": "none",
+      "student": "none",
+      "parent": "none",
+      "system": "propose",
+      "notes": {
+        "assistant": "đề xuất hay dính học phí — trần cứng"
+      }
+    },
+    "practice_set": {
+      "owner": "full",
+      "assistant": "read",
+      "student": "own",
+      "parent": "none",
+      "system": "propose"
+    },
     "gradebook": {
       "owner": "full",
       "assistant": "read",
       "student": "none",
       "parent": "none",
       "system": "auto"
+    },
+    "attendance": {
+      "owner": "full",
+      "assistant": "auto",
+      "student": "own",
+      "parent": "own",
+      "system": "none"
     },
     "post": {
       "owner": "full",
@@ -79,7 +113,7 @@
       "parent": "none",
       "system": "auto",
       "notes": {
-        "student": "no pin/delete"
+        "student": "đăng bài của mình, không ghim/xoá; ĐỌC theo phạm vi lớp (class.view), không theo own"
       }
     },
     "fee": {
@@ -95,6 +129,13 @@
       "student": "none",
       "parent": "none",
       "system": "auto"
+    },
+    "path": {
+      "owner": "full",
+      "assistant": "none",
+      "student": "none",
+      "parent": "none",
+      "system": "none"
     },
     "export": {
       "owner": "full",
@@ -133,7 +174,8 @@
     "review",
     "fee",
     "gradebook",
-    "events"
+    "events",
+    "attendance"
   ],
   "_note_own": "Mức `own` cho phép sửa khi người đó VIẾT RA object (bài nộp, bài đăng). Với các object ở danh sách trên, người đó chỉ LÀ CHỦ ĐỀ — nhận xét, học phí, hồ sơ năng lực là của cô hoặc của máy. ARCHITECTURE §3: lớp 1 chỉ thêm, lớp 2 máy ghi và cô sửa. Ở đó `own` chỉ là quyền xem."
 }

@@ -343,11 +343,11 @@ Lớp mới chỉ mở khi đủ N người (cô đặt N). Học phí còn lạ
 | 3 | Phụ huynh thấy **tiến bộ + việc**, không thấy điểm — vậy có thấy band mục tiêu không? | 9 |
 | 4 | Bài luyện sinh ra mà em không làm trong 7 ngày: nhắc lại, hay lặng lẽ hết hạn? | 7 |
 | 5 | Em học 2 lớp của cùng một cô: một hồ sơ hay hai? (`SRS` nói hồ sơ xuyên lớp → một; xác nhận) | 7 |
-| 6 | **`permissions.json` thiếu 5 thực thể**: `proposal` · `draft` · `practice_set` · `attendance` · `path`. `can()` mặc định đóng nên máy bị chặn ở đúng việc `OPERATIONS.md` giao cho nó — bước 3, 5, 7, 8 đứng im. Thêm một dòng vào file đó là đặt ra chính sách quyền, nên cần cô chốt. Đề xuất bên dưới. | 3, 5, 7 |
+| 6 | ~~`permissions.json` thiếu 5 thực thể~~ — **đã áp §8.1** ngày 9/9 để dựng bài luyện của em. Cô xem lại bảng ở §8.1; đổi ý thì sửa `docs/permissions.json`, không sửa chỗ khác. | (đã mở) |
 
-### §8.1 Đề xuất cho câu 6 — năm dòng còn thiếu
+### §8.1 Năm dòng còn thiếu — đã áp dụng 9/9/2026
 
-Suy từ `ARCHITECTURE` §3 (lớp dữ liệu) và `OPERATIONS.md` (cột "Ai"), chưa áp dụng:
+Suy từ `ARCHITECTURE` §3 (lớp dữ liệu) và `OPERATIONS.md` (cột "Ai"). Đây là bảng **đang chạy**:
 
 | object | owner | assistant | student | parent | system | vì sao |
 |---|---|---|---|---|---|---|
@@ -357,4 +357,13 @@ Suy từ `ARCHITECTURE` §3 (lớp dữ liệu) và `OPERATIONS.md` (cột "Ai")
 | `attendance` | `full` | `auto` | `own` | `own` | `none` | trợ giảng điểm danh được (bản mẫu lời mời ghi thế) |
 | `path` | `full` | `none` | `none` | `none` | `none` | lộ trình là tài sản của cô — RLS ở 0004 đã theo luật này |
 
-Chốt xong thì `tests/unit/van-hanh.test.ts` sẽ báo đỏ ở danh sách `CHO_CHOT`, nhắc cập nhật.
+Hai hệ quả đã thấy ngay khi áp:
+
+- `baiCanCham` (bản demo) hỏi được `draft.view` thay vì hỏi `review.propose` — câu hỏi đúng
+  thay cho câu hỏi gần đúng. Em vẫn bị chặn, nhưng chặn vì chính sách `draft`, không phải
+  vì tình cờ trùng kết quả.
+- `attendance` được thêm vào `own_is_subject_not_author`: em **là chủ đề** của điểm danh
+  chứ không phải người ghi ra nó. Không thêm thì mức `own` cho em tự sửa buổi vắng của mình.
+
+`tests/unit/van-hanh.test.ts` giữ năm thực thể này dưới kiểm tra: máy đề xuất được nháp,
+bài luyện, đề xuất — và vẫn không chạm được lộ trình, điểm danh, hay động từ `send`.

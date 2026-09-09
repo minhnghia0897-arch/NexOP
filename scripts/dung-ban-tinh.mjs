@@ -7,8 +7,8 @@
  * thứ PHẢI giữ ở bản thật, nên không gỡ chúng khỏi kho; thay vào đó chép sang một thư mục
  * tạm chỉ gồm phần demo, rồi dựng ở đó.
  *
- * Hệ quả cố ý: bản tĩnh CHỈ có bốn màn demo. Màn đăng nhập và lời mời không nằm trong đó,
- * vì chúng cần máy chủ để có nghĩa.
+ * Hệ quả cố ý: bản tĩnh CHỈ có phần demo — app của cô và app của em. Màn đăng nhập và lời
+ * mời không nằm trong đó, vì chúng cần máy chủ để có nghĩa.
  *
  *   node scripts/dung-ban-tinh.mjs
  */
@@ -51,9 +51,12 @@ for (const t of [
   chep(t)
 }
 
-// Bốn màn demo, giữ nguyên đường dẫn để link trong mã vẫn đúng.
+// Hai khung demo — app của cô `(gv)` và app của em `(em)`. Giữ nguyên đường dẫn để link
+// giữa hai bên (dải vai → "Mở app của em") vẫn đúng ở bản tĩnh.
 mkdirSync(join(TAM, 'app'), { recursive: true })
-cpSync(join(GOC, 'app/(gv)'), join(TAM, 'app/(gv)'), { recursive: true })
+for (const khung of ['app/(gv)', 'app/(em)']) {
+  cpSync(join(GOC, khung), join(TAM, khung), { recursive: true })
+}
 
 // Layout gốc: y hệt bản thật, chỉ bỏ phần không dùng được ở bản tĩnh.
 writeFileSync(join(TAM, 'app/layout.tsx'), readFileSync(join(GOC, 'app/layout.tsx'), 'utf8'))

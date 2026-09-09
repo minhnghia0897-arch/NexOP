@@ -1,5 +1,6 @@
 'use client'
 
+import type { Route } from 'next'
 import Link from 'next/link'
 
 import { DauMan, Ico, NutLien, Wrap } from '@/components/ung-dung/khung'
@@ -31,7 +32,9 @@ function Viec({
   mau: string
   ten: string
   phu: string
-  den: string
+  // Kiểu `Route` chứ không phải `string`: chỗ này từng để lọt một link tới màn đã xoá, vì
+  // component ép kiểu `as never` lúc truyền cho <Link>. Ép kiểu ở đâu thì mù ở đó.
+  den: Route
   nhanDen: string
 }) {
   return (
@@ -48,7 +51,7 @@ function Viec({
         <small className="text-[13px] leading-[19px] text-text-2">{phu}</small>
       </div>
       <Link
-        href={den as never}
+        href={den}
         className="whitespace-nowrap font-display text-[13px] font-semibold text-primary"
       >
         {nhanDen}
@@ -193,9 +196,9 @@ export default function TongQuan() {
                 so={du.nhanXet.length}
                 mau="linear-gradient(135deg,var(--av-green-a),var(--av-green-b))"
                 ten={`${du.nhanXet.length} nhận xét đã tới tay em`}
-                phu="xem lại trong nhật ký — mỗi dòng ghi ai gửi, lúc nào, ai nhìn thấy"
-                den="/nhat-ky"
-                nhanDen="Xem nhật ký"
+                phu="mỗi lần gửi ghi một dòng nhật ký: ai gửi, lúc nào, ai nhìn thấy"
+                den="/cau-hinh"
+                nhanDen="Mở nhật ký"
               />
             ) : null}
             {cho.length === 0 && chuaNop === 0 && du.nhanXet.length === 0 ? (

@@ -9,7 +9,18 @@
  * bản tĩnh cho GitHub Pages — xem DECISIONS 2026-09-08, mục bản tĩnh.
  */
 import type { VaiDemo } from './du-lieu'
-import { KhongDuQuyen, dangBai, deXuatChoCo, doiVai, guiNhanXet, suaNhap, vaiHienTai } from './kho'
+import {
+  KhongDuQuyen,
+  dangBai,
+  datLuat,
+  deXuatChoCo,
+  doiVai,
+  guiNhanXet,
+  lamBaiLuyen,
+  nopBai,
+  suaNhap,
+  vaiHienTai,
+} from './kho'
 
 /*
  * Dịch lời từ chối sang tiếng của cô.
@@ -54,4 +65,27 @@ export function deXuatChoCoHanhVi(baiNopId: string, noiDung: string): { loi?: st
 export function dangBaiHanhVi(lopId: string, noiDung: string): { loi?: string } {
   if (!noiDung.trim()) return { loi: 'Chưa có nội dung' }
   return thu(() => dangBai(vaiHienTai(), lopId, noiDung.trim()))
+}
+
+/** Cô bật/tắt một luật máy được tự làm. Trợ giảng bấm vào thì bị chặn ở trần cứng. */
+export function datLuatHanhVi(id: string, bat: boolean): { loi?: string } {
+  return thu(() => datLuat(vaiHienTai(), id, bat))
+}
+
+/** Em nộp bài. Không đi qua `vaiHienTai()`: app của em luôn chạy dưới danh nghĩa của em. */
+export function nopBaiHanhVi(
+  hocVienId: string,
+  baiGiaoId: string,
+  noiDung: string,
+): { loi?: string } {
+  if (noiDung.trim().length === 0) return { loi: 'Em chưa viết gì.' }
+  return thu(() => nopBai(hocVienId, baiGiaoId, noiDung))
+}
+
+export function lamBaiLuyenHanhVi(
+  hocVienId: string,
+  baiLuyenId: string,
+  dung: number,
+): { loi?: string } {
+  return thu(() => lamBaiLuyen(hocVienId, baiLuyenId, dung))
 }
