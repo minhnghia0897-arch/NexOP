@@ -108,7 +108,30 @@ export function soPhienBan(): number {
 // Không có localStorage thì tải lại trang là mất bài cô vừa gửi — và người xem demo sẽ
 // tưởng hệ thống hỏng chứ không nghĩ là mình vừa làm mới trang.
 
-const KHOA_LUU = 'oblue-demo-v1'
+const KHOA_LUU = 'oblue-demo-v2'
+
+/**
+ * Bản đã lưu của HÔM TRƯỚC không nhất thiết cùng hình dạng với bản hôm nay.
+ *
+ * Đây là lỗi đã xảy ra thật: bản demo thêm `luat` và `baiLuyen`, khoá lưu vẫn là `-v1`, nên
+ * người đã mở bản cũ quay lại là nạp một `du` thiếu hai mảng đó — rồi `du.baiLuyen.filter`
+ * ném lỗi và cả trang trắng với "Application error". Bài kiểm bằng trình duyệt không bắt
+ * được, vì lần nào cũng mở bằng hồ sơ sạch: chỗ hỏng chỉ tồn tại với người ĐÃ dùng.
+ *
+ * Nên hai lớp, không một:
+ *   1. Đổi khoá khi hình dạng đổi — sửa được lần này.
+ *   2. So khoá của bản lưu với bản mẫu, thiếu cái nào thì bỏ cả bản lưu — bắt được cả lần
+ *      sau, khi em quên làm việc (1). Lỗi này có chính vì em đã quên.
+ *
+ * Bỏ bản lưu nghĩa là demo về lại dữ liệu mẫu. Mất vài thao tác người xem vừa bấm, nhưng
+ * hơn hẳn một trang trắng — và trang trắng thì họ không biết là do đâu.
+ */
+function dungHinhDang(du: unknown): du is DuLieuDemo {
+  if (typeof du !== 'object' || du === null) return false
+  const mau = duLieuBanDau() as unknown as Record<string, unknown>
+  const co = du as Record<string, unknown>
+  return Object.keys(mau).every((k) => k in co)
+}
 
 function luuLai(): void {
   if (typeof localStorage === 'undefined') return
@@ -126,6 +149,10 @@ function doTuBoNho(): TrangThai | null {
     const raw = localStorage.getItem(KHOA_LUU)
     if (!raw) return null
     const x = JSON.parse(raw) as TrangThai & { vai?: VaiDemo }
+    if (!dungHinhDang(x.du) || !Array.isArray(x.events)) {
+      localStorage.removeItem(KHOA_LUU)
+      return null
+    }
     if (x.vai) vaiDangXem = x.vai
     return { du: x.du, events: x.events }
   } catch {
@@ -141,6 +168,13 @@ function doTuBoNho(): TrangThai | null {
  * rồi mới đổi sang bản của người xem.
  */
 export function napTuBoNho(): void {
+  // Dọn bản lưu của khoá cũ: nó không còn ai đọc, và để lại thì chiếm chỗ của người dùng.
+  try {
+    localStorage?.removeItem('oblue-demo-v1')
+  } catch {
+    // Không đọc được localStorage thì cũng chẳng có gì để dọn.
+  }
+
   const cu = doTuBoNho()
   if (!cu) return
   const g = globalThis as CoKho
