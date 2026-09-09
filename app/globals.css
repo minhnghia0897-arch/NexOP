@@ -50,6 +50,9 @@
   --color-callout-orange: var(--callout-orange);
   --color-ta-text: var(--ta-text);
 
+  /* Nền nút gửi của ô `steer` — xám hơn nền ô một bậc, để nút không chìm vào nền trắng. */
+  --color-send-bg: var(--send-bg);
+
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
   --color-surface-late: var(--surface-late);

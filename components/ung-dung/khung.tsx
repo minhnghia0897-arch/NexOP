@@ -17,6 +17,13 @@ import type { ReactNode } from 'react'
 import type { VaiDemo } from '@/lib/demo/du-lieu'
 import { doiVaiXem } from '@/lib/demo/hanh-vi'
 
+/*
+ * Chín mục của bản mẫu, chia ba nhóm bằng gạch ngang.
+ *
+ * Mục nào chưa dựng màn thì `chuaCo: true` — hiện mờ và không bấm được. Giấu chúng đi thì
+ * rail chỉ còn bốn mục và bố cục lệch hẳn khỏi bản mẫu; cho bấm vào màn trống thì tệ hơn
+ * nữa. Hiện mà mờ là nói đúng sự thật: chỗ này có trong sản phẩm, chưa có trong bản demo.
+ */
 export const MUC = [
   {
     href: '/tong-quan',
@@ -24,7 +31,18 @@ export const MUC = [
     d: 'M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z',
   },
   { href: '/cham-bai', ten: 'Chấm bài', d: 'M4 20l4-1 10-10-3-3L5 16zM13 7l3 3' },
+  {
+    href: '/hoc-vien',
+    ten: 'Học viên',
+    d: 'M9 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7M2.5 20a6.5 6.5 0 0 1 13 0M17 6.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M15.5 20a5 5 0 0 1 6-4.5',
+  },
   { href: '/lop-hoc', ten: 'Lớp học', d: 'M3 4h18v16H3zM3 10h18M9 4v16' },
+  { ngan: true },
+  { href: '/lo-trinh', ten: 'Lộ trình', d: 'M4 18h5l3-12h4l3 12h1' },
+  { href: '/ngan-hang-de', ten: 'Ngân hàng đề', d: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7' },
+  { href: '/hoc-phi', ten: 'Học phí', d: 'M3 6h18v12H3zM3 10h18' },
+  { href: '/bang-tin', ten: 'Bảng tin', d: 'M4 5h16v11H8l-4 4z' },
+  { ngan: true },
   {
     href: '/nhat-ky',
     ten: 'Nhật ký',

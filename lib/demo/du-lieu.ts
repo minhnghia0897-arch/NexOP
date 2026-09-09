@@ -44,7 +44,7 @@ export interface CauHoi {
 export interface De {
   id: string
   ten: string
-  kyNang: 'reading' | 'writing' | 'listening' | 'speaking'
+  kyNang: 'reading' | 'writing' | 'listening' | 'speaking' | 'grammar' | 'vocabulary'
   trinhDo?: string
   cachCham: 'auto' | 'draft' | 'manual'
   tinCayOcr?: number
@@ -59,6 +59,10 @@ export interface BaiGiao {
   lanThu: number
   /** Nhãn ngắn hiện ở đầu thẻ chấm, ví dụ "Task 2 — Education". */
   nhan?: string
+  /** Trọng số khi tính band trung bình. Mock nặng hơn Task 1 — cô đặt, không cố định. */
+  trongSo?: number
+  /** Bài đã xong từ trước, chỉ để dựng bảng điểm — không nằm trong chồng bài chờ. */
+  daXong?: boolean
   /** Ảnh chụp câu hỏi lúc giao — không phải liên kết sống (migration 0007). */
   cauHoi: CauHoi[]
 }
@@ -114,6 +118,50 @@ export interface NhanXet {
   suaTuNhap: boolean
 }
 
+/**
+ * Hồ sơ một em trong lớp — nguyên liệu cho tab Học viên và tab Điểm.
+ *
+ * `diem` khoá theo id bài giao. `null` nghĩa là chưa nộp, và đó là thông tin THẬT chứ
+ * không phải thiếu dữ liệu: ô trống trong bảng điểm là thứ cô nhìn để biết ai đang buông.
+ */
+export interface HoSoHocVien {
+  id: string
+  bandTb: number
+  huong: 'up' | 'down' | 'flat'
+  diHoc: string
+  coTaiKhoan: boolean
+  loiHayGap: string
+  hanHocPhi: string
+  diem: Record<string, { band: number | null; muon?: boolean }>
+}
+
+/** Một buổi trong lộ trình — kế hoạch, chưa phải bài đã giao. */
+export interface BuoiLoTrinh {
+  no: number
+  noiDung: string
+  baiVeNha?: string
+  deId?: string
+  trongSo?: number
+}
+
+export interface LoTrinh {
+  id: string
+  ten: string
+  moTa: string
+  soBuoi: number
+  dangDung: string[]
+  buoi: BuoiLoTrinh[]
+}
+
+/** Học phí một em. Lớp 1 — chỉ thêm, và không API nào cho máy tự gửi tin. */
+export interface HocPhi {
+  hocVienId: string
+  chuKy: string
+  soTien: number
+  hanDong: string
+  trangThai: 'da_dong' | 'sap_han' | 'qua_han'
+}
+
 export interface BaiDang {
   id: string
   lopId: string
@@ -133,6 +181,9 @@ export interface DuLieuDemo {
   nhapCham: NhapCham[]
   nhanXet: NhanXet[]
   baiDang: BaiDang[]
+  hoSo: HoSoHocVien[]
+  loTrinh: LoTrinh[]
+  hocPhi: HocPhi[]
   /** Ai đang đăng nhập ở mỗi vai — cho công tắc đổi vai của bản demo. */
   vai: Record<VaiDemo, string>
 }
@@ -223,15 +274,35 @@ export function duLieuBanDau(): DuLieuDemo {
       cachCham: 'draft', cauHoi: CAU_HOI_WRITING },
     { id: 'de-r1', ten: 'Cambridge 19 · Reading Test 1', kyNang: 'reading', trinhDo: 'B2',
       cachCham: 'auto', tinCayOcr: 0.94, cauHoi: CAU_HOI_READING },
+    { id: 'de-w2', ten: 'Writing Task 1 · Bar chart — Museums', kyNang: 'writing',
+      trinhDo: 'B2', cachCham: 'draft', cauHoi: CAU_HOI_WRITING },
+    { id: 'de-g1', ten: 'Trắc nghiệm ngữ pháp 3 · 40 câu', kyNang: 'grammar', trinhDo: 'B1',
+      cachCham: 'auto', tinCayOcr: 0.99, cauHoi: CAU_HOI_READING },
+    { id: 'de-l1', ten: 'Cambridge 18 · Listening Test 2', kyNang: 'listening', trinhDo: 'B2',
+      cachCham: 'auto', tinCayOcr: 0.71, cauHoi: CAU_HOI_READING },
   ]
 
+  /*
+   * Bốn bài đã xong dựng nên bảng điểm, một bài đang chấm, một bài đang mở.
+   *
+   * Không có lịch sử thì bảng điểm chỉ có một cột và "band tăng hay tụt" thành vô nghĩa —
+   * mà đó mới là thứ cô nhìn bảng điểm để tìm.
+   */
   const baiGiao: BaiGiao[] = [
+    { id: 'bg-t1a', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-52, 19), lanThu: 1,
+      nhan: 'Task 1 — Line graph', trongSo: 5, daXong: true, cauHoi: CAU_HOI_WRITING },
+    { id: 'bg-mock1', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-42, 19), lanThu: 1,
+      nhan: 'Mock 1', trongSo: 20, daXong: true, cauHoi: CAU_HOI_WRITING },
+    { id: 'bg-t2tech', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-31, 19), lanThu: 1,
+      nhan: 'Task 2 — Technology', trongSo: 10, daXong: true, cauHoi: CAU_HOI_WRITING },
+    { id: 'bg-t1bar', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-21, 19), lanThu: 1,
+      nhan: 'Task 1 — Bar chart', trongSo: 5, daXong: true, cauHoi: CAU_HOI_WRITING },
     { id: 'bg-w1', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-1, 23), lanThu: 1,
-      nhan: 'Task 2 — Community service', cauHoi: CAU_HOI_WRITING },
+      nhan: 'Task 2 — Community service', trongSo: 10, cauHoi: CAU_HOI_WRITING },
     { id: 'bg-r1', lopId: 'lop-65', deId: 'de-r1', hanNop: luc(2, 23), lanThu: 1,
-      nhan: 'Reading Test 1', cauHoi: CAU_HOI_READING },
+      nhan: 'Reading Test 1', trongSo: 5, cauHoi: CAU_HOI_READING },
     { id: 'bg-w1-70', lopId: 'lop-70', deId: 'de-w1', hanNop: luc(1, 23), lanThu: 1,
-      nhan: 'Task 2 — Community service', cauHoi: CAU_HOI_WRITING },
+      nhan: 'Task 2 — Community service', trongSo: 10, cauHoi: CAU_HOI_WRITING },
   ]
 
   // Bảy em đã nộp bài Writing — đây là chồng bài "tối chủ nhật" của cô.
@@ -305,8 +376,128 @@ export function duLieuBanDau(): DuLieuDemo {
       noiDung: 'Bài mới: Cambridge 19 · Reading Test 1 — hạn nộp 23:00 ngày kia.', luc: luc(0, 7) },
   ]
 
+  /*
+   * Hồ sơ mười em lớp 6.5. Số liệu đặt sao cho bảng điểm có chuyện để kể: Thu Hà đi lên
+   * đều, Bảo Ngọc tụt, Đức Thắng nộp muộn quen tay, Khánh Linh chưa bật tài khoản.
+   * Bảng điểm mà em nào cũng 6.0 thì cô nhìn xong không rút ra được gì.
+   */
+  const hoSo: HoSoHocVien[] = [
+    { id: 'hv-01', bandTb: 6.3, huong: 'up', diHoc: '28/30', coTaiKhoan: true,
+      loiHayGap: 'Hoà hợp chủ–vị ×3', hanHocPhi: '30/9',
+      diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 6.0 }, 'bg-t2tech': { band: 6.0 },
+              'bg-t1bar': { band: 6.5 }, 'bg-w1': { band: null } } },
+    { id: 'hv-02', bandTb: 6.9, huong: 'up', diHoc: '30/30', coTaiKhoan: true,
+      loiHayGap: '—', hanHocPhi: '12/10',
+      diem: { 'bg-t1a': { band: 6.0 }, 'bg-mock1': { band: 6.5 }, 'bg-t2tech': { band: 7.0 },
+              'bg-t1bar': { band: 7.0 }, 'bg-w1': { band: null } } },
+    { id: 'hv-03', bandTb: 5.2, huong: 'down', diHoc: '24/30', coTaiKhoan: true,
+      loiHayGap: 'Liên kết máy móc ×4', hanHocPhi: '30/9',
+      diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 5.0 },
+              'bg-t1bar': { band: 5.0 }, 'bg-w1': { band: null } } },
+    { id: 'hv-04', bandTb: 6.1, huong: 'flat', diHoc: '29/30', coTaiKhoan: true,
+      loiHayGap: 'Phản biện chưa có đỡ', hanHocPhi: '15/10',
+      diem: { 'bg-t1a': { band: 6.0 }, 'bg-mock1': { band: 6.0 }, 'bg-t2tech': { band: 6.5 },
+              'bg-t1bar': { band: 6.0 }, 'bg-w1': { band: null } } },
+    { id: 'hv-05', bandTb: 6.2, huong: 'flat', diHoc: '26/30', coTaiKhoan: true,
+      loiHayGap: 'Nộp muộn 4/6', hanHocPhi: '30/9',
+      diem: { 'bg-t1a': { band: 6.0, muon: true }, 'bg-mock1': { band: 6.5 },
+              'bg-t2tech': { band: 6.0, muon: true }, 'bg-t1bar': { band: null },
+              'bg-w1': { band: null, muon: true } } },
+    { id: 'hv-06', bandTb: 5.8, huong: 'up', diHoc: '30/30', coTaiKhoan: false,
+      loiHayGap: 'Câu phức còn ít', hanHocPhi: '30/9',
+      diem: { 'bg-t1a': { band: 5.0 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 6.0 },
+              'bg-t1bar': { band: 6.0 }, 'bg-w1': { band: null } } },
+    { id: 'hv-07', bandTb: 6.9, huong: 'up', diHoc: '30/30', coTaiKhoan: true,
+      loiHayGap: '—', hanHocPhi: '12/10',
+      diem: { 'bg-t1a': { band: 6.5 }, 'bg-mock1': { band: 6.5 }, 'bg-t2tech': { band: 7.0 },
+              'bg-t1bar': { band: 7.0 }, 'bg-w1': { band: null } } },
+    { id: 'hv-08', bandTb: 5.5, huong: 'flat', diHoc: '27/30', coTaiKhoan: true,
+      loiHayGap: 'Bài ngắn ×2', hanHocPhi: '15/10',
+      diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 5.5 },
+              'bg-t1bar': { band: 5.5 }, 'bg-w1': { band: null } } },
+    { id: 'hv-09', bandTb: 4.9, huong: 'down', diHoc: '22/30', coTaiKhoan: true,
+      loiHayGap: 'Đọc hiểu', hanHocPhi: '30/9',
+      diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.0 }, 'bg-t2tech': { band: 4.5 },
+              'bg-t1bar': { band: 4.5 }, 'bg-w1': { band: null } } },
+    { id: 'hv-10', bandTb: 5.6, huong: 'flat', diHoc: '25/30', coTaiKhoan: false,
+      loiHayGap: 'Bị động ×5', hanHocPhi: '30/9',
+      diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 5.5 },
+              'bg-t1bar': { band: 6.0, muon: true }, 'bg-w1': { band: null } } },
+  ]
+
+  /*
+   * Tám em còn lại ở lớp 7.0 và Nền tảng B1. Hai lớp đó chưa có bài nào được chấm nên
+   * `diem` rỗng — và bảng vẫn phải đọc được với ô trống, vì đó là trạng thái thật của một
+   * lớp mới mở.
+   */
+  const HO_SO_LOP_KHAC: [string, number, HoSoHocVien['huong'], string, boolean, string, string][] = [
+    ['hv-11', 7.2, 'up', '14/14', true, '—', '20/10'],
+    ['hv-12', 6.8, 'flat', '13/14', true, 'Dấu câu trong câu ghép', '20/10'],
+    ['hv-13', 7.0, 'up', '14/14', true, '—', '20/10'],
+    ['hv-14', 6.5, 'down', '11/14', true, 'Nghe số liệu ×3', '5/10'],
+    ['hv-15', 7.1, 'flat', '14/14', true, '—', '20/10'],
+    ['hv-16', 6.6, 'up', '12/14', false, 'Phát âm đuôi -ed', '5/10'],
+    ['hv-17', 4.2, 'up', '9/10', true, 'Trật tự từ', '28/9'],
+    ['hv-18', 4.5, 'flat', '10/10', false, 'Thì quá khứ', '28/9'],
+  ]
+
+  for (const [id, bandTb, huong, diHoc, coTaiKhoan, loiHayGap, hanHocPhi] of HO_SO_LOP_KHAC) {
+    hoSo.push({ id, bandTb, huong, diHoc, coTaiKhoan, loiHayGap, hanHocPhi, diem: {} })
+  }
+
+  const loTrinh: LoTrinh[] = [
+    {
+      id: 'lt-65',
+      ten: 'IELTS 6.5 · 48 buổi',
+      moTa: 'Từ 5.0 lên 6.5. Writing và Speaking mỗi tuần, Reading xen kẽ.',
+      soBuoi: 48,
+      dangDung: ['lop-65'],
+      buoi: [
+        { no: 28, noiDung: 'Task 2 — Đọc đề và lập dàn ý trong 5 phút',
+          baiVeNha: 'Mock 2', deId: 'de-w1', trongSo: 20 },
+        { no: 29, noiDung: 'Chữa Mock 2 — lỗi chung của cả lớp' },
+        { no: 30, noiDung: 'Thì hiện tại hoàn thành — lớp sai 11/18 bài trước',
+          baiVeNha: 'Task 2 — Community service', deId: 'de-w1', trongSo: 10 },
+        { no: 31, noiDung: 'Reading — dạng True/False/Not Given',
+          baiVeNha: 'Cambridge 19 Test 1', deId: 'de-r1', trongSo: 5 },
+      ],
+    },
+    {
+      id: 'lt-70',
+      ten: 'IELTS 7.0+ · 32 buổi',
+      moTa: 'Cho em đã vững 6.5. Nặng về lập luận và độ chính xác từ vựng.',
+      soBuoi: 32,
+      dangDung: ['lop-70'],
+      buoi: [
+        { no: 12, noiDung: 'Câu nhượng bộ — cách viết phản biện không mất lập trường' },
+        { no: 13, noiDung: 'Collocation học thuật theo chủ đề Education' },
+      ],
+    },
+    {
+      id: 'lt-nen',
+      ten: 'Nền tảng B1 · 24 buổi',
+      moTa: 'Xây lại ngữ pháp và vốn từ trước khi vào IELTS.',
+      soBuoi: 24,
+      dangDung: ['lop-nen'],
+      buoi: [{ no: 8, noiDung: 'Thì quá khứ đơn — dạng bất quy tắc hay gặp' }],
+    },
+  ]
+
+  /* Học phí: hai em quá hạn, ba em sắp tới hạn. Đó là chỗ cô cần nhìn thấy trước. */
+  const hocPhi: HocPhi[] = hoSo.map((h, i) => {
+    const trangThai: HocPhi['trangThai'] =
+      i % 7 === 0 ? 'qua_han' : i % 3 === 0 ? 'sap_han' : 'da_dong'
+    return {
+      hocVienId: h.id,
+      chuKy: 'Tháng 9/2026',
+      soTien: h.id.startsWith('hv-1') && Number(h.id.slice(-2)) >= 17 ? 1_800_000 : 2_400_000,
+      hanDong: h.hanHocPhi,
+      trangThai,
+    }
+  })
+
   return {
-    tenant: { id: 'tn-cothao', subdomain: 'cothao', ten: 'Lớp cô Thảo' },
+    tenant: { id: 'tn-cothao', subdomain: 'cothao', ten: 'Lớp IELTS của cô Thảo' },
     taiKhoan,
     lop,
     de,
@@ -315,6 +506,9 @@ export function duLieuBanDau(): DuLieuDemo {
     nhapCham,
     nhanXet: [],
     baiDang,
+    hoSo,
+    loTrinh,
+    hocPhi,
     vai: { owner: CO_THAO, assistant: TRO_GIANG, student: 'hv-01' },
   }
 }
