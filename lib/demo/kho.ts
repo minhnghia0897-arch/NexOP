@@ -560,7 +560,9 @@ export function giaoBai(
         trangThai: laCo ? 'dang_chay' : 'de_xuat',
         ...(laCo ? {} : { deXuatBoi: actor.accountId }),
         tuBuoi: { loTrinhId: y.loTrinhId, no: y.buoiNo },
-        cauHoi: de.cauHoi,
+        // Chụp lại, không trỏ về đề (migration 0007). Trỏ về thì cô sửa đề tuần sau là đổi
+        // luôn đề bài em đang làm dở.
+        cauHoi: structuredClone(de.cauHoi),
       })
     },
   )
@@ -633,6 +635,80 @@ function mayDangBaiGiao(baiGiaoId: string): void {
       })
     },
   )
+}
+
+/**
+ * Cô duyệt nhãn máy đề xuất cho một đề.
+ *
+ * Nhãn là lớp 3: máy ghi, có hạn, cô quyết. Duyệt xong nó thành lớp 1 — và từ đó đề tìm
+ * được bằng nhãn. Đây là cả giá trị của việc số hoá: không phải "có tệp", mà là "tìm ra".
+ */
+export function duyetNhanDe(vai: VaiDemo, deId: string): void {
+  const du = duLieu()
+  const de = du.de.find((d) => d.id === deId)
+  if (!de || de.trangThaiNhan === 'da_duyet') return
+
+  ghi(
+    actorCuaVai(vai),
+    'exam.update',
+    { type: 'exam', id: deId, tenantId: du.tenant.id },
+    { duyet_nhan: de.nhanDeXuat ?? [] },
+    [du.vai.owner],
+    (d) => {
+      const m = d.de.find((x) => x.id === deId)
+      if (m) m.trangThaiNhan = 'da_duyet'
+    },
+  )
+}
+
+/**
+ * Cô chọn đáp án cho một câu trong lúc duyệt đề số hoá.
+ *
+ * Đúng logic `app.save_exam_edit` ở migration 0013: có đáp án thì cảnh báo TỰ MẤT. Không
+ * tự xoá thì danh sách "cần xem lại" không bao giờ rỗng, cô thôi đọc nó, và cái cờ mất
+ * nghĩa. Bỏ đáp án thì cảnh báo quay lại — câu đó chuyển sang chấm tay.
+ */
+export function datDapAn(vai: VaiDemo, deId: string, cauNo: number, dapAn: string | null): void {
+  const du = duLieu()
+  const de = du.de.find((d) => d.id === deId)
+  if (!de) return
+
+  ghi(
+    actorCuaVai(vai),
+    'exam.update',
+    { type: 'exam', id: deId, tenantId: du.tenant.id },
+    { cau: cauNo, dap_an: dapAn },
+    [du.vai.owner],
+    (d) => {
+      const c = d.de.find((x) => x.id === deId)?.cauHoi.find((q) => q.no === cauNo)
+      if (!c) return
+      c.dapAn = dapAn
+      c.canhBao = dapAn
+        ? null
+        : 'Chưa có đáp án — câu này chấm tay cho tới khi cô điền.'
+    },
+  )
+}
+
+/** Đề vừa số hoá xong, cô bấm Lưu ở bước 4. */
+export function luuDeSoHoa(
+  vai: VaiDemo,
+  de: Omit<import('./du-lieu').De, 'id'>,
+): string {
+  const du = duLieu()
+  const id = maMoi('de')
+
+  ghi(
+    actorCuaVai(vai),
+    'exam.create',
+    { type: 'exam', id, tenantId: du.tenant.id },
+    { ten: de.ten, so_cau: de.cauHoi.length, tin_cay: de.tinCayOcr ?? null },
+    [du.vai.owner],
+    (d) => {
+      d.de.unshift({ ...de, id })
+    },
+  )
+  return id
 }
 
 /**

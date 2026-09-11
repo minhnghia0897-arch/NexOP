@@ -323,3 +323,32 @@ Và giao lại cùng một buổi cho cùng một lớp — việc có thật, c
 em hai dòng **trùng tên** không phân biệt nổi. Nay đánh số `lần 2` bằng `lanThu` vốn đã có
 sẵn trong mô hình từ đầu cho đúng việc này.
 Kiểm cả với **bản đã lưu của phiên bản trước**, không chỉ hồ sơ sạch — đúng bài học ngày 9/9.
+
+### 2026-09-11 · Ngân hàng đề và trình thuật sĩ số hoá — hai màn bản mẫu có mà bản demo chưa dựng
+Lý do: cô chỉ vào hai ảnh bản mẫu và hỏi vì sao bản đang chạy khác cả về thiết kế lẫn chi tiết.
+Cô đúng: ô kéo-thả số hoá, tab "Chờ duyệt nhãn", bảng Nguồn·Đọc đúng·Nhãn đề xuất·Trạng thái,
+và cả trình thuật sĩ bốn bước — đều có trong `design/_reference/oblue-platform-demo.html` (`s-bank`
+và `#wiz`) mà em chưa dựng bao giờ.
+Bước 3 của thuật sĩ là bước duy nhất đáng kể, và nó chạy thật: chọn đáp án cho câu còn cảnh báo
+thì **cảnh báo tự mất**, đúng `app.save_exam_edit` ở migration 0013. Không tự xoá thì danh sách
+"cần xem lại" không bao giờ rỗng, cô thôi đọc nó, và cái cờ mất nghĩa — cảnh báo tự giết chính nó.
+Bỏ đáp án thì cảnh báo quay lại, vì cô đổi ý là chuyện thường.
+Chỗ cố ý khác bản mẫu: tab một lọc theo **"đề mới số hoá chưa giao"**, không theo "chưa duyệt nhãn".
+Lọc theo nhãn thì cô duyệt xong là đề biến mất khỏi danh sách, mà nó vẫn còn một việc nữa —
+giao đi. Cột Trạng thái nói mỗi dòng đang cần gì: duyệt nhãn · xem chỗ chữ mờ · giao bài.
+Nhãn topbar đổi từ "Máy đã nháp sẵn 7 bài" sang **"Tuần này tiết kiệm 2h41"** như bản mẫu. Khác
+nhau ở chỗ ai được lợi: câu đầu khoe máy, câu sau nói với cô thứ cô mua. Con số tính từ chồng bài
+thật, nên nó tụt khi chồng bài vơi.
+Danh sách lớp về đúng bản mẫu: 4 lớp · 58 học viên (18/16/4/20). Mười tám em lớp 6.5 giữ tên thật,
+bài viết thật, hồ sơ thật — đó là lớp mọi màn demo đi qua; bốn mươi em ba lớp còn lại sinh ra chỉ
+để panel, học phí và "41/58 đã có tài khoản" đọc đúng.
+**Ba lỗi thật, cả ba do test bắt, không phải do đọc mã:**
+`duLieuBanDau()` trả về CHÍNH các hằng ở đầu file, không phải bản sao — nên `datLai()` trả lại
+đúng những đối tượng đã bị sửa lần trước: cô duyệt một nhãn, đặt lại dữ liệu mẫu, nhãn vẫn duyệt.
+Hai bài kiểm quyền xanh giả vì đề đã bị đổi từ bài kiểm trước đó. Nay trả về `structuredClone`.
+Bài giao **dùng chung mảng câu hỏi với đề** — nên sửa đáp án trong ngân hàng là sửa luôn đề bài em
+đang làm dở, đúng thứ migration 0007 sinh ra để chặn. Nay chụp riêng ở cả dữ liệu mẫu lẫn `giaoBai`.
+Và bộ lọc tab một quét cả kho đề cũ (127 dòng thay vì 3), vì đề lưu trữ cũng mang `trangThaiNhan`.
+Đề đã vào kho từ lâu thì không còn nằm trong luồng số hoá — nay để trống trường đó.
+Một lỗi nữa nằm ở **bài kiểm của em**, không ở mã: `getByRole('button', {name})` mặc định khớp
+CHUỖI CON, nên "Duyệt nhãn" khớp luôn tên tab "Chờ duyệt nhãn" và bài kiểm đỏ oan hai vòng.

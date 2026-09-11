@@ -18,12 +18,15 @@ import {
   datLuat,
   deXuatChoCo,
   dangChay,
+  datDapAn,
   duLieu,
+  duyetNhanDe,
   duyetBaiGiao,
   giaoBai,
   guiNhanXet,
   actorMay,
   lamBaiLuyen,
+  luuDeSoHoa,
   mayChamNhap,
   napTuBoNho,
   nhatKy,
@@ -137,11 +140,12 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
     })
 
     it('trợ giảng không đề xuất được vào lớp mình không phụ trách', () => {
-      // Bài của lớp 7.0 — ngoài phạm vi trợ giảng.
+      // Bài của lớp 5.5 — ngoài phạm vi trợ giảng (trợ giảng chỉ phụ trách lớp 6.5).
       const du = duLieu()
-      const bgKhac = du.baiGiao.find((g) => g.lopId === 'lop-70')!
-      nopBai('hv-11', bgKhac.id, 'Bài của em lớp 7.0')
-      const bnKhac = du.baiNop.find((b) => b.hocVienId === 'hv-11')!
+      const bgKhac = du.baiGiao.find((g) => g.lopId === 'lop-55')!
+      const emKhac = du.lop.find((l) => l.id === 'lop-55')!.hocVienIds[0]!
+      nopBai(emKhac, bgKhac.id, 'Bài của em lớp 5.5')
+      const bnKhac = du.baiNop.find((b) => b.hocVienId === emKhac)!
       expect(() => deXuatChoCo('assistant', bnKhac.id, 'x')).toThrow(KhongDuQuyen)
     })
   })
@@ -183,7 +187,7 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
     })
 
     it('trợ giảng không đăng bài được vào lớp mình không phụ trách', () => {
-      expect(() => dangBai('assistant', 'lop-70', 'Chào lớp')).toThrow(KhongDuQuyen)
+      expect(() => dangBai('assistant', 'lop-55', 'Chào lớp')).toThrow(KhongDuQuyen)
       expect(() => dangBai('assistant', 'lop-65', 'Chào lớp')).not.toThrow()
     })
   })
@@ -201,8 +205,8 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
       const ev = nhatKy()[0]!
       expect(ev.visibility).toContain('hv-01')
       expect(ev.visibility).toContain('hv-10')
-      // Em lớp khác thì không.
-      expect(ev.visibility).not.toContain('hv-11')
+      // Em lớp khác thì không. (Mười tám em hv-01..18 đều ở lớp 6.5; lớp khác mang tiền tố riêng.)
+      expect(ev.visibility).not.toContain('hv-l55-1')
     })
 
     it('em nộp bài thì có sự kiện, và chỉ cô với em thấy', () => {
@@ -402,6 +406,91 @@ describe('bước 1: giao bài từ lộ trình', () => {
 
   it('buổi không gắn đề thì không giao được — không có gì cho em nộp', () => {
     expect(() => giaoBai('owner', { ...Y, buoiNo: 29 })).toThrow('chưa gắn đề')
+  })
+})
+
+describe('số hoá đề: nhãn là lớp 3, cảnh báo tự dọn mình', () => {
+  beforeEach(() => {
+    datLai()
+  })
+
+  const RD = 'de-ocr-r2'
+
+  it('cô duyệt nhãn thì nhãn thành lớp 1, và có dòng nhật ký', () => {
+    const truoc = nhatKy().length
+    duyetNhanDe('owner', 'de-ocr-w2')
+
+    expect(duLieu().de.find((d) => d.id === 'de-ocr-w2')!.trangThaiNhan).toBe('da_duyet')
+    expect(nhatKy()).toHaveLength(truoc + 1)
+    expect(nhatKy()[0]!.action).toBe('exam.update')
+  })
+
+  it('trợ giảng không duyệt nhãn được — exam của trợ giảng là chỉ xem', () => {
+    expect(() => duyetNhanDe('assistant', 'de-ocr-w2')).toThrow(KhongDuQuyen)
+    expect(duLieu().de.find((d) => d.id === 'de-ocr-w2')!.trangThaiNhan).toBe('cho_duyet')
+  })
+
+  it('em càng không thấy đường nào tới ngân hàng đề', () => {
+    expect(() => duyetNhanDe('student', 'de-ocr-w2')).toThrow(KhongDuQuyen)
+  })
+
+  /*
+   * Đây là test quan trọng nhất của cả màn số hoá.
+   *
+   * `app.save_exam_edit` ở migration 0013 tự xoá cảnh báo khi có đáp án. Không tự xoá thì
+   * danh sách "cần xem lại" không bao giờ rỗng, cô thôi đọc nó, và cái cờ mất nghĩa — cảnh
+   * báo tự giết chính nó. Bản demo phải theo đúng luật đó, không phải chỉ trông giống.
+   */
+  it('chọn đáp án thì cảnh báo tự mất', () => {
+    const truoc = duLieu().de.find((d) => d.id === RD)!.cauHoi.find((c) => c.no === 12)!
+    expect(truoc.canhBao).toBeTruthy()
+    expect(truoc.dapAn).toBeNull()
+
+    datDapAn('owner', RD, 12, 'its dependence on specific weather conditions.')
+
+    const sau = duLieu().de.find((d) => d.id === RD)!.cauHoi.find((c) => c.no === 12)!
+    expect(sau.dapAn).toBe('its dependence on specific weather conditions.')
+    expect(sau.canhBao).toBeNull()
+  })
+
+  it('bỏ đáp án thì cảnh báo quay lại — câu đó chuyển sang chấm tay', () => {
+    datDapAn('owner', RD, 12, 'its dependence on specific weather conditions.')
+    datDapAn('owner', RD, 12, null)
+
+    const c = duLieu().de.find((d) => d.id === RD)!.cauHoi.find((q) => q.no === 12)!
+    expect(c.dapAn).toBeNull()
+    expect(c.canhBao).toContain('chấm tay')
+  })
+
+  it('sửa đáp án một đề KHÔNG đụng bài giao đã chụp câu hỏi', () => {
+    // migration 0007: bài giao giữ ảnh chụp. Cô sửa đề tuần sau không đổi bài em đang làm dở.
+    const bg = duLieu().baiGiao.find((g) => g.deId === 'de-r1')!
+    const truoc = JSON.stringify(bg.cauHoi)
+    datDapAn('owner', 'de-r1', 5, 'năm 1784')
+    const sau = duLieu().baiGiao.find((g) => g.id === bg.id)!
+    expect(JSON.stringify(sau.cauHoi)).toBe(truoc)
+  })
+
+  it('lưu đề mới thì nó vào ngân hàng của cô, chưa gắn lớp nào', () => {
+    const truoc = duLieu().de.length
+    const id = luuDeSoHoa('owner', {
+      ten: 'Đề mới của cô',
+      kyNang: 'reading',
+      cachCham: 'auto',
+      cauHoi: [],
+    })
+
+    expect(duLieu().de).toHaveLength(truoc + 1)
+    expect(duLieu().de[0]!.id).toBe(id)
+    // Không bài giao nào trỏ về nó — đề thuộc ngân hàng, không thuộc lớp.
+    expect(duLieu().baiGiao.some((g) => g.deId === id)).toBe(false)
+    expect(nhatKy()[0]!.action).toBe('exam.create')
+  })
+
+  it('trợ giảng không tạo đề được', () => {
+    expect(() =>
+      luuDeSoHoa('assistant', { ten: 'x', kyNang: 'reading', cachCham: 'auto', cauHoi: [] }),
+    ).toThrow(KhongDuQuyen)
   })
 })
 
