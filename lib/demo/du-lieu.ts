@@ -49,6 +49,22 @@ export interface De {
   cachCham: 'auto' | 'draft' | 'manual'
   tinCayOcr?: number
   cauHoi: CauHoi[]
+  /** Đề vào ngân hàng bằng đường nào. `tay` = cô tự soạn, không qua OCR. */
+  nguon?: { loai: 'anh' | 'pdf' | 'tay'; soTrang?: number }
+  /**
+   * Nhãn máy đề xuất sau khi đọc: cấp · kỹ năng · chủ đề. Cô chỉ DUYỆT, không gõ lại.
+   *
+   * Nhãn là thứ làm đề tự tìm được sau 10 năm — nên máy đề xuất còn hơn để trống, và
+   * `trangThaiNhan` giữ đúng luật lớp 3: có hạn, cô quyết.
+   */
+  nhanDeXuat?: string[]
+  trangThaiNhan?: 'cho_duyet' | 'da_duyet' | 'chu_mo'
+  /** Chỗ máy đọc không chắc — trang nào, vì sao. Rỗng nghĩa là máy tự tin. */
+  choMo?: string[]
+  thoiGianPhut?: number
+  chuDe?: string[]
+  /** Đoạn văn gắn với câu hỏi (Reading/Listening). Chụp lại cùng đề. */
+  doanVan?: { ten: string; noiDung: string; tuCau: number; denCau: number }[]
 }
 
 export interface BaiGiao {
@@ -285,6 +301,54 @@ const HOC_VIEN: { id: string; ten: string; mau: TaiKhoan['mau'] }[] = [
   { id: 'hv-18', ten: 'Mai Phương Thảo', mau: 'blue' },
 ]
 
+/**
+ * Bốn mươi em của ba lớp còn lại.
+ *
+ * Sinh ra từ hai danh sách họ và tên, không gõ tay bốn mươi dòng — nhưng vẫn là tên Việt có
+ * dấu, không phải "Học viên 1..40". Danh sách lớp mà đọc như bảng mã thì cô không tin nó là
+ * lớp của mình, và bố cục panel cũng mất nhịp vì mọi dòng dài bằng nhau.
+ */
+const HO_VIET = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Vũ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ']
+const TEN_VIET = [
+  'An Nhiên', 'Bảo Trâm', 'Chí Dũng', 'Diệu Hương', 'Gia Hân', 'Hải Yến', 'Hữu Phước',
+  'Khả Ngân', 'Lan Chi', 'Minh Quân', 'Ngọc Diệp', 'Phú Quý', 'Quỳnh Như', 'Song Ngư',
+  'Thanh Tùng', 'Trúc Mai', 'Tường Vy', 'Văn Lộc', 'Xuân Mai', 'Yến Nhi',
+]
+const MAU_AV: TaiKhoan['mau'][] = ['orange', 'blue', 'green', 'purple']
+
+const HOC_VIEN_PHU: { id: string; ten: string; phone: string; mau: TaiKhoan['mau']; lop: string }[] =
+  (() => {
+    const ket: { id: string; ten: string; phone: string; mau: TaiKhoan['mau']; lop: string }[] = []
+    let i = 0
+    for (const [tien, so] of [['l55', 16], ['lct', 4], ['lsp', 20]] as const) {
+      for (let k = 0; k < so; k++) {
+        i += 1
+        ket.push({
+          id: `hv-${tien}-${k + 1}`,
+          ten: `${HO_VIET[i % HO_VIET.length]} ${TEN_VIET[(i * 3) % TEN_VIET.length]}`,
+          phone: `+8490200${String(i).padStart(3, '0')}`,
+          mau: MAU_AV[i % MAU_AV.length]!,
+          lop: tien,
+        })
+      }
+    }
+    return ket
+  })()
+
+const THEM = (so: number, tien: string): string[] =>
+  HOC_VIEN_PHU.filter((h) => h.lop === tien)
+    .slice(0, so)
+    .map((h) => h.id)
+
+/**
+ * Ảnh chụp câu hỏi cho một bài giao (migration 0007).
+ *
+ * Bài giao KHÔNG dùng chung mảng với đề. Dùng chung thì cô sửa đáp án trong ngân hàng đề là
+ * đổi luôn đề bài em đang làm dở — đúng thứ migration 0007 sinh ra để chặn, và test đã bắt
+ * được đúng chỗ này.
+ */
+const chupCauHoi = (c: CauHoi[]): CauHoi[] => structuredClone(c)
+
 const CAU_HOI_WRITING: CauHoi[] = [
   {
     no: 1,
@@ -322,20 +386,189 @@ function nhapChoBai(
   return { id: `nc-${baiNopId}`, baiNopId, band, tinCay, co, nhanXet, ganCo, hetHan: luc(14) }
 }
 
+
+const DOAN_FOG = {
+  ten: 'Passage 1 · Đoạn văn gắn với câu 1–13',
+  tuCau: 1,
+  denCau: 13,
+  noiDung:
+    'The idea of harvesting water from fog is not new. In the Atacama Desert of Chile, where rainfall is almost nonexistent, communities have long relied on large mesh nets that capture droplets from coastal fog. As the moist air moves inland, it passes through the mesh; droplets coalesce, run down the fibres and collect in gutters below. A single well-sited net can yield several hundred litres on a good day, though output falls sharply when the fog layer sits above the collectors.',
+}
+
+/**
+ * Ba câu đầu của đề Reading — đúng ba ca mà màn duyệt câu hỏi phải xử được.
+ *
+ * Câu 12 KHÔNG có đáp án: máy đọc được đề nhưng không tìm ra đáp án trong tệp. Đó là ca
+ * quan trọng nhất của cả trình thuật sĩ — đề vẫn lưu được, câu đó chấm tay cho tới khi cô
+ * điền. Bỏ ca này đi thì màn duyệt chỉ còn là màn bấm Tiếp tục bốn lần.
+ */
+function CAU_HOI_FOG_BUILD(): CauHoi[] {
+  return [
+    {
+      no: 1,
+      loai: 'mcq',
+      de: 'What does the writer say about fog harvesting in the Atacama Desert?',
+      luaChon: [
+        'It was introduced by foreign scientists.',
+        'It has been used by local communities for a long time.',
+        'It is more expensive than desalination.',
+        'It only works during winter.',
+      ],
+      dapAn: 'It has been used by local communities for a long time.',
+      trangNguon: 1,
+    },
+    {
+      no: 2,
+      loai: 'fill',
+      de: 'Complete the sentence with NO MORE THAN TWO WORDS: The nets capture droplets from ______.',
+      dapAn: 'coastal fog',
+      trangNguon: 1,
+    },
+    {
+      no: 12,
+      loai: 'mcq',
+      de: 'According to paragraph C, the main limitation of the technique is',
+      luaChon: [
+        'the cost of the mesh material.',
+        'the amount of maintenance required.',
+        'its dependence on specific weather conditions.',
+        'the lack of government support.',
+      ],
+      dapAn: null,
+      canhBao: 'Không tìm thấy đáp án trong tệp — cô chọn đáp án đúng, hoặc để chấm tay.',
+      trangNguon: 3,
+    },
+  ]
+}
+const CAU_HOI_FOG: CauHoi[] = CAU_HOI_FOG_BUILD()
+
+/**
+ * Ba đề máy vừa đọc xong, đang chờ cô duyệt nhãn.
+ *
+ * Đây là chồng việc thật của màn Ngân hàng đề: không phải "312 đề" mà là BA đề cần cô nhìn.
+ * Mỗi đề một kết cục khác nhau — máy chắc, máy gặp chữ mờ, và cô tự soạn không qua OCR —
+ * vì một danh sách mà cả ba dòng giống nhau thì không dạy được gì.
+ */
+const DE_CHO_DUYET: De[] = [
+  {
+    id: 'de-ocr-w2',
+    ten: 'Cambridge 19 — Test 2 Writing',
+    kyNang: 'writing',
+    trinhDo: 'IELTS 6.5',
+    cachCham: 'draft',
+    tinCayOcr: 0.94,
+    nguon: { loai: 'anh', soTrang: 12 },
+    nhanDeXuat: ['Task 2', 'Education', '6.5'],
+    trangThaiNhan: 'cho_duyet',
+    thoiGianPhut: 40,
+    chuDe: ['Education'],
+    cauHoi: CAU_HOI_EDUCATION,
+  },
+  {
+    id: 'de-ocr-r2',
+    ten: 'Cambridge 19 — Test 2 Reading',
+    kyNang: 'reading',
+    trinhDo: 'IELTS 6.5',
+    cachCham: 'auto',
+    tinCayOcr: 0.88,
+    nguon: { loai: 'anh', soTrang: 8 },
+    nhanDeXuat: ['Reading', '3 passage'],
+    trangThaiNhan: 'chu_mo',
+    choMo: ['Trang 3 — chữ mờ ở câu 12', 'Trang 6 — chữ mờ ở câu 27'],
+    thoiGianPhut: 60,
+    chuDe: ['Science', 'Environment'],
+    doanVan: [DOAN_FOG],
+    cauHoi: CAU_HOI_FOG,
+  },
+  {
+    id: 'de-pdf-env3',
+    ten: 'Đề tự soạn — Environment 3',
+    kyNang: 'writing',
+    trinhDo: 'IELTS 6.0',
+    cachCham: 'draft',
+    tinCayOcr: 0.99,
+    nguon: { loai: 'pdf' },
+    nhanDeXuat: ['Task 2', 'Environment', '6.0'],
+    trangThaiNhan: 'da_duyet',
+    thoiGianPhut: 40,
+    chuDe: ['Environment'],
+    cauHoi: [
+      {
+        no: 1,
+        loai: 'essay',
+        de: 'Some argue that individual action on climate change is meaningless without government regulation. To what extent do you agree?',
+      },
+    ],
+  },
+]
+
+
+/**
+ * Đề giấy mười năm của cô, đã số hoá.
+ *
+ * Sinh ra chứ không gõ tay từng dòng — ngân hàng chỉ có sáu đề thì thanh "theo kỹ năng"
+ * không nói được gì, mà đó lại là thứ bán được: "10 năm đề giấy giờ tìm được trong 2 giây".
+ * Nội dung câu hỏi để rỗng vì màn này không mở từng đề ra đọc; cái nó cần là nhãn và số đếm.
+ */
+function khoDeCu(): De[] {
+  const BO: [De['kyNang'], string, string[], number][] = [
+    ['writing', 'Writing Task 2', ['Education', 'Technology', 'Environment', 'Health', 'Crime', 'Work'], 38],
+    ['writing', 'Writing Task 1', ['Line graph', 'Bar chart', 'Pie chart', 'Process', 'Map'], 24],
+    ['reading', 'Reading', ['Science', 'History', 'Nature', 'Society'], 21],
+    ['listening', 'Listening', ['Section 1', 'Section 2', 'Section 3', 'Section 4'], 16],
+    ['speaking', 'Speaking', ['Part 1', 'Part 2', 'Part 3'], 14],
+    ['grammar', 'Ngữ pháp', ['Thì', 'Mệnh đề quan hệ', 'Bị động', 'Giới từ'], 11],
+  ]
+
+  const ket: De[] = []
+  for (const [kyNang, nhom, chuDe, soLuong] of BO) {
+    for (let i = 1; i <= soLuong; i++) {
+      const cd = chuDe[i % chuDe.length]!
+      ket.push({
+        id: `de-kho-${kyNang}-${i}`,
+        ten: `${nhom} · ${cd} ${Math.ceil(i / chuDe.length)}`,
+        kyNang,
+        trinhDo: ['IELTS 5.5', 'IELTS 6.5', 'IELTS 7.0+'][i % 3],
+        cachCham: kyNang === 'writing' || kyNang === 'speaking' ? 'draft' : 'auto',
+        tinCayOcr: 0.9 + ((i * 7) % 9) / 100,
+        nguon: { loai: i % 3 === 0 ? 'pdf' : 'anh', soTrang: 2 + (i % 10) },
+        nhanDeXuat: [nhom, cd],
+        // KHÔNG đặt `trangThaiNhan`: đề này đã vào kho từ lâu, nó không còn nằm trong luồng
+        // số hoá nữa. Đặt 'da_duyet' thì tab "Chờ duyệt nhãn" quét cả kho — 127 dòng thay
+        // vì 3 — và chồng việc mất nghĩa ngay lập tức.
+        trangThaiNhan: undefined,
+        chuDe: [cd],
+        cauHoi: [],
+      })
+    }
+  }
+  return ket
+}
+
 export function duLieuBanDau(): DuLieuDemo {
   const taiKhoan: TaiKhoan[] = [
     { id: CO_THAO, ten: 'Cô Thảo', email: 'co.thao@oblue.vn', mau: 'purple' },
     { id: TRO_GIANG, ten: 'Phạm Lan', phone: '+84901000004', mau: 'green' },
     ...HOC_VIEN.map((h) => ({ id: h.id, ten: h.ten, phone: `+8490100${h.id.slice(-2)}00`, mau: h.mau })),
+    ...HOC_VIEN_PHU.map((h) => ({ id: h.id, ten: h.ten, phone: h.phone, mau: h.mau })),
   ]
 
   const lop: Lop[] = [
+    /*
+     * Bốn lớp đang chạy, 58 học viên — đúng sĩ số bản mẫu.
+     *
+     * Mười tám em của lớp 6.5 có tên thật, bài viết thật, hồ sơ thật: đó là lớp mọi màn
+     * demo đi qua. Bốn mươi em ba lớp còn lại chỉ cần có mặt để panel và học phí đọc đúng —
+     * cho các em đó bài viết nữa là làm chồng bài chấm phình ra mà không kể thêm gì.
+     */
     { id: 'lop-65', ten: 'IELTS 6.5 · Tối T3/T5', lich: 'T3, T5 · 19:30', trangThai: 'running',
-      mau: 'blue', hocVienIds: HOC_VIEN.slice(0, 10).map((h) => h.id) },
-    { id: 'lop-70', ten: 'IELTS 7.0 · Thứ 7', lich: 'T7 · 14:00', trangThai: 'running',
-      mau: 'purple', hocVienIds: HOC_VIEN.slice(10, 16).map((h) => h.id) },
-    { id: 'lop-nen', ten: 'Nền tảng B1 · Sáng T2/T4', lich: 'T2, T4 · 18:00', trangThai: 'running',
-      mau: 'orange', hocVienIds: HOC_VIEN.slice(16).map((h) => h.id) },
+      mau: 'blue', hocVienIds: HOC_VIEN.map((h) => h.id) },
+    { id: 'lop-55', ten: 'IELTS 5.5 · Sáng T7/CN', lich: 'T7, CN · 8:30', trangThai: 'running',
+      mau: 'purple', hocVienIds: THEM(16, 'l55') },
+    { id: 'lop-cap-toc', ten: 'Writing cấp tốc · 1 kèm 4', lich: 'T2 · 20:00', trangThai: 'running',
+      mau: 'orange', hocVienIds: THEM(4, 'lct') },
+    { id: 'lop-speak', ten: 'Speaking club · T4', lich: 'T4 · 19:00', trangThai: 'running',
+      mau: 'green', hocVienIds: THEM(20, 'lsp') },
     { id: 'lop-moi', ten: 'IELTS 7.0+ · nhóm 6', lich: 'Khai giảng 22/9', trangThai: 'opening',
       mau: 'indigo', hocVienIds: [], ghiChu: 'Khai giảng 22/9 · 2/6' },
   ]
@@ -353,6 +586,8 @@ export function duLieuBanDau(): DuLieuDemo {
       cachCham: 'auto', tinCayOcr: 0.71, cauHoi: CAU_HOI_READING },
     { id: 'de-w3', ten: 'Cambridge 19 · Test 2 — Task 2 Education', kyNang: 'writing',
       trinhDo: 'B2–C1', cachCham: 'draft', cauHoi: CAU_HOI_EDUCATION },
+    ...DE_CHO_DUYET,
+    ...khoDeCu(),
   ]
 
   /*
@@ -363,21 +598,21 @@ export function duLieuBanDau(): DuLieuDemo {
    */
   const baiGiao: BaiGiao[] = [
     { id: 'bg-t1a', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-52, 19), lanThu: 1,
-      nhan: 'Task 1 — Line graph', trongSo: 5, daXong: true, cauHoi: CAU_HOI_WRITING },
+      nhan: 'Task 1 — Line graph', trongSo: 5, daXong: true, cauHoi: chupCauHoi(CAU_HOI_WRITING) },
     { id: 'bg-mock1', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-42, 19), lanThu: 1,
-      nhan: 'Mock 1', trongSo: 20, daXong: true, cauHoi: CAU_HOI_WRITING },
+      nhan: 'Mock 1', trongSo: 20, daXong: true, cauHoi: chupCauHoi(CAU_HOI_WRITING) },
     { id: 'bg-t2tech', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-31, 19), lanThu: 1,
-      nhan: 'Task 2 — Technology', trongSo: 10, daXong: true, cauHoi: CAU_HOI_WRITING },
+      nhan: 'Task 2 — Technology', trongSo: 10, daXong: true, cauHoi: chupCauHoi(CAU_HOI_WRITING) },
     { id: 'bg-t1bar', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-21, 19), lanThu: 1,
-      nhan: 'Task 1 — Bar chart', trongSo: 5, daXong: true, cauHoi: CAU_HOI_WRITING },
+      nhan: 'Task 1 — Bar chart', trongSo: 5, daXong: true, cauHoi: chupCauHoi(CAU_HOI_WRITING) },
     { id: 'bg-w1', lopId: 'lop-65', deId: 'de-w1', hanNop: luc(-1, 23), lanThu: 1,
-      nhan: 'Task 2 — Community service', trongSo: 10, cauHoi: CAU_HOI_WRITING },
+      nhan: 'Task 2 — Community service', trongSo: 10, cauHoi: chupCauHoi(CAU_HOI_WRITING) },
     { id: 'bg-w2', lopId: 'lop-65', deId: 'de-w3', hanNop: luc(2, 19), lanThu: 1,
-      nhan: 'Task 2 — Education', trongSo: 10, cauHoi: CAU_HOI_EDUCATION },
+      nhan: 'Task 2 — Education', trongSo: 10, cauHoi: chupCauHoi(CAU_HOI_EDUCATION) },
     { id: 'bg-r1', lopId: 'lop-65', deId: 'de-r1', hanNop: luc(2, 23), lanThu: 1,
-      nhan: 'Reading Test 1', trongSo: 5, cauHoi: CAU_HOI_READING },
-    { id: 'bg-w1-70', lopId: 'lop-70', deId: 'de-w1', hanNop: luc(1, 23), lanThu: 1,
-      nhan: 'Task 2 — Community service', trongSo: 10, cauHoi: CAU_HOI_WRITING },
+      nhan: 'Reading Test 1', trongSo: 5, cauHoi: chupCauHoi(CAU_HOI_READING) },
+    { id: 'bg-w1-55', lopId: 'lop-55', deId: 'de-w1', hanNop: luc(1, 23), lanThu: 1,
+      nhan: 'Task 2 — Community service', trongSo: 10, cauHoi: chupCauHoi(CAU_HOI_WRITING) },
   ]
 
   // Bảy em đã nộp bài Writing — đây là chồng bài "tối chủ nhật" của cô.
@@ -508,9 +743,10 @@ export function duLieuBanDau(): DuLieuDemo {
   ]
 
   /*
-   * Tám em còn lại ở lớp 7.0 và Nền tảng B1. Hai lớp đó chưa có bài nào được chấm nên
-   * `diem` rỗng — và bảng vẫn phải đọc được với ô trống, vì đó là trạng thái thật của một
-   * lớp mới mở.
+   * Tám em vào lớp 6.5 muộn: có hồ sơ, chưa có điểm bài nào.
+   *
+   * `diem` rỗng và bảng điểm vẫn phải đọc được với ô trống — đó là trạng thái thật của em
+   * vào giữa khoá, và cũng là chỗ cô nhìn ra ai đang bị bỏ lại.
    */
   const HO_SO_LOP_KHAC: [string, number, HoSoHocVien['huong'], string, boolean, string, string][] = [
     ['hv-11', 7.2, 'up', '14/14', true, '—', '20/10'],
@@ -525,6 +761,25 @@ export function duLieuBanDau(): DuLieuDemo {
 
   for (const [id, bandTb, huong, diHoc, coTaiKhoan, loiHayGap, hanHocPhi] of HO_SO_LOP_KHAC) {
     hoSo.push({ id, bandTb, huong, diHoc, coTaiKhoan, loiHayGap, hanHocPhi, diem: {} })
+  }
+
+  /*
+   * Hồ sơ cho bốn mươi em ba lớp còn lại.
+   *
+   * `coTaiKhoan` cứ ba em một em chưa bật — đúng tỉ lệ bản mẫu (41/58), và đó là con số có
+   * nghĩa: em chưa bật tài khoản thì máy không nhắc được, cô phải nhắc tay.
+   */
+  for (const [i, h] of HOC_VIEN_PHU.entries()) {
+    hoSo.push({
+      id: h.id,
+      bandTb: Number((4.5 + ((i * 7) % 25) / 10).toFixed(1)),
+      huong: (['up', 'flat', 'down'] as const)[i % 3]!,
+      diHoc: `${10 + (i % 5)}/14`,
+      coTaiKhoan: i % 3 !== 2,
+      loiHayGap: ['—', 'Thì quá khứ', 'Giới từ', 'Phát âm đuôi -s'][i % 4]!,
+      hanHocPhi: ['30/9', '5/10', '15/10', '20/10'][i % 4]!,
+      diem: {},
+    })
   }
 
   const loTrinh: LoTrinh[] = [
@@ -549,7 +804,7 @@ export function duLieuBanDau(): DuLieuDemo {
       ten: 'IELTS 7.0+ · 32 buổi',
       moTa: 'Cho em đã vững 6.5. Nặng về lập luận và độ chính xác từ vựng.',
       soBuoi: 32,
-      dangDung: ['lop-70'],
+      dangDung: ['lop-55'],
       buoi: [
         { no: 12, noiDung: 'Câu nhượng bộ — cách viết phản biện không mất lập trường' },
         { no: 13, noiDung: 'Collocation học thuật theo chủ đề Education' },
@@ -560,7 +815,7 @@ export function duLieuBanDau(): DuLieuDemo {
       ten: 'Nền tảng B1 · 24 buổi',
       moTa: 'Xây lại ngữ pháp và vốn từ trước khi vào IELTS.',
       soBuoi: 24,
-      dangDung: ['lop-nen'],
+      dangDung: ['lop-cap-toc'],
       buoi: [{ no: 8, noiDung: 'Thì quá khứ đơn — dạng bất quy tắc hay gặp' }],
     },
   ]
@@ -740,7 +995,18 @@ export function duLieuBanDau(): DuLieuDemo {
       phu: 'Không tắt được. Học viên thuộc về cô, không thuộc về nền tảng.' },
   ]
 
-  return {
+  /*
+   * Trả về BẢN SAO SÂU, không phải đối tượng gốc.
+   *
+   * Các hằng ở đầu file (`DE_CHO_DUYET`, `CAU_HOI_*`, `HOC_VIEN`…) là đối tượng dùng chung.
+   * Không sao chép thì mọi lần `datLai()` trả về ĐÚNG những đối tượng đã bị sửa lần trước:
+   * cô duyệt một nhãn, đặt lại dữ liệu mẫu, nhãn vẫn còn duyệt. Lỗi này đã lộ ra trong test
+   * — hai bài kiểm quyền xanh giả vì đề đã bị đổi từ bài kiểm trước đó.
+   *
+   * `structuredClone` giữ nguyên quan hệ dùng chung BÊN TRONG bản sao, nên chỗ bài giao
+   * dùng chung mảng câu hỏi với đề phải cắt riêng — xem `chupCauHoi` bên dưới.
+   */
+  return structuredClone({
     tenant: { id: 'tn-cothao', subdomain: 'cothao', ten: 'Lớp IELTS của cô Thảo' },
     taiKhoan,
     lop,
@@ -756,7 +1022,7 @@ export function duLieuBanDau(): DuLieuDemo {
     baiLuyen,
     luat,
     vai: { owner: CO_THAO, assistant: TRO_GIANG, student: 'hv-01' },
-  }
+  })
 }
 
 /** Bảy bài viết thật, mỗi bài một giọng khác nhau — để màn chấm bài không đọc như một người. */

@@ -132,6 +132,17 @@ function DoiVai({ vai }: { vai: VaiDemo }) {
   )
 }
 
+/**
+ * Thời gian cô tiết kiệm được tuần này.
+ *
+ * 25 phút một bài nếu chấm tay (OPERATIONS.md), trừ đi ~2 phút cô duyệt nháp. Tính từ
+ * chồng bài THẬT, nên tắt máy chấm đi là con số tụt — chứ không phải một chữ dán sẵn.
+ */
+function tietKiem(soBai: number): string {
+  const phut = soBai * 23
+  return phut >= 60 ? `${Math.floor(phut / 60)}h${String(phut % 60).padStart(2, '0')}` : `${phut} phút`
+}
+
 export function Topbar({
   tenTenant,
   vai,
@@ -158,11 +169,26 @@ export function Topbar({
       </div>
 
       <div className="ml-auto flex flex-none items-center gap-4">
+        {/*
+         * Nhãn của bản mẫu nói THỜI GIAN TIẾT KIỆM, không phải số bài máy nháp.
+         *
+         * Khác nhau ở chỗ ai được lợi: "máy đã nháp 7 bài" khoe máy, "tuần này tiết kiệm
+         * 6h20" nói với cô thứ cô mua. Con số tính từ chồng bài thật — 25 phút mỗi bài nếu
+         * chấm tay, trừ đi thời gian cô duyệt.
+         */}
         {soCho > 0 ? (
           <span className="hidden rounded-s bg-st-green-soft px-2 py-0.5 font-display text-[11px] font-semibold leading-[18px] text-st-green-deep lg:inline">
-            Máy đã nháp sẵn {soCho} bài
+            Tuần này tiết kiệm {tietKiem(soCho)}
           </span>
         ) : null}
+        <span className="relative hidden sm:grid">
+          <Ico s d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0" />
+          {soCho > 0 ? (
+            <span className="absolute -right-2 -top-1.5 min-w-[15px] rounded-[8px] bg-primary px-[3px] text-center font-display text-[10px] font-bold leading-[15px] text-surface">
+              {soCho}
+            </span>
+          ) : null}
+        </span>
         <DoiVai vai={vai} />
       </div>
     </div>

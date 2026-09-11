@@ -8,17 +8,20 @@
  * Trước đây đây thật sự LÀ server action. Đổi thành hàm chạy ở trình duyệt để xuất được
  * bản tĩnh cho GitHub Pages — xem DECISIONS 2026-09-08, mục bản tĩnh.
  */
-import type { VaiDemo } from './du-lieu'
+import type { De, VaiDemo } from './du-lieu'
 import {
   KhongDuQuyen,
   dangBai,
+  datDapAn,
   datLuat,
   deXuatChoCo,
+  duyetNhanDe,
   doiVai,
   duyetBaiGiao,
   giaoBai,
   guiNhanXet,
   lamBaiLuyen,
+  luuDeSoHoa,
   nopBai,
   suaNhap,
   vaiHienTai,
@@ -115,4 +118,21 @@ export function giaoBaiHanhVi(y: {
 
 export function duyetBaiGiaoHanhVi(baiGiaoId: string): { loi?: string } {
   return thu(() => duyetBaiGiao(vaiHienTai(), baiGiaoId))
+}
+
+export function duyetNhanDeHanhVi(deId: string): { loi?: string } {
+  return thu(() => duyetNhanDe(vaiHienTai(), deId))
+}
+
+export function datDapAnHanhVi(
+  deId: string,
+  cauNo: number,
+  dapAn: string | null,
+): { loi?: string } {
+  return thu(() => datDapAn(vaiHienTai(), deId, cauNo, dapAn))
+}
+
+export function luuDeSoHoaHanhVi(de: Omit<De, 'id'>): { loi?: string } {
+  if (!de.ten.trim()) return { loi: 'Đề chưa có tên.' }
+  return thu(() => void luuDeSoHoa(vaiHienTai(), de))
 }
