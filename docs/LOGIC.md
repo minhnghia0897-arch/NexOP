@@ -344,6 +344,7 @@ Lớp mới chỉ mở khi đủ N người (cô đặt N). Học phí còn lạ
 | 4 | Bài luyện sinh ra mà em không làm trong 7 ngày: nhắc lại, hay lặng lẽ hết hạn? | 7 |
 | 5 | Em học 2 lớp của cùng một cô: một hồ sơ hay hai? (`SRS` nói hồ sơ xuyên lớp → một; xác nhận) | 7 |
 | 6 | ~~`permissions.json` thiếu 5 thực thể~~ — **đã áp §8.1** ngày 9/9 để dựng bài luyện của em. Cô xem lại bảng ở §8.1; đổi ý thì sửa `docs/permissions.json`, không sửa chỗ khác. | (đã mở) |
+| 7 | **Trợ giảng có mức `propose` ở `assignment` nhưng không có lối vào nào hợp lệ.** `path` là `none` (không thấy lộ trình) và `exam` là `read` giới hạn "chỉ đề đã giao" — nên trợ giảng không chọn được đề nào để đề xuất giao. Khả năng có, đường đi không. Hai cách: (a) cho trợ giảng "giao lại" một bài lớp ĐÃ có (lần 2) — hợp `exam: read`; (b) hạ `assignment` của trợ giảng xuống `read` cho khớp thực tế. Cần cô chốt. | 1 |
 
 ### §8.1 Năm dòng còn thiếu — đã áp dụng 9/9/2026
 

@@ -17,7 +17,10 @@ import {
   datLai,
   datLuat,
   deXuatChoCo,
+  dangChay,
   duLieu,
+  duyetBaiGiao,
+  giaoBai,
   guiNhanXet,
   actorMay,
   lamBaiLuyen,
@@ -28,6 +31,7 @@ import {
   suaNhap,
 } from '@/lib/demo/kho'
 import { duLieuBanDau } from '@/lib/demo/du-lieu'
+import { baiCuaEm } from '@/lib/demo/em'
 import { can, type Actor } from '@/lib/auth/can'
 
 const BAI = 'bn-hv-01'
@@ -298,6 +302,109 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
  * Bài kiểm bằng trình duyệt không bắt được: lần nào cũng mở bằng hồ sơ sạch, mà chỗ hỏng
  * chỉ tồn tại với người ĐÃ dùng. Nên nó phải nằm ở đây, chỗ dựng được đúng tình huống đó.
  */
+describe('bước 1: giao bài từ lộ trình', () => {
+  // Describe này nằm ngoài khối chính, nên phải tự dọn: thiếu dòng này thì bài một test
+  // giao còn nằm nguyên ở test sau, và "em không giao được" xanh/đỏ tuỳ thứ tự chạy.
+  beforeEach(() => {
+    datLai()
+  })
+
+  const Y = {
+    loTrinhId: 'lt-65',
+    buoiNo: 31,
+    lopId: 'lop-65',
+    hanNop: new Date(Date.now() + 3 * 86_400_000).toISOString(),
+    trongSo: 5,
+  }
+
+  it('cô giao thì bài chạy ngay, và máy đăng lên bảng tin', () => {
+    const baiTruoc = duLieu().baiDang.length
+    const id = giaoBai('owner', Y)
+
+    const bg = duLieu().baiGiao.find((g) => g.id === id)!
+    expect(dangChay(bg)).toBe(true)
+    expect(bg.trongSo).toBe(5)
+    // Đề đi theo buổi trong lộ trình — cô không chọn lại.
+    expect(bg.deId).toBe('de-r1')
+    // Câu hỏi CHỤP LẠI lúc giao (migration 0007), không trỏ sống về đề.
+    expect(bg.cauHoi.length).toBeGreaterThan(0)
+
+    expect(duLieu().baiDang).toHaveLength(baiTruoc + 1)
+    expect(duLieu().baiDang[0]!.loai).toBe('system')
+
+    // Hai sự kiện, đúng thứ tự: cô giao trước, máy đăng sau.
+    const [sau, truoc] = nhatKy()
+    expect(truoc!.action).toBe('assignment.create')
+    expect(sau!.action).toBe('post.auto:assign')
+    expect(sau!.actorRole).toBe('system')
+  })
+
+  it('trợ giảng đề xuất, bài KHÔNG chạy và em không thấy', () => {
+    const id = giaoBai('assistant', Y)
+    const bg = duLieu().baiGiao.find((g) => g.id === id)!
+
+    expect(dangChay(bg)).toBe(false)
+    expect(bg.deXuatBoi).toBe('acc-pham-lan')
+    // Máy chưa đăng gì — chưa có gì để báo cho lớp.
+    expect(nhatKy()[0]!.action).toBe('assignment.propose')
+    // Và chỉ cô với trợ giảng nhìn thấy dòng đó, không phải cả lớp.
+    expect(nhatKy()[0]!.visibility.sort()).toEqual(['acc-co-thao', 'acc-pham-lan'])
+  })
+
+  it('em không thấy đề xuất chưa duyệt — cửa chặn ở lớp đọc dữ liệu của em', () => {
+    giaoBai('assistant', Y)
+    expect(baiCuaEm('hv-01').some((b) => b.nhan.includes('Cambridge 19 Test 1'))).toBe(false)
+
+    // Cô duyệt thì em thấy ngay, và máy đăng lúc đó chứ không phải lúc trợ giảng soạn.
+    const id = duLieu().baiGiao.find((g) => !dangChay(g))!.id
+    const baiTruoc = duLieu().baiDang.length
+    duyetBaiGiao('owner', id)
+
+    expect(duLieu().baiDang).toHaveLength(baiTruoc + 1)
+    expect(baiCuaEm('hv-01').some((b) => b.baiGiaoId === id)).toBe(true)
+  })
+
+  it('em càng không tự giao bài cho mình', () => {
+    expect(() => giaoBai('student', Y)).toThrow(KhongDuQuyen)
+    expect(duLieu().baiGiao.some((g) => g.tuBuoi?.no === 31)).toBe(false)
+  })
+
+  it('trợ giảng không tự duyệt đề xuất của chính mình', () => {
+    const id = giaoBai('assistant', Y)
+    expect(() => duyetBaiGiao('assistant', id)).toThrow(KhongDuQuyen)
+    expect(dangChay(duLieu().baiGiao.find((g) => g.id === id)!)).toBe(false)
+  })
+
+  it('tắt luật nhắc thì máy vẫn đăng, nhưng nói rõ là không nhắc', () => {
+    datLuat('owner', 'nhac-nop', false)
+    giaoBai('owner', Y)
+    expect(duLieu().baiDang[0]!.noiDung).toContain('tắt nhắc tự động')
+
+    datLai()
+    datLuat('owner', 'nhac-nop', true)
+    giaoBai('owner', Y)
+    expect(duLieu().baiDang[0]!.noiDung).toContain('sẽ được nhắc')
+  })
+
+  it('giao lại cùng buổi thì đánh số lần, không để em thấy hai dòng trùng tên', () => {
+    const a = giaoBai('owner', Y)
+    const b = giaoBai('owner', { ...Y, hanNop: new Date(Date.now() + 5 * 86_400_000).toISOString() })
+
+    const bgA = duLieu().baiGiao.find((g) => g.id === a)!
+    const bgB = duLieu().baiGiao.find((g) => g.id === b)!
+    expect(bgA.lanThu).toBe(1)
+    expect(bgB.lanThu).toBe(2)
+    expect(bgB.nhan).toContain('lần 2')
+    // Em nhìn thấy hai dòng KHÁC TÊN nhau — đó mới là điều quan trọng.
+    const tenEm = baiCuaEm('hv-01').map((x) => x.nhan)
+    expect(new Set(tenEm).size).toBe(tenEm.length)
+  })
+
+  it('buổi không gắn đề thì không giao được — không có gì cho em nộp', () => {
+    expect(() => giaoBai('owner', { ...Y, buoiNo: 29 })).toThrow('chưa gắn đề')
+  })
+})
+
 describe('bản lưu cũ không được làm vỡ bản mới', () => {
   const KHOA = 'oblue-demo-v2'
 

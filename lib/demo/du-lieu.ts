@@ -63,6 +63,18 @@ export interface BaiGiao {
   trongSo?: number
   /** Bài đã xong từ trước, chỉ để dựng bảng điểm — không nằm trong chồng bài chờ. */
   daXong?: boolean
+  /**
+   * `de_xuat` = trợ giảng đã soạn, cô chưa duyệt. Lớp 3: chưa có hiệu lực với ai.
+   *
+   * Không tách thành bảng riêng, vì đây vẫn là MỘT bài giao — chỉ khác ở chỗ đã có hiệu
+   * lực hay chưa. `permissions.json` cho trợ giảng mức `propose` ở `assignment`, nên hình
+   * dạng này bám đúng chính sách: cùng một object, khác động từ tạo ra nó.
+   */
+  trangThai?: 'de_xuat' | 'dang_chay'
+  /** Ai soạn, khi là đề xuất của trợ giảng. */
+  deXuatBoi?: string
+  /** Buổi trong lộ trình mà bài này lấy ra — để cô thấy bài đến từ đâu. */
+  tuBuoi?: { loTrinhId: string; no: number }
   /** Ảnh chụp câu hỏi lúc giao — không phải liên kết sống (migration 0007). */
   cauHoi: CauHoi[]
 }

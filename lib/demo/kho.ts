@@ -103,6 +103,19 @@ export function soPhienBan(): number {
   return phienBan
 }
 
+/*
+ * Mã mới, không trùng.
+ *
+ * `Date.now()` một mình là không đủ: hai bài giao trong cùng một mili giây ra CÙNG một mã,
+ * rồi `find(g => g.id === id)` trả về bài đầu và bài thứ hai thành vô hình. Lỗi này đã xảy
+ * ra thật ngay ở test đầu tiên — và nếu nó lọt, người dùng gặp nó lúc bấm Giao hai lần liền.
+ */
+let dem = 0
+function maMoi(tien: string): string {
+  dem += 1
+  return `${tien}-${Date.now().toString(36)}-${dem}`
+}
+
 // ───────────────────────── giữ qua lần tải lại ─────────────────────────
 //
 // Không có localStorage thì tải lại trang là mất bài cô vừa gửi — và người xem demo sẽ
@@ -269,7 +282,7 @@ function ghi<T>(
 
   const st = trangThai()
   st.events.push({
-    id: `ev-${st.events.length + 1}`,
+    id: maMoi('ev'),
     tenantId: object.tenantId,
     classId: object.classId ?? null,
     actorId: actor.role === 'system' ? null : actor.accountId,
@@ -404,7 +417,7 @@ export function guiNhanXet(vai: VaiDemo, baiNopId: string): void {
     [du.vai.owner, bn.hocVienId],
     (d) => {
       d.nhanXet.push({
-        id: `nx-${baiNopId}-${d.nhanXet.length + 1}`,
+        id: maMoi(`nx-${baiNopId}`),
         baiNopId,
         band,
         noiDung: nhap.nhanXet,
@@ -432,7 +445,7 @@ export function dangBai(vai: VaiDemo, lopId: string, noiDung: string): void {
     [du.vai.owner, ...(du.lop.find((l) => l.id === lopId)?.hocVienIds ?? [])],
     (d) => {
       d.baiDang.unshift({
-        id: `bd-${d.baiDang.length + 1}`,
+        id: maMoi('bd'),
         lopId,
         tacGiaId: actor.accountId,
         loai: 'post',
@@ -469,6 +482,154 @@ export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): v
         soTu: noiDung.trim().split(/\s+/).filter(Boolean).length,
         nopLuc: new Date().toISOString(),
         muon: Date.now() > new Date(bg.hanNop).getTime(),
+      })
+    },
+  )
+}
+
+/** Bài giao đã có hiệu lực. Đề xuất của trợ giảng chưa tính — em không thấy, hạn chưa chạy. */
+export function dangChay(bg: import('./du-lieu').BaiGiao): boolean {
+  return (bg.trangThai ?? 'dang_chay') === 'dang_chay'
+}
+
+function batDauNgay(iso: string): string {
+  return new Date(iso).toISOString()
+}
+
+/**
+ * Bước 1 của vòng vận hành: giao một buổi trong lộ trình cho lớp.
+ *
+ * Cô hỏi `assignment.create` → bài chạy ngay. Trợ giảng hỏi `assignment.propose` → bài nằm
+ * ở trạng thái `de_xuat`, chờ cô. Không có nhánh `if vai === 'assistant'` nào ở đây: hai
+ * động từ khác nhau vì `permissions.json` cho hai vai hai mức khác nhau, và `can()` là chỗ
+ * duy nhất biết điều đó.
+ *
+ * Đề đi theo lộ trình chứ không nhân bản — CLAUDE.md: "đề thuộc ngân hàng của cô, chỉ khi
+ * GIAO mới gắn vào lớp". Nhưng câu hỏi thì chụp lại tại thời điểm giao (migration 0007):
+ * cô sửa đề tuần sau không được đổi đề bài em đang làm dở.
+ */
+export function giaoBai(
+  vai: VaiDemo,
+  y: { loTrinhId: string; buoiNo: number; lopId: string; hanNop: string; trongSo: number },
+): string {
+  const du = duLieu()
+  const lt = du.loTrinh.find((l) => l.id === y.loTrinhId)
+  const buoi = lt?.buoi.find((b) => b.no === y.buoiNo)
+  if (!buoi?.deId) throw new Error('Buổi này chưa gắn đề')
+
+  const de = du.de.find((d) => d.id === buoi.deId)
+  if (!de) throw new Error('Không tìm thấy đề của buổi này')
+
+  const actor = actorCuaVai(vai)
+  const laCo = vai === 'owner'
+  const id = maMoi('bg-giao')
+
+  /*
+   * Giao lại cùng một buổi cho cùng một lớp là việc CÓ THẬT — cả lớp làm tệ thì cô cho làm
+   * lại. Nên không chặn; nhưng phải đánh số lần.
+   *
+   * Không đánh số thì em mở app ra thấy hai dòng "Nộp Mock 2" giống hệt nhau và không biết
+   * nộp cái nào. Bảng điểm cũng có hai cột cùng tên. `lanThu` đã có sẵn trong mô hình từ
+   * đầu cho đúng việc này.
+   */
+  const lanTruoc = du.baiGiao.filter(
+    (g) => g.lopId === y.lopId && g.tuBuoi?.loTrinhId === y.loTrinhId && g.tuBuoi.no === y.buoiNo,
+  ).length
+  const lanThu = lanTruoc + 1
+  const nhan = buoi.baiVeNha ?? de.ten
+
+  ghi(
+    actor,
+    laCo ? 'assignment.create' : 'assignment.propose',
+    { type: 'assignment', id, tenantId: du.tenant.id, classId: y.lopId, ownerId: actor.accountId },
+    { de: de.id, buoi: y.buoiNo, han: y.hanNop, trong_so: y.trongSo, lan_thu: lanThu },
+    // Đề xuất thì chỉ cô thấy. Bài đã chạy thì cả lớp thấy — đó là điểm khác nhau duy nhất
+    // giữa hai nhánh, và nó nằm ở đây chứ không rải trong giao diện.
+    laCo
+      ? [du.vai.owner, ...(du.lop.find((l) => l.id === y.lopId)?.hocVienIds ?? [])]
+      : [du.vai.owner, actor.accountId],
+    (d) => {
+      d.baiGiao.push({
+        id,
+        lopId: y.lopId,
+        deId: de.id,
+        hanNop: batDauNgay(y.hanNop),
+        lanThu,
+        nhan: lanThu > 1 ? `${nhan} (lần ${lanThu})` : nhan,
+        trongSo: y.trongSo,
+        trangThai: laCo ? 'dang_chay' : 'de_xuat',
+        ...(laCo ? {} : { deXuatBoi: actor.accountId }),
+        tuBuoi: { loTrinhId: y.loTrinhId, no: y.buoiNo },
+        cauHoi: de.cauHoi,
+      })
+    },
+  )
+
+  if (laCo) mayDangBaiGiao(id)
+  return id
+}
+
+/** Cô duyệt bài trợ giảng đã soạn. Từ đây mới có hiệu lực với em. */
+export function duyetBaiGiao(vai: VaiDemo, baiGiaoId: string): void {
+  const du = duLieu()
+  const bg = du.baiGiao.find((g) => g.id === baiGiaoId)
+  if (!bg || dangChay(bg)) return
+
+  ghi(
+    actorCuaVai(vai),
+    'assignment.create',
+    { type: 'assignment', id: baiGiaoId, tenantId: du.tenant.id, classId: bg.lopId },
+    { duyet_de_xuat_cua: bg.deXuatBoi ?? null },
+    [du.vai.owner, ...(du.lop.find((l) => l.id === bg.lopId)?.hocVienIds ?? [])],
+    (d) => {
+      const m = d.baiGiao.find((g) => g.id === baiGiaoId)
+      if (m) m.trangThai = 'dang_chay'
+    },
+  )
+
+  mayDangBaiGiao(baiGiaoId)
+}
+
+/**
+ * Bước 2: máy đăng bài giao lên bảng tin lớp.
+ *
+ * `post` của vai `system` là mức `auto`, nên máy ĐƯỢC đăng thẳng — khác hẳn nhận xét, chỗ
+ * máy chỉ nháp. Ranh giới không phải "máy không được làm gì", mà là: máy không phát ra
+ * phán xét về một đứa trẻ; thông báo một việc cô vừa quyết thì được.
+ *
+ * Việc nhắc trước hạn phụ thuộc công tắc `nhac-nop`. Tắt thì máy chỉ đăng, không nhắc —
+ * và nói thẳng điều đó trong bài đăng, để cô không tưởng em đã được nhắc.
+ */
+function mayDangBaiGiao(baiGiaoId: string): void {
+  const du = duLieu()
+  const bg = du.baiGiao.find((g) => g.id === baiGiaoId)
+  if (!bg) return
+
+  const lop = du.lop.find((l) => l.id === bg.lopId)
+  const nhac = du.luat.find((l) => l.id === 'nhac-nop')?.bat ?? false
+  const coTaiKhoan = (lop?.hocVienIds ?? []).filter(
+    (id) => du.hoSo.find((h) => h.id === id)?.coTaiKhoan,
+  ).length
+
+  const han = new Date(bg.hanNop)
+  const khi = `${han.getDate()}/${han.getMonth() + 1} lúc ${String(han.getHours()).padStart(2, '0')}:${String(han.getMinutes()).padStart(2, '0')}`
+
+  ghi(
+    actorMay(bg.lopId),
+    'post.auto:assign',
+    { type: 'post', tenantId: du.tenant.id, classId: bg.lopId },
+    { bai_giao: baiGiaoId, nhac },
+    [du.vai.owner, ...(lop?.hocVienIds ?? [])],
+    (d) => {
+      d.baiDang.unshift({
+        id: maMoi('bd-auto'),
+        lopId: bg.lopId,
+        tacGiaId: null,
+        loai: 'system',
+        noiDung: nhac
+          ? `Bài mới: ${bg.nhan} — hạn ${khi}. ${coTaiKhoan} em đã bật tài khoản sẽ được nhắc trước 24 giờ và 2 giờ.`
+          : `Bài mới: ${bg.nhan} — hạn ${khi}. Cô đang tắt nhắc tự động, nên các em tự nhớ hạn giúp cô.`,
+        luc: new Date().toISOString(),
       })
     },
   )
