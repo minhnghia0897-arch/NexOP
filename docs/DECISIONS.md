@@ -296,3 +296,30 @@ trắng thì người dùng không biết là do đâu, cũng không biết bấ
 Test nằm ở `tests/unit/kho-demo.test.ts`, dựng đúng tình huống bằng localStorage giả — chỗ
 duy nhất dựng lại được "người đã dùng bản cũ". Đã kiểm đột biến cả hai lớp: tắt cửa kiểm hình
 dạng thì đỏ, đổi khoá về `-v1` cũng đỏ.
+
+### 2026-09-11 · Bước 1 của vòng vận hành: cô giao bài từ lộ trình
+Lý do: mười bảy màn đã đủ, nhưng bản demo vẫn bắt đầu từ lúc bài đã có sẵn. Cô chấm được,
+gửi được, mà **không tạo được việc** — nghĩa là vòng vận hành thiếu đúng cái bước đầu tiên,
+và "mở lớp thứ 3 không kiệt sức" chưa có gì để xem.
+Ô giao bài có ba ô nhập, không hơn: lớp nào · hạn bao giờ · nặng bao nhiêu. Đề đã gắn sẵn
+trong buổi nên cô không chọn lại — thêm một ô "chọn đề" ở đó là xoá mất lý do lộ trình tồn tại.
+Câu hỏi được **chụp lại** lúc giao (migration 0007), không trỏ sống về đề.
+Máy đăng bài giao lên bảng tin bằng `post.auto:assign`. Đây là chỗ ranh giới máy–người dễ bị
+hiểu nhầm nên nói rõ: máy ĐƯỢC đăng thẳng (`post` của `system` là mức `auto`), khác hẳn nhận
+xét chỗ máy chỉ nháp. Luật không phải "máy không được làm gì", mà là: máy không phát ra phán
+xét về một đứa trẻ; thông báo một việc cô vừa quyết thì được.
+Công tắc `nhac-nop` đổi **lời** của bài đăng chứ không giấu nó: tắt thì máy vẫn đăng nhưng nói
+thẳng "cô đang tắt nhắc tự động, các em tự nhớ hạn". Giấu đi thì cô tưởng em đã được nhắc.
+**Chỗ hổng phát hiện khi dựng**, đã ghi vào `LOGIC.md` §8 câu 7: trợ giảng có mức `propose` ở
+`assignment` nhưng **không có lối vào nào hợp lệ** — `path` là `none` nên không thấy lộ trình,
+`exam` là `read` giới hạn "chỉ đề đã giao" nên không chọn được đề. Khả năng có, đường đi không.
+Nên nhánh "trợ giảng đề xuất" bị gỡ khỏi giao diện (dựng ra là dựng mã chết), nhưng giữ trong
+kho và có test — vì `permissions.json` nói thế, và chính sách mới là nguồn.
+Hai lỗi thật lộ ra khi bấm và khi nhìn ảnh chụp, không lộ khi đọc mã:
+`bg-giao-${Date.now()}` cho hai bài giao trong cùng một mili giây **cùng một mã**, rồi bài thứ
+hai thành vô hình. Nay mọi mã sinh ra đi qua một hàm có bộ đếm — bỏ luôn cả kiểu mã theo
+`length + 1`, vốn cũng trùng ngay khi có thứ bị xoá.
+Và giao lại cùng một buổi cho cùng một lớp — việc có thật, cả lớp làm tệ thì cho làm lại — cho
+em hai dòng **trùng tên** không phân biệt nổi. Nay đánh số `lần 2` bằng `lanThu` vốn đã có
+sẵn trong mô hình từ đầu cho đúng việc này.
+Kiểm cả với **bản đã lưu của phiên bản trước**, không chỉ hồ sơ sạch — đúng bài học ngày 9/9.

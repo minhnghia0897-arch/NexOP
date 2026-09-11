@@ -12,7 +12,7 @@
 import { can, type Actor } from '@/lib/auth/can'
 
 import type { BaiGiao, BaiLuyen, LoiDanhDau, NhanXet } from './du-lieu'
-import { duLieu } from './kho'
+import { dangChay, duLieu } from './kho'
 
 /**
  * Em đang đăng nhập trong bản demo.
@@ -65,6 +65,8 @@ export function baiCuaEm(hocVienId: string): BaiTrongHoSo[] {
 
   for (const bg of du.baiGiao) {
     if (bg.lopId !== lop.id) continue
+    // Đề xuất của trợ giảng chưa có hiệu lực. Em không thấy, và hạn của nó cũng chưa chạy.
+    if (!dangChay(bg)) continue
     if (!can(actor, 'assignment.view', { type: 'assignment', tenantId: du.tenant.id, classId: bg.lopId })) {
       continue
     }

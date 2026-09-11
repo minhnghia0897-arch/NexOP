@@ -15,6 +15,8 @@ import {
   datLuat,
   deXuatChoCo,
   doiVai,
+  duyetBaiGiao,
+  giaoBai,
   guiNhanXet,
   lamBaiLuyen,
   nopBai,
@@ -88,4 +90,29 @@ export function lamBaiLuyenHanhVi(
   dung: number,
 ): { loi?: string } {
   return thu(() => lamBaiLuyen(hocVienId, baiLuyenId, dung))
+}
+
+/**
+ * Cô giao một buổi trong lộ trình cho lớp. Trợ giảng bấm cùng nút này thì thành đề xuất.
+ *
+ * Giao diện KHÔNG tự đoán vai: nó gọi một hàm, `can()` quyết ra hai kết cục. Nếu ở đây có
+ * `if vai === ...` thì hôm nào chính sách đổi, nút vẫn làm theo cái if cũ.
+ */
+export function giaoBaiHanhVi(y: {
+  loTrinhId: string
+  buoiNo: number
+  lopId: string
+  hanNop: string
+  trongSo: number
+}): { loi?: string } {
+  if (!y.lopId) return { loi: 'Cô chưa chọn lớp.' }
+  if (!y.hanNop) return { loi: 'Cô chưa đặt hạn nộp.' }
+  if (new Date(y.hanNop).getTime() <= Date.now()) {
+    return { loi: 'Hạn nộp đã qua. Em sẽ nhận bài trong trạng thái muộn ngay khi giao.' }
+  }
+  return thu(() => void giaoBai(vaiHienTai(), y))
+}
+
+export function duyetBaiGiaoHanhVi(baiGiaoId: string): { loi?: string } {
+  return thu(() => duyetBaiGiao(vaiHienTai(), baiGiaoId))
 }

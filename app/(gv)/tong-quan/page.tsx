@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { DauMan, Ico, NutLien, Wrap } from '@/components/ung-dung/khung'
 import { ChiSo, Khoi, Nhan, ViSao } from '@/components/ung-dung/phan-tu'
 import { useKho } from '@/lib/demo/dung-kho'
-import { baiCanCham, duLieu, vaiHienTai } from '@/lib/demo/kho'
+import { baiCanCham, dangChay as baiDangChay, duLieu, vaiHienTai } from '@/lib/demo/kho'
 
 function ngayViet(iso: string): string {
   const d = new Date(iso)
@@ -73,12 +73,14 @@ export default function TongQuan() {
     cho.length === 0 ? null : cho.reduce((t, b) => t + b.bandTb, 0) / cho.length
 
   const sapHan = du.baiGiao
-    .filter((b) => new Date(b.hanNop).getTime() > Date.now())
+    .filter((b) => baiDangChay(b) && new Date(b.hanNop).getTime() > Date.now())
     .sort((a, b) => a.hanNop.localeCompare(b.hanNop))
 
+  // Bài ĐÃ XONG không còn "chưa nộp" — nó đã chấm xong từ tuần trước. Và đề xuất chưa
+  // duyệt thì chưa giao cho ai, nên cũng không có ai thiếu nó.
   const chuaNop = du.baiGiao.flatMap((bg) => {
     const lop = du.lop.find((l) => l.id === bg.lopId)
-    if (!lop) return []
+    if (!lop || bg.daXong || !baiDangChay(bg)) return []
     return lop.hocVienIds.filter(
       (id) => !du.baiNop.some((b) => b.baiGiaoId === bg.id && b.hocVienId === id),
     )
