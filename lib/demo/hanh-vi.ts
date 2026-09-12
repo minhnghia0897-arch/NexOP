@@ -22,6 +22,7 @@ import {
   guiNhanXet,
   lamBaiLuyen,
   luuDeSoHoa,
+  luuGhiChu,
   nopBai,
   suaNhap,
   vaiHienTai,
@@ -135,4 +136,8 @@ export function datDapAnHanhVi(
 export function luuDeSoHoaHanhVi(de: Omit<De, 'id'>): { loi?: string } {
   if (!de.ten.trim()) return { loi: 'Đề chưa có tên.' }
   return thu(() => void luuDeSoHoa(vaiHienTai(), de))
+}
+
+export function luuGhiChuHanhVi(hocVienId: string, ghiChu: string): { loi?: string } {
+  return thu(() => luuGhiChu(vaiHienTai(), hocVienId, ghiChu))
 }

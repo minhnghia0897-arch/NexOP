@@ -21,12 +21,15 @@ import {
   datDapAn,
   duLieu,
   duyetNhanDe,
+  hoSoDayDu,
   duyetBaiGiao,
   giaoBai,
+  soLieuLop,
   guiNhanXet,
   actorMay,
   lamBaiLuyen,
   luuDeSoHoa,
+  luuGhiChu,
   mayChamNhap,
   napTuBoNho,
   nhatKy,
@@ -491,6 +494,88 @@ describe('số hoá đề: nhãn là lớp 3, cảnh báo tự dọn mình', () 
     expect(() =>
       luuDeSoHoa('assistant', { ten: 'x', kyNang: 'reading', cachCham: 'auto', cauHoi: [] }),
     ).toThrow(KhongDuQuyen)
+  })
+})
+
+describe('ghi chú riêng của cô — cắt ở lớp đọc, không ở giao diện', () => {
+  beforeEach(() => {
+    datLai()
+  })
+
+  it('cô đọc và sửa được ghi chú', () => {
+    const truoc = hoSoDayDu('owner', 'hv-01')!
+    expect(truoc.ghiChu).toContain('thi tháng 12')
+
+    luuGhiChu('owner', 'hv-01', 'Đã nói chuyện với phụ huynh, lùi sang tháng 3.')
+    expect(hoSoDayDu('owner', 'hv-01')!.ghiChu).toContain('tháng 3')
+  })
+
+  /*
+   * Đây là test đáng giá nhất của màn hồ sơ.
+   *
+   * Trợ giảng XEM ĐƯỢC hồ sơ (`profile` mức `read`), nên ngăn kéo vẫn mở. Nhưng `ghiChu`
+   * phải là `null` — không phải chuỗi rỗng, không phải nội dung rồi giao diện tự giấu.
+   * Giấu ở giao diện thì dữ liệu vẫn đi tới trình duyệt của trợ giảng, ai mở công cụ nhà
+   * phát triển cũng đọc được.
+   */
+  it('trợ giảng mở được hồ sơ nhưng KHÔNG nhận được nội dung ghi chú', () => {
+    const ho = hoSoDayDu('assistant', 'hv-01')!
+    expect(ho).not.toBeNull()
+    expect(ho.bandTb).toBeGreaterThan(0)
+    expect(ho.ghiChu).toBeNull()
+    // Và không có trường nào khác lén mang nội dung đó theo.
+    expect(JSON.stringify(ho)).not.toContain('thi tháng 12')
+  })
+
+  it('trợ giảng không sửa được ghi chú', () => {
+    expect(() => luuGhiChu('assistant', 'hv-01', 'x')).toThrow(KhongDuQuyen)
+    expect(hoSoDayDu('owner', 'hv-01')!.ghiChu).toContain('thi tháng 12')
+  })
+
+  it('em đọc hồ sơ của mình, không đọc của bạn, và không thấy ghi chú', () => {
+    const cuaEm = hoSoDayDu('student', 'hv-01')!
+    expect(cuaEm.ghiChu).toBeNull()
+    expect(hoSoDayDu('student', 'hv-02')).toBeNull()
+  })
+
+  it('nhật ký ghi là cô có sửa, nhưng không ghi nội dung', () => {
+    luuGhiChu('owner', 'hv-01', 'Bí mật không được lọt ra nhật ký')
+    const ev = nhatKy()[0]!
+    expect(ev.action).toBe('profile.update')
+    expect(ev.visibility).toEqual(['acc-co-thao'])
+    expect(JSON.stringify(ev.payload)).not.toContain('Bí mật')
+  })
+})
+
+describe('lưới thẻ lớp đọc số liệu thật', () => {
+  beforeEach(() => {
+    datLai()
+  })
+
+  it('cô thấy đủ lớp, trợ giảng chỉ thấy lớp mình phụ trách', () => {
+    expect(soLieuLop('owner').length).toBeGreaterThan(3)
+    const tg = soLieuLop('assistant')
+    expect(tg).toHaveLength(1)
+    expect(tg[0]!.lop.id).toBe('lop-65')
+  })
+
+  it('bài chờ chấm trên thẻ khớp với chồng bài của chính vai đó', () => {
+    const the = soLieuLop('owner').find((t) => t.lop.id === 'lop-65')!
+    expect(the.cho).toBe(baiCanCham('owner').filter((b) => b.lopId === 'lop-65').length)
+  })
+
+  it('giao thêm một bài thì tiến độ buổi của lớp đi lên', () => {
+    const truoc = soLieuLop('owner').find((t) => t.lop.id === 'lop-65')!.buoiDaDay!
+    giaoBai('owner', {
+      loTrinhId: 'lt-65',
+      buoiNo: 31,
+      lopId: 'lop-65',
+      hanNop: new Date(Date.now() + 3 * 86_400_000).toISOString(),
+      trongSo: 5,
+    })
+    expect(soLieuLop('owner').find((t) => t.lop.id === 'lop-65')!.buoiDaDay).toBe(
+      Math.max(truoc, 31),
+    )
   })
 })
 

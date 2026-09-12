@@ -352,3 +352,31 @@ Và bộ lọc tab một quét cả kho đề cũ (127 dòng thay vì 3), vì đ
 Đề đã vào kho từ lâu thì không còn nằm trong luồng số hoá — nay để trống trường đó.
 Một lỗi nữa nằm ở **bài kiểm của em**, không ở mã: `getByRole('button', {name})` mặc định khớp
 CHUỖI CON, nên "Duyệt nhãn" khớp luôn tên tab "Chờ duyệt nhãn" và bài kiểm đỏ oan hai vòng.
+
+### 2026-09-12 · Lớp học thành lưới thẻ, Học viên có ngăn hồ sơ
+Lý do: cô gửi ba ảnh và nói bản đang chạy khác xa. Cô đúng ở hai chỗ nữa.
+**Lớp học**: bản mẫu tách hai màn — `s-cls` (lưới thẻ, để CHỌN) và `s-class` (năm tab, để LÀM
+VIỆC). Em gộp làm một và mất mất màn chọn: cô mở "Lớp học" ra là rơi thẳng vào một lớp, không
+nhìn được bốn lớp cạnh nhau — mà đó mới là lúc cô thấy lớp nào đang tụt. Nay `?lop=` quyết định
+màn nào; một đường dẫn hai màn, vì bản tĩnh không dựng được route động thiếu `generateStaticParams`.
+Số trên thẻ tính từ dữ liệu thật: band trung bình từ hồ sơ các em trong lớp, "quá hạn" đếm bài đã
+qua hạn mà còn người chưa nộp, tiến độ buổi từ bài giao đã lấy từ lộ trình. Cắm số thì thẻ đẹp mà
+tắt một luật đi con số vẫn y nguyên, và cô sẽ tin nhầm nó.
+**Học viên**: ba tab (Tất cả · Cần chú ý · Chưa có tài khoản) và ngăn kéo hồ sơ 520px trượt từ
+phải. Ngăn kéo chứ không phải trang mới: cô đang quét danh sách, xem một em rồi quay lại.
+Chỗ đáng nói nhất là **ghi chú riêng của cô**. Nó bị cắt ở `hoSoDayDu` — LỚP ĐỌC DỮ LIỆU — chứ
+không ở giao diện. Cắt ở giao diện thì nội dung vẫn đi tới trình duyệt của trợ giảng và chỉ là
+không vẽ ra; ai mở công cụ nhà phát triển cũng đọc được. `teacher_notes` trong
+`assistant_hard_ceiling` nói "không đọc được", không nói "không hiện ra". Nhật ký cũng chỉ ghi
+độ dài ghi chú, không ghi nội dung — một payload đầy đủ là một đường rò.
+Và ngăn của trợ giảng không để trống: nó nói thẳng "trần cứng của trợ giảng, nội dung chưa từng
+được gửi tới màn này". Để trống thì trợ giảng tưởng cô chưa viết gì.
+**Bốn chỗ dữ liệu lạc, ảnh chụp lộ ra chứ đọc mã không thấy:**
+lớp 5.5 gắn lộ trình tên "IELTS 7.0+" và lớp Writing gắn "Nền tảng B1" — di chứng của lần đổi
+danh sách lớp; nay mỗi lớp một lộ trình đúng tên. Lớp sắp mở ghi "2/6 đăng ký" mà `hocVienIds`
+rỗng, nên thẻ đếm ra 0 và tự mâu thuẫn với dòng ngay bên cạnh. Thẻ lớp sắp mở đọc thành
+"Khai giảng: khai giảng 22/9" vì ghi chú bị nhét vào hai chỗ. Và cột "Mục tiêu" trống với gần hết
+học viên — cột trống là cột vô nghĩa, nay suy ra nửa bậc trên band hiện tại.
+Chỗ thứ năm là **hình dạng dữ liệu, không phải lỗi**: chia đều ba hướng band thì một phần ba lớp
+đang tụt và màn "Cần chú ý" liệt kê 16/58 em. Đó là lớp đang vỡ, không phải lớp của cô Thảo. Số
+em cần can thiệp phải đủ ít để cô làm hết trong một buổi tối, nếu không thì danh sách cũng vô dụng.
