@@ -712,6 +712,39 @@ export function luuDeSoHoa(
 }
 
 /**
+ * Cô lưu ghi chú riêng về một em.
+ *
+ * `visibility` chỉ có cô, và đó không phải phép lịch sự: ghi chú kiểu "nhà xa, hay đến muộn
+ * — không phải lười" chỉ có giá trị khi cô chắc chắn không ai khác đọc. Trợ giảng bị chặn ở
+ * MỨC (`profile` của trợ giảng là `read`, không sửa được); còn việc trợ giảng không ĐỌC được
+ * nội dung thì `hoSoDayDu` lo, ở lớp đọc dữ liệu chứ không ở giao diện.
+ */
+export function luuGhiChu(vai: VaiDemo, hocVienId: string, ghiChu: string): void {
+  const du = duLieu()
+  const lop = du.lop.find((l) => l.hocVienIds.includes(hocVienId))
+
+  ghi(
+    actorCuaVai(vai),
+    'profile.update',
+    {
+      type: 'profile',
+      id: hocVienId,
+      tenantId: du.tenant.id,
+      classId: lop?.id,
+      ownerId: hocVienId,
+    },
+    // Không ghi NỘI DUNG ghi chú vào nhật ký: nhật ký cô cho trợ giảng xem được phần của họ,
+    // và một payload đầy đủ là một đường rò. Ghi độ dài là đủ để truy "cô có sửa không".
+    { ghi_chu_dai: ghiChu.length },
+    [du.vai.owner],
+    (d) => {
+      const h = d.hoSo.find((x) => x.id === hocVienId)
+      if (h) h.ghiChu = ghiChu
+    },
+  )
+}
+
+/**
  * Bật/tắt một luật của cô.
  *
  * Hỏi `rubric.update`: "máy được tự làm gì" là một phần của cách cô chấm, và `rubric` là
@@ -772,6 +805,152 @@ export function lamBaiLuyen(hocVienId: string, baiLuyenId: string, dung: number)
       if (m) m.ketQua = { dung, luc: new Date().toISOString() }
     },
   )
+}
+
+/**
+ * Hồ sơ một em, cắt theo vai đang đọc.
+ *
+ * `ghiChu` bị cắt cho MỌI vai trừ cô, và cắt ở đây — lớp đọc dữ liệu — chứ không ở giao
+ * diện. Cắt ở giao diện thì dữ liệu vẫn đi tới trình duyệt của trợ giảng và chỉ là không
+ * vẽ ra; ai mở công cụ nhà phát triển cũng đọc được. `teacher_notes` trong
+ * `assistant_hard_ceiling` nói "không đọc được", không nói "không hiện ra".
+ */
+export function hoSoDayDu(vai: VaiDemo, hocVienId: string) {
+  const du = duLieu()
+  const h = du.hoSo.find((x) => x.id === hocVienId)
+  if (!h) return null
+
+  const lop = du.lop.find((l) => l.hocVienIds.includes(hocVienId))
+  const actor = actorCuaVai(vai)
+  const doc = can(actor, 'profile.view', {
+    type: 'profile',
+    tenantId: du.tenant.id,
+    classId: lop?.id,
+    ownerId: hocVienId,
+  })
+  if (!doc) return null
+
+  const tk = du.taiKhoan.find((t) => t.id === hocVienId)
+
+  /* Bài gần đây: mới nhất trước. `band: null` nghĩa là ĐANG CHỜ CÔ, không phải thiếu dữ
+     liệu — và đó là dòng cô cần thấy nhất khi mở hồ sơ một em. */
+  const baiGanDay = du.baiNop
+    .filter((b) => b.hocVienId === hocVienId)
+    .map((b) => {
+      const bg = du.baiGiao.find((g) => g.id === b.baiGiaoId)
+      const nx = du.nhanXet.find((n) => n.baiNopId === b.id)
+      return {
+        nhan: bg?.nhan ?? 'Bài tập',
+        band: nx?.band ?? null,
+        luc: b.nopLuc ?? '',
+      }
+    })
+    .sort((a, b) => b.luc.localeCompare(a.luc))
+    .slice(0, 6)
+
+  const { ghiChu, ...conLai } = h
+  return {
+    ...conLai,
+    ten: tk?.ten ?? hocVienId,
+    mau: tk?.mau ?? 'off',
+    baiGanDay,
+    ghiChu: vai === 'owner' ? (ghiChu ?? '') : null,
+    lop: lop ?? null,
+  }
+}
+
+/**
+ * Số liệu cho lưới thẻ lớp.
+ *
+ * Tính từ dữ liệu thật, không cắm số: band trung bình lấy từ hồ sơ các em trong lớp, mức
+ * đổi lấy từ hướng đi của chính các em đó, "quá hạn" đếm bài đã qua hạn mà còn người chưa
+ * nộp. Cắm số thì thẻ đẹp mà tắt một luật đi con số vẫn y nguyên, và cô sẽ tin nhầm nó.
+ */
+export function soLieuLop(vai: VaiDemo): {
+  lop: import('./du-lieu').Lop
+  soEm: number
+  bandTb: number | null
+  doiBand: number | null
+  cho: number
+  quaHan: number
+  buoiDaDay: number | null
+  soBuoi: number | null
+  tenLoTrinh: string | null
+  buoiToi: string
+  diHocDeu: number | null
+}[] {
+  const du = duLieu()
+  const cho = baiCanCham(vai)
+
+  const thay =
+    vai === 'owner'
+      ? du.lop
+      : vai === 'assistant'
+        ? du.lop.filter((l) => l.id === 'lop-65')
+        : du.lop.filter((l) => l.hocVienIds.includes(du.vai.student))
+
+  return thay.map((l) => {
+    const hoSo = du.hoSo.filter((h) => l.hocVienIds.includes(h.id))
+    const band = hoSo.filter((h) => h.bandTb > 0)
+    const lt = du.loTrinh.find((x) => x.dangDung.includes(l.id))
+
+    /* "Buổi đã dạy" = buổi lớn nhất trong lộ trình mà lớp đã có bài giao từ đó. Chưa giao
+       buổi nào thì lấy buổi nhỏ nhất của lộ trình — lớp đang ở đầu chặng đó. */
+    const buoiDaGiao = du.baiGiao
+      .filter((g) => g.lopId === l.id && g.tuBuoi)
+      .map((g) => g.tuBuoi!.no)
+    const buoiDaDay = lt
+      ? Math.max(...(buoiDaGiao.length > 0 ? buoiDaGiao : lt.buoi.map((b) => b.no)))
+      : null
+
+    const quaHan = du.baiGiao.filter(
+      (g) =>
+        g.lopId === l.id &&
+        !g.daXong &&
+        dangChay(g) &&
+        new Date(g.hanNop).getTime() < Date.now() &&
+        l.hocVienIds.some(
+          (id) => !du.baiNop.some((b) => b.baiGiaoId === g.id && b.hocVienId === id),
+        ),
+    ).length
+
+    const diHoc = hoSo
+      .map((h) => h.diHoc.split('/').map(Number))
+      .filter((x) => x.length === 2 && x[1]! > 0)
+
+    return {
+      lop: l,
+      soEm: l.hocVienIds.length,
+      bandTb:
+        band.length === 0
+          ? null
+          : Number((band.reduce((t, h) => t + h.bandTb, 0) / band.length).toFixed(1)),
+      doiBand:
+        band.length === 0
+          ? null
+          : Number(
+              (
+                (band.filter((h) => h.huong === 'up').length -
+                  band.filter((h) => h.huong === 'down').length) /
+                band.length
+              ).toFixed(1),
+            ),
+      cho: cho.filter((b) => b.lopId === l.id).length,
+      quaHan,
+      buoiDaDay,
+      soBuoi: lt?.soBuoi ?? null,
+      tenLoTrinh: lt?.ten ?? null,
+      // Lớp sắp mở: `lich` là ngày khai giảng, `ghiChu` là dòng phụ dưới thanh tiến độ.
+      // Nhét ghi chú vào cả hai chỗ thì thẻ đọc thành "Khai giảng: khai giảng 22/9".
+      buoiToi: l.lich,
+      diHocDeu:
+        diHoc.length === 0
+          ? null
+          : Math.round(
+              (diHoc.reduce((t, [a, b]) => t + a! / b!, 0) / diHoc.length) * 100,
+            ),
+    }
+  })
 }
 
 // ───────────────────────────── đọc ─────────────────────────────

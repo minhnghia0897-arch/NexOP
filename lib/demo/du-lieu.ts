@@ -196,6 +196,18 @@ export interface HoSoHocVien {
   loiHayGap: string
   hanHocPhi: string
   diem: Record<string, { band: number | null; muon?: boolean }>
+  /** Band em nhắm tới. Không có mục tiêu thì "tăng 0.5" không nói được là đủ hay chưa. */
+  mucTieu?: number
+  /**
+   * Ghi chú riêng của cô về em.
+   *
+   * `teacher_notes` nằm trong `assistant_hard_ceiling`: trợ giảng KHÔNG đọc được, và cô có
+   * muốn cấp cũng không cấp được. Em càng không. Đây là chỗ cô viết "nhà xa, hay đến muộn —
+   * không phải lười", và nó chỉ có giá trị khi cô chắc chắn không ai khác đọc.
+   */
+  ghiChu?: string
+  /** Lỗi lặp máy theo dõi, kèm mức nặng — nguyên liệu cho ngăn hồ sơ. */
+  loiLap?: { ten: string; y: string; nang: 'do' | 'cam' | 'xanh' }[]
 }
 
 /** Một buổi trong lộ trình — kế hoạch, chưa phải bài đã giao. */
@@ -569,8 +581,16 @@ export function duLieuBanDau(): DuLieuDemo {
       mau: 'orange', hocVienIds: THEM(4, 'lct') },
     { id: 'lop-speak', ten: 'Speaking club · T4', lich: 'T4 · 19:00', trangThai: 'running',
       mau: 'green', hocVienIds: THEM(20, 'lsp') },
-    { id: 'lop-moi', ten: 'IELTS 7.0+ · nhóm 6', lich: 'Khai giảng 22/9', trangThai: 'opening',
-      mau: 'indigo', hocVienIds: [], ghiChu: 'Khai giảng 22/9 · 2/6' },
+    /*
+     * Lớp sắp mở: HAI em đã đăng ký, đúng bằng con số trong ghi chú.
+     *
+     * Để `hocVienIds` rỗng mà ghi chú vẫn viết "2/6" thì thẻ lớp đếm ra 0 và tự mâu thuẫn
+     * với chính dòng ngay bên cạnh. Hai em này là em đủ điều kiện lên lớp từ lớp 6.5 —
+     * cùng người, lớp mới, đó chính là "mở lớp thứ 3 không kiệt sức".
+     */
+    { id: 'lop-moi', ten: 'IELTS 7.0+ · nhóm 6', lich: '22/9 · T2, T5 · 19:30',
+      trangThai: 'opening', mau: 'indigo', hocVienIds: ['hv-02', 'hv-07'],
+      ghiChu: '2/6 đăng ký · khai giảng 22/9' },
   ]
 
   const de: De[] = [
@@ -700,7 +720,13 @@ export function duLieuBanDau(): DuLieuDemo {
    */
   const hoSo: HoSoHocVien[] = [
     { id: 'hv-01', bandTb: 6.3, huong: 'up', diHoc: '28/30', coTaiKhoan: true,
-      loiHayGap: 'Hoà hợp chủ–vị ×3', hanHocPhi: '30/9',
+      loiHayGap: 'Hoà hợp chủ–vị ×3', hanHocPhi: '30/9', mucTieu: 6.5,
+      ghiChu: 'Bố mẹ muốn em thi tháng 12. Hơi vội — nói chuyện lại sau Mock 2.',
+      loiLap: [
+        { ten: 'Hoà hợp chủ ngữ – động từ', y: '3 bài liên tiếp · đã giao bài luyện', nang: 'do' },
+        { ten: 'Mở đoạn kết quen tay', y: '2/3 bài gần nhất', nang: 'cam' },
+        { ten: 'Overview Task 1', y: 'đã dứt từ tuần 5 — không tái phạm', nang: 'xanh' },
+      ],
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 6.0 }, 'bg-t2tech': { band: 6.0 },
               'bg-t1bar': { band: 6.5 }, 'bg-w1': { band: null } } },
     { id: 'hv-02', bandTb: 6.9, huong: 'up', diHoc: '30/30', coTaiKhoan: true,
@@ -743,6 +769,14 @@ export function duLieuBanDau(): DuLieuDemo {
   ]
 
   /*
+   * Mục tiêu band cho những em chưa đặt tay.
+   *
+   * Làm tròn lên nửa bậc so với band hiện tại, tối thiểu hơn nửa band. Không có mục tiêu thì
+   * "tăng 0.5" không nói được là đủ hay chưa — mà đó là câu cô nhìn cột này để hỏi.
+   */
+  const mucTieuTu = (band: number): number => Math.min(9, Math.ceil((band + 0.5) * 2) / 2)
+
+  /*
    * Tám em vào lớp 6.5 muộn: có hồ sơ, chưa có điểm bài nào.
    *
    * `diem` rỗng và bảng điểm vẫn phải đọc được với ô trống — đó là trạng thái thật của em
@@ -760,7 +794,10 @@ export function duLieuBanDau(): DuLieuDemo {
   ]
 
   for (const [id, bandTb, huong, diHoc, coTaiKhoan, loiHayGap, hanHocPhi] of HO_SO_LOP_KHAC) {
-    hoSo.push({ id, bandTb, huong, diHoc, coTaiKhoan, loiHayGap, hanHocPhi, diem: {} })
+    hoSo.push({
+      id, bandTb, huong, diHoc, coTaiKhoan, loiHayGap, hanHocPhi,
+      mucTieu: mucTieuTu(bandTb), diem: {},
+    })
   }
 
   /*
@@ -770,14 +807,23 @@ export function duLieuBanDau(): DuLieuDemo {
    * nghĩa: em chưa bật tài khoản thì máy không nhắc được, cô phải nhắc tay.
    */
   for (const [i, h] of HOC_VIEN_PHU.entries()) {
+    const band = Number((4.5 + ((i * 7) % 25) / 10).toFixed(1))
     hoSo.push({
       id: h.id,
-      bandTb: Number((4.5 + ((i * 7) % 25) / 10).toFixed(1)),
-      huong: (['up', 'flat', 'down'] as const)[i % 3]!,
+      bandTb: band,
+      /*
+       * Nghiêng về đi lên và đi ngang: cứ bảy em mới có một em tụt.
+       *
+       * Chia đều ba hướng thì một phần ba lớp đang tụt, và màn "Cần chú ý" liệt kê 16/58 em
+       * — đó là lớp đang vỡ, không phải lớp của cô Thảo. Số em cần can thiệp phải đủ ít để
+       * cô làm hết được trong một buổi tối, nếu không thì danh sách đó cũng vô dụng.
+       */
+      huong: i % 7 === 3 ? 'down' : i % 2 === 0 ? 'up' : 'flat',
       diHoc: `${10 + (i % 5)}/14`,
       coTaiKhoan: i % 3 !== 2,
       loiHayGap: ['—', 'Thì quá khứ', 'Giới từ', 'Phát âm đuôi -s'][i % 4]!,
       hanHocPhi: ['30/9', '5/10', '15/10', '20/10'][i % 4]!,
+      mucTieu: mucTieuTu(band),
       diem: {},
     })
   }
@@ -800,27 +846,56 @@ export function duLieuBanDau(): DuLieuDemo {
       ],
     },
     {
-      id: 'lt-70',
-      ten: 'IELTS 7.0+ · 32 buổi',
-      moTa: 'Cho em đã vững 6.5. Nặng về lập luận và độ chính xác từ vựng.',
-      soBuoi: 32,
+      id: 'lt-55',
+      ten: 'IELTS 5.5 · 48 buổi',
+      moTa: 'Từ mất gốc lên 5.5. Nặng ngữ pháp nền và vốn từ theo chủ đề.',
+      soBuoi: 48,
       dangDung: ['lop-55'],
       buoi: [
-        { no: 12, noiDung: 'Câu nhượng bộ — cách viết phản biện không mất lập trường' },
-        { no: 13, noiDung: 'Collocation học thuật theo chủ đề Education' },
+        { no: 20, noiDung: 'Thì quá khứ đơn — dạng bất quy tắc hay gặp' },
+        { no: 21, noiDung: 'Task 1 — đọc biểu đồ cột và viết câu so sánh',
+          baiVeNha: 'Task 1 — Bar chart', deId: 'de-w2', trongSo: 5 },
       ],
     },
     {
-      id: 'lt-nen',
-      ten: 'Nền tảng B1 · 24 buổi',
-      moTa: 'Xây lại ngữ pháp và vốn từ trước khi vào IELTS.',
-      soBuoi: 24,
+      id: 'lt-writing',
+      ten: 'Writing 8 tuần · 16 buổi',
+      moTa: 'Khoá ngắn, một kèm bốn. Mỗi buổi chữa tay một bài của từng em.',
+      soBuoi: 16,
       dangDung: ['lop-cap-toc'],
-      buoi: [{ no: 8, noiDung: 'Thì quá khứ đơn — dạng bất quy tắc hay gặp' }],
+      buoi: [
+        { no: 14, noiDung: 'Task 2 — viết lại phần thân theo nhận xét của cô',
+          baiVeNha: 'Task 2 — Education', deId: 'de-w3', trongSo: 15 },
+        { no: 15, noiDung: 'Soát lỗi lặp của từng em trước khi kết khoá' },
+      ],
+    },
+    {
+      id: 'lt-speak',
+      ten: 'Speaking club · 20 buổi',
+      moTa: 'Câu lạc bộ nói, không chấm điểm. Mỗi buổi một chủ đề Part 2.',
+      soBuoi: 20,
+      dangDung: ['lop-speak'],
+      buoi: [{ no: 6, noiDung: 'Part 2 — tả một nơi em muốn quay lại' }],
+    },
+    {
+      id: 'lt-70',
+      ten: 'IELTS 7.0 · 36 buổi',
+      moTa: 'Cho em đã vững 6.5. Nặng về lập luận và độ chính xác từ vựng.',
+      soBuoi: 36,
+      dangDung: ['lop-moi'],
+      buoi: [
+        { no: 1, noiDung: 'Câu nhượng bộ — cách viết phản biện không mất lập trường' },
+        { no: 2, noiDung: 'Collocation học thuật theo chủ đề Education' },
+      ],
     },
   ]
 
   /* Học phí: hai em quá hạn, ba em sắp tới hạn. Đó là chỗ cô cần nhìn thấy trước. */
+  /* Em nào chưa đặt mục tiêu tay thì suy ra — cột "Mục tiêu" trống là cột vô nghĩa. */
+  for (const h of hoSo) {
+    if (!h.mucTieu) h.mucTieu = mucTieuTu(h.bandTb)
+  }
+
   const hocPhi: HocPhi[] = hoSo.map((h, i) => {
     const trangThai: HocPhi['trangThai'] =
       i % 7 === 0 ? 'qua_han' : i % 3 === 0 ? 'sap_han' : 'da_dong'
