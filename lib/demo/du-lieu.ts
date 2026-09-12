@@ -39,6 +39,14 @@ export interface CauHoi {
   dapAn?: string | null
   canhBao?: string | null
   trangNguon?: number
+  /**
+   * Chủ đề ngữ pháp của CÂU (khác `De.chuDe` là chủ đề của cả đề).
+   *
+   * Cột "Sai ở đâu" của bản mẫu đọc "Câu 3, 11, 16 — bị động", không đọc "Câu 3, 11, 16".
+   * Không có trường này thì cô phải tự mở đề ra xem ba câu đó hỏi gì — tức là màn chốt điểm
+   * không tiết kiệm cho cô phút nào.
+   */
+  chuDeCau?: string
 }
 
 export interface De {
@@ -103,6 +111,14 @@ export interface BaiNop {
   soTu: number
   nopLuc: string | null
   muon: boolean
+  /**
+   * Bài trắc nghiệm: đáp án theo SỐ CÂU, không phải một đoạn văn.
+   *
+   * Tách riêng khỏi `noiDung` chứ không nhồi JSON vào đó: máy chấm trắc nghiệm phải so từng
+   * câu với `cauHoi[].dapAn`, và một chuỗi thì mỗi chỗ đọc lại tự parse theo cách của mình.
+   * Bài tự luận không có trường này; bài trắc nghiệm thì `noiDung` rỗng.
+   */
+  traLoi?: Record<number, string>
 }
 
 /**
@@ -136,6 +152,80 @@ export interface NhapCham {
 }
 
 /** Lớp 1: nhận xét cô đã gửi. Chỉ thêm, không sửa — sửa là thêm dòng mới. */
+/**
+ * Nháp chấm TRẮC NGHIỆM. **Lớp 3 — máy ghi, có hạn, cô quyết.**
+ *
+ * Không dùng chung `NhapCham` với bài tự luận: `NhapCham` mang bốn tiêu chí IELTS
+ * (tr/cc/lr/gra) và một đoạn nhận xét, còn trắc nghiệm là đúng-bao-nhiêu-trên-bao-nhiêu và
+ * sai ở câu nào. Nhồi vào một kiểu thì mọi chỗ đọc phải hỏi "bài này loại gì" trước khi
+ * dám đọc trường nào — và chỗ nào quên hỏi thì đọc ra `band 0.0` cho một bài 37/40.
+ */
+export interface NhapTracNghiem {
+  id: string
+  baiNopId: string
+  dung: number
+  tong: number
+  /** Câu em làm sai — nguyên liệu cho cột "Sai ở đâu" của bản mẫu. */
+  cauSai: number[]
+  /**
+   * Câu máy KHÔNG chấm được vì ĐỀ chưa có đáp án.
+   *
+   * Khác `cauSai`: đây không phải lỗi của em, mà là chỗ máy không biết. Bản mẫu gọi là
+   * "câu chữ mờ" và luật của cô ghi rõ "câu chữ mờ vẫn hỏi cô" — nên câu này không được
+   * tính là sai, và bài có nó không bao giờ vào lô chốt tự động.
+   */
+  cauCanCo: number[]
+  tinCay: number
+  hetHan: string
+}
+
+/**
+ * Chấm một bài trắc nghiệm. **Hàm THUẦN** — cùng đầu vào thì cùng đầu ra, không đọc kho.
+ *
+ * Để ở đây chứ không ở `kho.ts` vì cả hai chỗ cần nó: dữ liệu mẫu dựng nháp chấm sẵn (máy đã
+ * chấm từ lúc em nộp, hai ngày trước), và `mayChamTracNghiem` chấm lại khi cô điền đáp án.
+ * Hai bản cài đặt thì hai bản lệch nhau, và lệch ở chỗ tệ nhất: bảng mẫu nói một điểm, bấm
+ * "chấm lại" ra điểm khác.
+ *
+ * Câu đề CHƯA CÓ đáp án thì KHÔNG tính là sai — nó vào `cauCanCo`. Tính là sai thì em bị trừ
+ * điểm vì đề thiếu đáp án, và điểm sai vẫn trông hợp lý nên không ai soi lại.
+ */
+export function chamTracNghiem(
+  cauHoi: CauHoi[],
+  traLoi: Record<number, string>,
+  tinCayOcr: number,
+): { dung: number; tong: number; cauSai: number[]; cauCanCo: number[]; tinCay: number } {
+  const cauSai: number[] = []
+  const cauCanCo: number[] = []
+  let dung = 0
+
+  for (const c of cauHoi) {
+    if (!c.dapAn) {
+      cauCanCo.push(c.no)
+      continue
+    }
+    if (traLoi[c.no] === c.dapAn) dung += 1
+    else cauSai.push(c.no)
+  }
+
+  const tong = cauHoi.length - cauCanCo.length
+
+  /*
+   * Tin cậy nói MÁY chắc tới đâu, không nói em làm tốt tới đâu.
+   *
+   * Nền là độ tin cậy OCR của đề; mỗi câu chưa có đáp án kéo xuống, vì phần đề đó máy chưa
+   * đọc được. Điểm của em KHÔNG vào công thức: gộp vào thì một em làm kém đọc thành "máy
+   * không chắc", và cô mở bài ra chỉ để xem lại một phép so sánh chuỗi.
+   */
+  return {
+    dung,
+    tong,
+    cauSai,
+    cauCanCo,
+    tinCay: cauHoi.length === 0 ? tinCayOcr : Number((tinCayOcr * (tong / cauHoi.length)).toFixed(2)),
+  }
+}
+
 export interface NhanXet {
   id: string
   baiNopId: string
@@ -299,6 +389,7 @@ export interface DuLieuDemo {
   baiGiao: BaiGiao[]
   baiNop: BaiNop[]
   nhapCham: NhapCham[]
+  nhapTracNghiem: NhapTracNghiem[]
   nhanXet: NhanXet[]
   baiDang: BaiDang[]
   hoSo: HoSoHocVien[]
@@ -540,6 +631,57 @@ const CAU_HOI_READING: CauHoi[] = [
   { no: 5, loai: 'fill', de: 'The tax on tea was abolished in ______.', dapAn: null, canhBao: 'Không tìm thấy đáp án ở trang 6', trangNguon: 6 },
 ]
 
+/**
+ * Đề trắc nghiệm ngữ pháp — `Trắc nghiệm ngữ pháp 3` của bản mẫu.
+ *
+ * Hai mươi câu THẬT, không phải bốn mươi câu đệm. Bản mẫu ghi "40 câu", nhưng con số đó là
+ * minh hoạ; thứ cần đúng là hình dạng bảng chốt điểm. Bốn mươi câu bịa thì cột "Sai ở đâu"
+ * nói về những câu không có nội dung, và cả màn thành trang trí.
+ *
+ * Nhóm theo CHỦ ĐỀ (`chuDe` của từng câu, qua `NHOM_NGU_PHAP` dưới đây) vì cột "Sai ở đâu"
+ * của bản mẫu không đọc "Câu 3, 11, 16" mà đọc "Câu 3, 11, 16 — bị động". Số câu không dạy
+ * cô điều gì; tên lỗi thì dạy.
+ *
+ * Câu 12 KHÔNG có đáp án — máy đọc được đề nhưng không tìm ra đáp án. Đó là "câu chữ mờ"
+ * của luật `chot-mcq`, và là ca đáng demo nhất: bài nào chứa nó thì không vào lô chốt.
+ */
+const NGU_PHAP: [number, string, string[], number, string][] = [
+  [1, 'She ______ in Hanoi since 2019.', ['lives', 'has lived', 'is living', 'lived'], 1, 'Hiện tại hoàn thành'],
+  [2, 'They ______ the report before the meeting started.', ['finished', 'had finished', 'have finished', 'finish'], 1, 'Quá khứ hoàn thành'],
+  [3, 'The results ______ next Monday.', ['will announce', 'will be announced', 'are announcing', 'announce'], 1, 'Bị động'],
+  [4, 'Many people ______ that service teaches responsibility.', ['believes', 'believe', 'is believing', 'believing'], 1, 'Hoà hợp chủ–vị'],
+  [5, 'If I ______ more time, I would travel more.', ['have', 'had', 'will have', 'would have'], 1, 'Câu điều kiện'],
+  [6, 'She asked me where I ______ the money.', ['found', 'had found', 'have found', 'find'], 1, 'Câu tường thuật'],
+  [7, 'This is ______ interesting book I have read.', ['a most', 'the most', 'most', 'more'], 1, 'Mạo từ'],
+  [8, 'The government ______ a new policy every year.', ['announces', 'announce', 'are announcing', 'have announced'], 0, 'Hoà hợp chủ–vị'],
+  [9, 'He has been living here ______ ten years.', ['since', 'for', 'during', 'in'], 1, 'Giới từ thời gian'],
+  [10, 'The bridge ______ in 1890 and still stands.', ['built', 'was built', 'has built', 'is building'], 1, 'Bị động'],
+  [11, 'Neither the students nor the teacher ______ satisfied.', ['are', 'is', 'were', 'being'], 1, 'Hoà hợp chủ–vị'],
+  [12, 'By this time next year she ______ her degree.', ['will finish', 'will have finished', 'finishes', 'is finishing'], -1, 'Tương lai hoàn thành'],
+  [13, 'I wish I ______ how to swim.', ['know', 'knew', 'have known', 'will know'], 1, 'Câu điều kiện'],
+  [14, 'It was ______ hot day that we stayed indoors.', ['so a', 'such a', 'such', 'so'], 1, 'Mạo từ'],
+  [15, 'The book ______ I borrowed was excellent.', ['who', 'which', 'whose', 'what'], 1, 'Đại từ quan hệ'],
+  [16, 'A lot of damage ______ by the storm.', ['were caused', 'was caused', 'have caused', 'causing'], 1, 'Bị động'],
+  [17, 'She denied ______ the window.', ['to break', 'breaking', 'break', 'broken'], 1, 'Động từ nguyên mẫu / V-ing'],
+  [18, 'Hardly ______ when the phone rang.', ['I had sat down', 'had I sat down', 'I sat down', 'did I sit down'], 1, 'Đảo ngữ'],
+  [19, 'He is used to ______ up early.', ['get', 'getting', 'got', 'gets'], 1, 'Động từ nguyên mẫu / V-ing'],
+  [20, 'The teacher ______ explanation was clear retired last year.', ['who', 'whom', 'whose', 'which'], 2, 'Đại từ quan hệ'],
+]
+
+function CAU_HOI_NGU_PHAP(): CauHoi[] {
+  return NGU_PHAP.map(([no, de, luaChon, dung, chuDe]) => ({
+    no,
+    loai: 'mcq' as const,
+    de,
+    luaChon,
+    // `dung: -1` = máy không tìm ra đáp án. Ghi `dapAn: null` + cảnh báo, đúng như câu 5 của
+    // đề Reading: đề vẫn lưu được, câu đó chấm tay cho tới khi cô điền.
+    dapAn: dung < 0 ? null : luaChon[dung]!,
+    ...(dung < 0 ? { canhBao: 'Không tìm thấy đáp án ở trang 3 — chữ mờ' } : {}),
+    chuDeCau: chuDe,
+  }))
+}
+
 /** Nhận xét nháp: viết theo giọng cô, có lỗi cụ thể, không có câu chung chung. */
 function nhapChoBai(
   baiNopId: string,
@@ -754,8 +896,15 @@ export function duLieuBanDau(): DuLieuDemo {
       cachCham: 'auto', tinCayOcr: 0.94, cauHoi: CAU_HOI_READING },
     { id: 'de-w2', ten: 'Writing Task 1 · Bar chart — Museums', kyNang: 'writing',
       trinhDo: 'B2', cachCham: 'draft', cauHoi: CAU_HOI_WRITING },
-    { id: 'de-g1', ten: 'Trắc nghiệm ngữ pháp 3 · 40 câu', kyNang: 'grammar', trinhDo: 'B1',
-      cachCham: 'auto', tinCayOcr: 0.99, cauHoi: CAU_HOI_READING },
+    /*
+     * Đề này trước đây tên là "40 câu" mà mang đúng 5 câu đọc hiểu về trà — dùng chung
+     * `CAU_HOI_READING` với đề Reading. Tên nói một đằng, nội dung một nẻo, và nó chưa bao
+     * giờ được giao nên không ai phát hiện. Nay có nội dung thật và được giao cho lớp 6.5.
+     */
+    { id: 'de-g1', ten: 'Trắc nghiệm ngữ pháp 3 · 20 câu', kyNang: 'grammar', trinhDo: 'B1',
+      cachCham: 'auto', tinCayOcr: 0.99, thoiGianPhut: 15,
+      chuDe: ['Thì', 'Bị động', 'Câu điều kiện', 'Đại từ quan hệ'],
+      cauHoi: CAU_HOI_NGU_PHAP() },
     { id: 'de-l1', ten: 'Cambridge 18 · Listening Test 2', kyNang: 'listening', trinhDo: 'B2',
       cachCham: 'auto', tinCayOcr: 0.71, cauHoi: CAU_HOI_READING },
     { id: 'de-w3', ten: 'Cambridge 19 · Test 2 — Task 2 Education', kyNang: 'writing',
@@ -787,6 +936,14 @@ export function duLieuBanDau(): DuLieuDemo {
       nhan: 'Reading Test 1', trongSo: 5, cauHoi: chupCauHoi(CAU_HOI_READING) },
     { id: 'bg-w1-55', lopId: 'lop-55', deId: 'de-w1', hanNop: luc(1, 23), lanThu: 1,
       nhan: 'Task 2 — Community service', trongSo: 10, cauHoi: chupCauHoi(CAU_HOI_WRITING) },
+    /*
+     * Bài trắc nghiệm cả lớp đã nộp — bước 4 của vòng vận hành.
+     *
+     * Hạn đã qua và 18/18 em đã nộp: đúng tình huống tối chủ nhật cô mở màn Chấm bài ra và
+     * thấy "10 trắc nghiệm đã chấm xong, chỉ cần chốt điểm cả lớp".
+     */
+    { id: 'bg-g1', lopId: 'lop-65', deId: 'de-g1', hanNop: luc(-2, 23), lanThu: 1,
+      nhan: 'Trắc nghiệm ngữ pháp 3', trongSo: 5, cauHoi: chupCauHoi(CAU_HOI_NGU_PHAP()) },
   ]
 
   // Bảy em đã nộp bài Writing — đây là chồng bài "tối chủ nhật" của cô.
@@ -980,6 +1137,100 @@ export function duLieuBanDau(): DuLieuDemo {
       diem: {},
     })
   }
+
+  /*
+   * Mười tám em nộp bài trắc nghiệm — SỰ THẬT (lớp 1), chỉ là đáp án em chọn.
+   *
+   * Điểm KHÔNG nằm ở đây. Điểm là thứ máy suy ra khi so đáp án em chọn với đáp án của đề, và
+   * nó phải tính lại được: cô sửa đáp án câu 12 trong ngân hàng đề thì điểm cả lớp đổi theo.
+   * Cắm sẵn "17/19" vào bài nộp là biến một con số suy ra thành một con số bịa — đúng lỗi
+   * vừa bỏ đi ở `diHoc: '28/30'`.
+   *
+   * Em sai nhiều hay ít suy từ BAND CỦA CHÍNH EM, không từ chỉ số trong mảng.
+   *
+   * Lần đầu em viết `(i + no) % max(3, 12 - i)`, và số in ra tự tố cáo: Minh Anh 19/19 (trái
+   * với chính ghi chú em vừa viết), rồi tám em cuối chỉ có ba mẫu câu sai lặp lại ba lần —
+   * bảng chốt điểm mà cô đọc sẽ thấy ngay là máy phát. Tệ hơn: bảng điểm viết nói Gia Bảo
+   * 4.9 còn trắc nghiệm nói em ấy khá — hai bộ dữ liệu kể hai câu chuyện rời nhau về cùng
+   * một đứa trẻ. Buộc vào band thì em yếu ở bài viết cũng yếu ở ngữ pháp, và đó là lý do
+   * đầu tiên cô tin vào số trên màn.
+   *
+   * Đáp án sai chọn lựa chọn KẾ TIẾP, không chọn bừa: em học sai thì sai có lý, và chọn bừa
+   * thì cột "Sai ở đâu" không gom thành chủ đề nào.
+   */
+  const CAU_G1 = CAU_HOI_NGU_PHAP()
+  const baiNopTracNghiem: BaiNop[] = HOC_VIEN.map((h, i) => {
+    const band = hoSo.find((x) => x.id === h.id)?.bandTb ?? 6
+    /*
+     * SỐ câu sai suy từ band, rồi mới chọn LÀ những câu nào. Không dùng công thức chia lấy dư.
+     *
+     * Hai lần thử trước đều dùng `(i * 3 + no) % nhịp === 0`, và cả hai lần số in ra đều
+     * sai kiểu khác nhau: nhịp nhỏ thì tám em cuối chỉ có ba mẫu câu sai lặp lại, nhịp lớn
+     * thì SÁU em được 19/19 — vì với nhịp lớn, chẳng bội số nào của nó rơi vào khoảng 1–20.
+     * Chia lấy dư cho ra "trúng hoặc không", nó không cho ra một TỈ LỆ. Muốn điều khiển tỉ lệ
+     * thì phải đếm trước rồi chọn sau.
+     *
+     * Band 7.2 → sai 1 câu (95%); band 4.2 → sai 6 câu (68%). Khoảng đó khớp bản mẫu, chỗ
+     * điểm chạy từ 24/40 tới 37/40. Tối thiểu 1: cả lớp 18 em toàn điểm tuyệt đối thì bảng
+     * chốt điểm không có gì để cô xem.
+     */
+    const soSai = Math.min(8, Math.max(1, Math.round((7.5 - band) * 1.7)))
+
+    /* Chọn câu sai: 19 là số nguyên tố nên `(i * 7 + j * 3) % 19` không lặp với j < 19 —
+       không phải tự dedupe. `i * 7` đẩy lệch theo em: cùng band không cùng lỗ hổng. */
+    const chamDiem = CAU_G1.filter((c) => c.dapAn)
+    const sai = new Set<number>()
+    for (let j = 0; j < soSai; j += 1) {
+      sai.add(chamDiem[(i * 7 + j * 3) % chamDiem.length]!.no)
+    }
+
+    const traLoi: Record<number, string> = {}
+    for (const c of CAU_G1) {
+      const lc = c.luaChon!
+
+      if (!c.dapAn) {
+        /*
+         * Câu đề CHƯA CÓ đáp án: em chọn theo phân bố riêng, không dựa vào đáp án.
+         *
+         * Bản đầu em viết `dungIdx = c.dapAn ? indexOf : 0` cho cả câu này, tức là coi lựa
+         * chọn A là "đúng". Nó chạy êm cho tới lúc cô điền đáp án câu 12 là "will have
+         * finished" (lựa chọn B): khi đó những em bị đánh dấu "làm đúng" hoá ra chọn A —
+         * SAI, còn những em bị đánh dấu "làm sai" lại chọn đúng B. Đảo ngược hoàn toàn, và
+         * chỉ lộ ra ở màn chốt điểm sau khi đáp án được điền.
+         *
+         * Không có đáp án thì không có khái niệm đúng-sai để mà suy; chỉ có em đã chọn gì.
+         */
+        traLoi[c.no] = lc[(i + c.no) % lc.length]!
+        continue
+      }
+
+      const dungIdx = lc.indexOf(c.dapAn)
+      traLoi[c.no] = sai.has(c.no) ? lc[(dungIdx + 1) % lc.length]! : lc[dungIdx]!
+    }
+
+    return {
+      id: `bn-g1-${h.id}`,
+      baiGiaoId: 'bg-g1',
+      hocVienId: h.id,
+      soTu: 0,
+      nopLuc: luc(-2, 19 + (i % 4)),
+      muon: i === 9 || i === 14,
+      noiDung: '',
+      traLoi,
+    }
+  })
+
+  /*
+   * Máy đã chấm nháp từ lúc em nộp — hạn đã qua hai ngày. Dựng bằng CHÍNH hàm chấm, không
+   * gõ tay: gõ tay là cắm sẵn điểm, và điểm cắm sẵn thì cô điền đáp án câu 12 xong bảng vẫn
+   * nói số cũ.
+   */
+  const nhapTracNghiem: NhapTracNghiem[] = baiNopTracNghiem.map((b) => {
+    const bg = baiGiao.find((g) => g.id === b.baiGiaoId)!
+    const deCuaBai = de.find((d) => d.id === bg.deId)
+    const k = chamTracNghiem(bg.cauHoi, b.traLoi ?? {}, deCuaBai?.tinCayOcr ?? 0.95)
+    return { id: `ntn-${b.id}`, baiNopId: b.id, hetHan: luc(14), ...k }
+  })
 
   const loTrinh: LoTrinh[] = [
     {
@@ -1242,8 +1493,11 @@ export function duLieuBanDau(): DuLieuDemo {
     lop,
     de,
     baiGiao,
-    baiNop,
+    // Hai loại bài nộp, MỘT bảng: bài tự luận mang `noiDung`, bài trắc nghiệm mang
+    // `traLoi`. Cùng là `submissions` ở bản thật, cùng một chính sách quyền.
+    baiNop: [...baiNop, ...baiNopTracNghiem],
     nhapCham,
+    nhapTracNghiem,
     nhanXet,
     baiDang,
     hoSo,

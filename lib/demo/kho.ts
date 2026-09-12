@@ -28,6 +28,7 @@
 import { can, type Actor, type TargetObject } from '@/lib/auth/can'
 
 import {
+  chamTracNghiem,
   duLieuBanDau,
   type DuLieuDemo,
   type LoiDanhDau,
@@ -328,6 +329,57 @@ export function mayChamNhap(baiNopId: string, ket: Omit<import('./du-lieu').Nhap
       else d.nhapCham.push(moi)
     },
   )
+}
+
+/**
+ * Máy chấm một bài TRẮC NGHIỆM. **Lớp 3 — nháp, cô chốt.**
+ *
+ * So đáp án em chọn với đáp án của BÀI GIAO (ảnh chụp lúc giao), không với đề trong ngân
+ * hàng: cô sửa đáp án hôm nay thì bài em làm tuần trước không được đổi đề bài — đúng thứ
+ * migration 0007 sinh ra để chặn.
+ *
+ * Câu đề CHƯA CÓ đáp án thì máy không đoán: nó ghi vào `cauCanCo` và KHÔNG tính là sai.
+ * Tính là sai thì em bị trừ điểm vì đề thiếu đáp án, và không ai phát hiện — điểm vẫn trông
+ * hợp lý. Luật của cô ghi đúng thế: "câu chữ mờ vẫn hỏi cô".
+ */
+export function mayChamTracNghiem(baiNopId: string): void {
+  const du = duLieu()
+  const bn = du.baiNop.find((b) => b.id === baiNopId)
+  if (!bn) throw new Error('Không có bài nộp này')
+  const bg = du.baiGiao.find((g) => g.id === bn.baiGiaoId)
+  if (!bg) throw new Error('Không có bài giao này')
+
+  // Cùng hàm thuần mà dữ liệu mẫu dùng — xem `chamTracNghiem` trong du-lieu.ts.
+  const de = du.de.find((d) => d.id === bg.deId)
+  const k = chamTracNghiem(bg.cauHoi, bn.traLoi ?? {}, de?.tinCayOcr ?? 0.95)
+  const { dung, tong, cauCanCo, tinCay } = k
+
+  ghi(
+    actorMay(bg.lopId),
+    'review.draft',
+    { type: 'review', tenantId: du.tenant.id, classId: bg.lopId, ownerId: bn.hocVienId },
+    { bai_nop: baiNopId, dung, tong, tin_cay: tinCay, cau_can_co: cauCanCo },
+    [du.vai.owner],
+    (d) => {
+      const moi = {
+        id: `ntn-${baiNopId}`,
+        baiNopId,
+        hetHan: new Date(Date.now() + 14 * 864e5).toISOString(),
+        ...k,
+      }
+      const cu = d.nhapTracNghiem.findIndex((n) => n.baiNopId === baiNopId)
+      if (cu >= 0) d.nhapTracNghiem[cu] = moi
+      else d.nhapTracNghiem.push(moi)
+    },
+  )
+}
+
+/** Máy chấm cả lô. Chạy lại được: mỗi bài ghi đè nháp cũ, không sinh dòng thứ hai. */
+export function mayChamCaLoTracNghiem(baiGiaoId: string): number {
+  const du = duLieu()
+  const nop = du.baiNop.filter((b) => b.baiGiaoId === baiGiaoId && b.nopLuc !== null)
+  for (const b of nop) mayChamTracNghiem(b.id)
+  return nop.length
 }
 
 // ───────────────────────────── việc của người ─────────────────────────────
@@ -1070,6 +1122,305 @@ export function hoSoDayDu(vai: VaiDemo, hocVienId: string) {
     vangLienTiep: xemDiemDanh ? vangLienTiep(hocVienId) : null,
     lop: lop ?? null,
   }
+}
+
+/**
+ * Cô điền ĐÁP ÁN CÒN THIẾU cho một câu của BÀI GIAO — không phải của đề trong ngân hàng.
+ *
+ * Chỗ này lộ ra khi dựng bảng chốt điểm, và nó chặn cả bước 4 của vòng vận hành: đề có một
+ * câu máy không tìm ra đáp án, nên cả 18 bài đều "chờ cô". Cô điền đáp án vào NGÂN HÀNG ĐỀ
+ * thì không giải quyết được — `propagate_exam_edit` (0007) bỏ qua mọi bài giao đã có người
+ * nộp, và bỏ qua là ĐÚNG cho phần đề bài.
+ *
+ * Nhưng điền một đáp án CÒN THIẾU khác về bản chất với sửa đề bài:
+ *
+ * - Sửa `de` / `luaChon` là đổi thứ em ĐÃ ĐỌC. Không được, kể cả cô. Đó là 0007.
+ * - Điền `dapAn` đang rỗng là đổi thứ em CHƯA BAO GIỜ THẤY. Em không nhìn đáp án; nó chỉ
+ *   dùng để chấm. Không cho điền thì cô phải chấm tay 18 lần cho một câu.
+ *
+ * Nên hàm này hẹp đúng bằng thế, và ba giới hạn dưới đây là lý do nó an toàn:
+ *   1. Chỉ khi đáp án đang rỗng. KHÔNG ghi đè đáp án đã có — đó mới là đổi cách chấm bài
+ *      đã chấm, và cô muốn thế thì phải chấm lại từng bài, không phải lặng lẽ đổi một ô.
+ *   2. Chỉ chạm `dapAn` và `canhBao`. `de` và `luaChon` không đổi.
+ *   3. Chấm lại ngay cả lô, để điểm và bảng khớp nhau trong cùng một hành động.
+ *
+ * Đã ghi thành LOGIC §8 câu 11 — bản thật cần migration 0015 mở đúng cửa hẹp này.
+ */
+export function dienDapAnThieu(
+  vai: VaiDemo,
+  baiGiaoId: string,
+  cauNo: number,
+  dapAn: string,
+): void {
+  const du = duLieu()
+  const bg = du.baiGiao.find((g) => g.id === baiGiaoId)
+  if (!bg) throw new Error('Không có bài giao này')
+
+  const c = bg.cauHoi.find((x) => x.no === cauNo)
+  if (!c) throw new Error(`Bài giao không có câu ${cauNo}`)
+  if (c.dapAn) throw new Error('Câu này đã có đáp án. Ghi đè là đổi cách chấm bài đã chấm.')
+  if (!dapAn.trim()) throw new Error('Đáp án không được rỗng')
+  if (c.luaChon && !c.luaChon.includes(dapAn)) {
+    throw new Error('Đáp án phải là một trong các lựa chọn của câu đó')
+  }
+
+  ghi(
+    actorCuaVai(vai),
+    'assignment.update',
+    { type: 'assignment', id: baiGiaoId, tenantId: du.tenant.id, classId: bg.lopId },
+    { cau_no: cauNo, dap_an: dapAn },
+    [du.vai.owner],
+    (d) => {
+      const g = d.baiGiao.find((x) => x.id === baiGiaoId)!
+      const cau = g.cauHoi.find((x) => x.no === cauNo)!
+      cau.dapAn = dapAn
+      cau.canhBao = null
+    },
+  )
+
+  // Chấm lại cả lô NGAY, trong cùng một hành động của cô. Để cô phải bấm thêm một nút
+  // "chấm lại" là mở đường cho trạng thái nửa vời: đáp án đã có mà điểm vẫn là điểm cũ.
+  mayChamCaLoTracNghiem(baiGiaoId)
+}
+
+/** Dưới mức này thì cô nên xem, dù máy chấm chắc chắn. Bản mẫu gắn cờ bài 24/40 = 60%. */
+const NGUONG_CAN_CHU_Y = 0.7
+
+/** Tin cậy tối thiểu để vào lô chốt — luật `chot-mcq` của cô. */
+const NGUONG_TIN_CAY = 0.97
+
+/** Công tắc của cô. Tắt thì không có lô nào — cô duyệt từng bài. */
+const batChotMcq = (): boolean =>
+  duLieu().luat.find((l) => l.id === 'chot-mcq')?.bat ?? false
+
+export interface DongTracNghiem {
+  baiNopId: string
+  hocVien: { id: string; ten: string; mau: string }
+  dung: number
+  tong: number
+  tinCay: number
+  /** Câu sai, đã gom theo chủ đề: "Câu 3, 11, 16 — bị động". */
+  saiODau: string
+  trangThai: 'san_sang' | 'xem_lai_cau' | 'can_chu_y' | 'da_chot'
+  cauCanCo: number[]
+}
+
+/**
+ * Những bài giao trắc nghiệm còn bài chưa chốt — nguồn cho đường "Trắc nghiệm" ở màn Chấm bài.
+ *
+ * Lọc theo NHÁP còn tồn, không theo `cachCham` của đề: đề trắc nghiệm mà cả lớp đã chốt điểm
+ * thì không còn việc gì, và để nó nằm đó là để một con số 0 trên đường dẫn.
+ */
+export function baiTracNghiemCanChot(
+  vai: VaiDemo,
+): { baiGiaoId: string; lopId: string; lopTen: string; chuaChot: number }[] {
+  const du = duLieu()
+  const actor = actorCuaVai(vai)
+  const theoBai = new Map<string, number>()
+
+  for (const n of du.nhapTracNghiem) {
+    const bn = du.baiNop.find((b) => b.id === n.baiNopId)
+    const bg = bn && du.baiGiao.find((g) => g.id === bn.baiGiaoId)
+    if (!bn || !bg) continue
+    if (
+      !can(actor, 'draft.view', {
+        type: 'draft',
+        tenantId: du.tenant.id,
+        classId: bg.lopId,
+        ownerId: bn.hocVienId,
+      })
+    ) {
+      continue
+    }
+    theoBai.set(bg.id, (theoBai.get(bg.id) ?? 0) + 1)
+  }
+
+  return [...theoBai.entries()].map(([baiGiaoId, chuaChot]) => {
+    const bg = du.baiGiao.find((g) => g.id === baiGiaoId)!
+    return {
+      baiGiaoId,
+      lopId: bg.lopId,
+      lopTen: du.lop.find((l) => l.id === bg.lopId)?.ten ?? '',
+      chuaChot,
+    }
+  })
+}
+
+/**
+ * Bảng chốt điểm trắc nghiệm của một bài giao — `#q2` của bản mẫu.
+ *
+ * Ba trạng thái, và cả ba đều nói CÔ NÊN LÀM GÌ, không nói con số:
+ * - `san_sang`   máy chắc, điểm ổn → nằm trong lô chốt một lần
+ * - `xem_lai_cau` đề thiếu đáp án ở câu nào đó → cô điền đáp án trước
+ * - `can_chu_y`  máy chắc nhưng em làm kém → cô nên xem trước khi gửi
+ *
+ * Hai trạng thái cam KHÔNG nằm trong lô chốt. Bản mẫu cũng vậy: nút ghi "Chốt 8 & mở 2".
+ */
+export function soLieuTracNghiem(
+  vai: VaiDemo,
+  baiGiaoId: string,
+): { dong: DongTracNghiem[]; tinCayTb: number | null; chotDuoc: number; cho: number } | null {
+  const du = duLieu()
+  const bg = du.baiGiao.find((g) => g.id === baiGiaoId)
+  if (!bg) return null
+
+  const actor = actorCuaVai(vai)
+  const dong: DongTracNghiem[] = []
+
+  for (const bn of du.baiNop.filter((b) => b.baiGiaoId === baiGiaoId && b.nopLuc !== null)) {
+    /* Hỏi `draft.view` như `baiCanCham`: nháp là lớp 3, em không bao giờ thấy. Hỏi
+       `submission.view` thì em mở được cả bảng điểm của lớp — đúng thứ luật cứng cấm. */
+    if (
+      !can(actor, 'draft.view', {
+        type: 'draft',
+        tenantId: du.tenant.id,
+        classId: bg.lopId,
+        ownerId: bn.hocVienId,
+      })
+    ) {
+      continue
+    }
+
+    const daGui = du.nhanXet.some((x) => x.baiNopId === bn.id)
+    const tk = du.taiKhoan.find((t) => t.id === bn.hocVienId)
+    if (!tk) continue
+
+    /*
+     * Bài đã chốt thì nháp bị xoá (nháp là lớp 3, hết vai thì đi), nên phải TÍNH LẠI để dòng
+     * còn đứng đó với nhãn "Đã chốt".
+     *
+     * Bỏ qua bài đã chốt thì bấm "Chốt 17" xong bảng rụng 17 trong 18 dòng ngay trước mắt cô
+     * — trông như vừa xoá mất bài của cả lớp. Tính lại được vì `chamTracNghiem` là hàm thuần
+     * trên ảnh chụp câu hỏi của bài giao: cùng đầu vào, cùng đầu ra, không cần lưu thêm gì.
+     */
+    const de = du.de.find((d) => d.id === bg.deId)
+    const n =
+      du.nhapTracNghiem.find((x) => x.baiNopId === bn.id) ??
+      (daGui
+        ? chamTracNghiem(bg.cauHoi, bn.traLoi ?? {}, de?.tinCayOcr ?? 0.95)
+        : null)
+    if (!n) continue
+
+    /* Gom câu sai theo chủ đề. Cột này của bản mẫu đọc "Câu 3, 11, 16 — bị động": tên lỗi
+       mới là thứ dạy cô điều gì, số câu thì không. */
+    const theoChuDe = new Map<string, number[]>()
+    for (const no of n.cauSai) {
+      const cd = bg.cauHoi.find((c) => c.no === no)?.chuDeCau ?? 'khác'
+      theoChuDe.set(cd, [...(theoChuDe.get(cd) ?? []), no])
+    }
+    const saiODau =
+      n.cauSai.length === 0
+        ? 'Không sai câu nào'
+        : [...theoChuDe.entries()]
+            .sort((a, b) => b[1].length - a[1].length)
+            .slice(0, 2)
+            .map(([cd, nos]) => `Câu ${nos.join(', ')} — ${cd.toLowerCase()}`)
+            .join(' · ')
+
+    dong.push({
+      baiNopId: bn.id,
+      hocVien: { id: tk.id, ten: tk.ten, mau: tk.mau },
+      dung: n.dung,
+      tong: n.tong,
+      tinCay: n.tinCay,
+      saiODau,
+      cauCanCo: n.cauCanCo,
+      trangThai: daGui
+        ? 'da_chot'
+        : /* Công tắc `chot-mcq` TẮT → không bài nào vào lô, cô xem từng bài.
+             Đây là chỗ công tắc có nghĩa thật: nó không đổi con số nào, nó đổi việc cô phải
+             làm. Không đọc công tắc ở đây thì nó thành đồ trang trí ở màn Cấu hình. */
+          !batChotMcq()
+          ? 'can_chu_y'
+          : n.cauCanCo.length > 0 || n.tinCay < NGUONG_TIN_CAY
+            ? 'xem_lai_cau'
+            : n.tong > 0 && n.dung / n.tong < NGUONG_CAN_CHU_Y
+              ? 'can_chu_y'
+              : 'san_sang',
+    })
+  }
+
+  dong.sort((a, b) => a.hocVien.ten.localeCompare(b.hocVien.ten, 'vi'))
+  const chuaChot = dong.filter((d) => d.trangThai !== 'da_chot')
+
+  return {
+    dong,
+    tinCayTb:
+      chuaChot.length === 0
+        ? null
+        : Number(
+            (chuaChot.reduce((t, d) => t + d.tinCay, 0) / chuaChot.length).toFixed(2),
+          ),
+    chotDuoc: dong.filter((d) => d.trangThai === 'san_sang').length,
+    cho: dong.filter((d) => d.trangThai === 'xem_lai_cau' || d.trangThai === 'can_chu_y')
+      .length,
+  }
+}
+
+/**
+ * Cô chốt điểm cả lớp — MỘT hành động, nhiều nhận xét.
+ *
+ * Chỉ chốt bài `san_sang`. Bài cam thì để nguyên, và đó là chỗ nút của bản mẫu nói thật:
+ * "Chốt 8 & mở 2" — không phải "Chốt tất cả".
+ *
+ * Không có đường nào cho MÁY gọi hàm này: `review.send` nằm trong `send_actions_owner_only`
+ * nên cả trợ giảng cũng bị chặn ở cửa 4 của `can()`. Bản mẫu vẽ cô bấm nút, và
+ * `OPERATIONS.md` bước 4 ghi "🔵 Cô" — máy chấm xong, cô mới gửi.
+ *
+ * Mỗi bài một sự kiện `review.send`, không phải một sự kiện cho cả lô: em chỉ được nhìn
+ * nhận xét của chính em, mà `visibility` thì gắn vào từng dòng sự kiện.
+ */
+export function chotTracNghiemCaLop(vai: VaiDemo, baiGiaoId: string): number {
+  const so = soLieuTracNghiem(vai, baiGiaoId)
+  if (!so) throw new Error('Không có bài giao này')
+
+  let dem = 0
+  for (const d of so.dong) {
+    if (d.trangThai !== 'san_sang') continue
+    chotMotBaiTracNghiem(vai, d.baiNopId)
+    dem += 1
+  }
+  return dem
+}
+
+/**
+ * Chốt MỘT bài trắc nghiệm. Cũng là đường cô dùng cho bài cam sau khi đã xem.
+ *
+ * Band quy từ tỉ lệ đúng sang thang 9 rồi làm tròn nửa bậc — cùng thang với bài tự luận, vì
+ * bảng điểm của lớp trộn cả hai loại và một cột 0–9 cạnh một cột 0–20 thì không đọc được.
+ */
+export function chotMotBaiTracNghiem(vai: VaiDemo, baiNopId: string): void {
+  const du = duLieu()
+  const bn = du.baiNop.find((b) => b.id === baiNopId)
+  if (!bn) throw new Error('Không có bài nộp này')
+  const bg = du.baiGiao.find((g) => g.id === bn.baiGiaoId)!
+  const n = du.nhapTracNghiem.find((x) => x.baiNopId === baiNopId)
+  if (!n) throw new Error('Chưa có nháp chấm trắc nghiệm cho bài này')
+
+  const band = n.tong === 0 ? 0 : Math.round((n.dung / n.tong) * 9 * 2) / 2
+
+  ghi(
+    actorCuaVai(vai),
+    'review.send',
+    { type: 'review', tenantId: du.tenant.id, classId: bg.lopId, ownerId: bn.hocVienId },
+    { bai_nop: baiNopId, dung: n.dung, tong: n.tong, band },
+    // Từ đây em nhìn thấy điểm của CHÍNH EM. Không có id em nào khác trong danh sách này.
+    [du.vai.owner, bn.hocVienId],
+    (d) => {
+      d.nhanXet.push({
+        id: maMoi(`nx-${baiNopId}`),
+        baiNopId,
+        band,
+        noiDung:
+          n.cauSai.length === 0
+            ? `Em làm đúng cả ${n.tong} câu. Giữ nhịp này.`
+            : `Em đúng ${n.dung}/${n.tong} câu. Xem lại câu ${n.cauSai.join(', ')}.`,
+        guiLuc: new Date().toISOString(),
+        suaTuNhap: false,
+      })
+      d.nhapTracNghiem = d.nhapTracNghiem.filter((x) => x.baiNopId !== baiNopId)
+    },
+  )
 }
 
 /**

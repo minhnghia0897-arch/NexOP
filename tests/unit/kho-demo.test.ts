@@ -13,10 +13,17 @@ import {
   KhongDuQuyen,
   actorCuaVai,
   baiCanCham,
+  baiTracNghiemCanChot,
   buoiKeTiep,
+  chotMotBaiTracNghiem,
+  chotTracNghiemCaLop,
+  dienDapAnThieu,
   diHocCuaEm,
   diHocTrongLop,
   ghiDiemDanh,
+  mayChamCaLoTracNghiem,
+  mayChamTracNghiem,
+  soLieuTracNghiem,
   vangLienTiep,
   dangBai,
   datLai,
@@ -863,5 +870,181 @@ describe('điểm danh: cô và trợ giảng ghi, máy không chạm, em chỉ 
     expect(duLieu().diemDanh.length).toBeGreaterThan(0)
     // `diemDanh` có trong dữ liệu mẫu, nên `dungHinhDang` đòi nó ở mọi bản lưu.
     expect(Object.keys(duLieuBanDau())).toContain('diemDanh')
+  })
+})
+
+/**
+ * Bước 4 của vòng vận hành — nửa TRẮC NGHIỆM: "chốt cả lớp" bằng một hành động.
+ *
+ * Chỗ đáng kiểm nhất không phải phép so chuỗi, mà là ba ranh giới: điểm phải TÍNH LẠI được
+ * chứ không cắm sẵn; đề thiếu đáp án thì không bài nào được chốt; và chỉ cô gửi được.
+ */
+describe('chốt điểm trắc nghiệm cả lớp', () => {
+  beforeEach(() => {
+    datLai()
+  })
+
+  it('điểm suy ra từ đáp án em chọn, không cắm sẵn trong bài nộp', () => {
+    const so = soLieuTracNghiem('owner', 'bg-g1')!
+    const em = so.dong.find((d) => d.hocVien.id === 'hv-01')!
+
+    // Sửa đáp án em chọn ở một câu em đang làm ĐÚNG → điểm phải tụt đúng 1.
+    const bn = duLieu().baiNop.find((b) => b.id === 'bn-g1-hv-01')!
+    const bg = duLieu().baiGiao.find((g) => g.id === 'bg-g1')!
+    const dangDung = bg.cauHoi.find(
+      (c) => c.dapAn && bn.traLoi![c.no] === c.dapAn,
+    )!
+    bn.traLoi![dangDung.no] = dangDung.luaChon!.find((x) => x !== dangDung.dapAn)!
+
+    mayChamTracNghiem('bn-g1-hv-01')
+    const sau = soLieuTracNghiem('owner', 'bg-g1')!.dong.find(
+      (d) => d.hocVien.id === 'hv-01',
+    )!
+    expect(sau.dung).toBe(em.dung - 1)
+    expect(sau.tong).toBe(em.tong)
+  })
+
+  it('đề thiếu đáp án MỘT câu → không bài nào chốt được, cả 18 bài chờ', () => {
+    const so = soLieuTracNghiem('owner', 'bg-g1')!
+    expect(so.chotDuoc).toBe(0)
+    expect(so.cho).toBe(18)
+    // Và câu thiếu được nêu tên, không phải chỉ "có gì đó sai".
+    expect(so.dong.every((d) => d.cauCanCo.length === 1)).toBe(true)
+  })
+
+  it('câu chưa có đáp án KHÔNG bị tính là em làm sai', () => {
+    const bg = duLieu().baiGiao.find((g) => g.id === 'bg-g1')!
+    const so = soLieuTracNghiem('owner', 'bg-g1')!
+    // 20 câu, 1 câu chưa có đáp án → mẫu số là 19, không phải 20.
+    expect(bg.cauHoi).toHaveLength(20)
+    expect(so.dong.every((d) => d.tong === 19)).toBe(true)
+  })
+
+  it('cô điền đáp án còn thiếu → máy chấm lại cả lô, lô chốt mở ra', () => {
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+
+    const so = soLieuTracNghiem('owner', 'bg-g1')!
+    expect(so.chotDuoc).toBe(17)
+    expect(so.cho).toBe(1)
+    // Mẫu số lên 20 vì câu 12 giờ chấm được.
+    expect(so.dong.every((d) => d.tong === 20)).toBe(true)
+    // Và cảnh báo tự dọn mình, y như `datDapAn` ở ngân hàng đề.
+    expect(duLieu().baiGiao.find((g) => g.id === 'bg-g1')!.cauHoi[11]!.canhBao).toBeNull()
+  })
+
+  it('KHÔNG ghi đè đáp án đã có — đó là đổi cách chấm bài đã chấm', () => {
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+    expect(() => dienDapAnThieu('owner', 'bg-g1', 12, 'will finish')).toThrow(/đã có đáp án/)
+    // Câu khác, vốn đã có đáp án, cũng không điền lại được.
+    expect(() => dienDapAnThieu('owner', 'bg-g1', 1, 'lives')).toThrow(/đã có đáp án/)
+  })
+
+  it('đáp án phải là một trong các lựa chọn của câu', () => {
+    expect(() => dienDapAnThieu('owner', 'bg-g1', 12, 'sẽ xong')).toThrow(/lựa chọn/)
+  })
+
+  it('điền đáp án chỉ chạm dapAn — đề bài em đã đọc KHÔNG đổi', () => {
+    const truoc = duLieu().baiGiao.find((g) => g.id === 'bg-g1')!.cauHoi[11]!
+    const de = truoc.de
+    const luaChon = [...truoc.luaChon!]
+
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+
+    const sau = duLieu().baiGiao.find((g) => g.id === 'bg-g1')!.cauHoi[11]!
+    expect(sau.de).toBe(de)
+    expect(sau.luaChon).toEqual(luaChon)
+  })
+
+  it('cô chốt cả lớp → 17 nhận xét gửi đi, mỗi bài một sự kiện', () => {
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+    const truoc = nhatKy().filter((e) => e.action === 'review.send').length
+
+    expect(chotTracNghiemCaLop('owner', 'bg-g1')).toBe(17)
+
+    expect(nhatKy().filter((e) => e.action === 'review.send').length).toBe(truoc + 17)
+    expect(duLieu().nhanXet.filter((n) => n.baiNopId.startsWith('bn-g1')).length).toBe(17)
+  })
+
+  it('mỗi em chỉ thấy nhận xét CỦA MÌNH — visibility từng dòng, không gộp lô', () => {
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+    chotTracNghiemCaLop('owner', 'bg-g1')
+
+    for (const e of nhatKy().filter(
+      (x) => x.action === 'review.send' && String(x.payload['bai_nop']).startsWith('bn-g1'),
+    )) {
+      // Đúng hai người: cô và em của bài đó. Gộp cả lô vào một sự kiện thì em thấy điểm bạn.
+      expect(e.visibility).toHaveLength(2)
+      expect(e.visibility).toContain(duLieu().vai.owner)
+    }
+  })
+
+  it('bài "Cần chú ý" KHÔNG bị chốt kèm — nút nói "Chốt 17 & mở 1" là nói thật', () => {
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+    const yeu = soLieuTracNghiem('owner', 'bg-g1')!.dong.find(
+      (d) => d.trangThai === 'can_chu_y',
+    )!
+    chotTracNghiemCaLop('owner', 'bg-g1')
+
+    expect(duLieu().nhanXet.some((n) => n.baiNopId === yeu.baiNopId)).toBe(false)
+    // Cô xem rồi chốt riêng thì được.
+    chotMotBaiTracNghiem('owner', yeu.baiNopId)
+    expect(duLieu().nhanXet.some((n) => n.baiNopId === yeu.baiNopId)).toBe(true)
+  })
+
+  it('bài đã chốt vẫn còn trong bảng với nhãn "Đã chốt"', () => {
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+    chotTracNghiemCaLop('owner', 'bg-g1')
+
+    const so = soLieuTracNghiem('owner', 'bg-g1')!
+    // Rụng 17 dòng ngay sau khi cô bấm thì trông như vừa xoá bài của cả lớp.
+    expect(so.dong).toHaveLength(18)
+    expect(so.dong.filter((d) => d.trangThai === 'da_chot')).toHaveLength(17)
+  })
+
+  it('trợ giảng KHÔNG chốt được — `review.send` chỉ của cô', () => {
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+    expect(() => chotTracNghiemCaLop('assistant', 'bg-g1')).toThrow(KhongDuQuyen)
+    expect(duLieu().nhanXet.filter((n) => n.baiNopId.startsWith('bn-g1'))).toHaveLength(0)
+  })
+
+  it('em không thấy bảng chốt điểm — nháp là lớp 3', () => {
+    const so = soLieuTracNghiem('student', 'bg-g1')!
+    expect(so.dong).toHaveLength(0)
+    expect(baiTracNghiemCanChot('student')).toHaveLength(0)
+  })
+
+  it('công tắc `chot-mcq` TẮT → không có lô nào, cô duyệt từng bài', () => {
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+    expect(soLieuTracNghiem('owner', 'bg-g1')!.chotDuoc).toBe(17)
+
+    datLuat('owner', 'chot-mcq', false)
+    const so = soLieuTracNghiem('owner', 'bg-g1')!
+    expect(so.chotDuoc).toBe(0)
+    expect(so.cho).toBe(18)
+  })
+
+  it('"Sai ở đâu" gọi tên lỗi, không đọc số câu trơn', () => {
+    const d = soLieuTracNghiem('owner', 'bg-g1')!.dong.find(
+      (x) => x.hocVien.id === 'hv-17',
+    )!
+    expect(d.saiODau).toMatch(/Câu .+ — .+/)
+    // Có chữ, không chỉ có số.
+    expect(d.saiODau.replace(/[\d,\s·—]/g, '').length).toBeGreaterThan(5)
+  })
+
+  it('tin cậy nói MÁY chắc tới đâu, không nói em làm tốt tới đâu', () => {
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+    const dong = soLieuTracNghiem('owner', 'bg-g1')!.dong
+    const yeu = dong.find((d) => d.trangThai === 'can_chu_y')!
+    const gioi = dong.find((d) => d.dung === Math.max(...dong.map((x) => x.dung)))!
+    // Em làm kém nhất và em làm tốt nhất có CÙNG độ tin cậy: đề như nhau, máy chắc như nhau.
+    expect(yeu.tinCay).toBe(gioi.tinCay)
+  })
+
+  it('chấm lại cả lô chạy lại được, không sinh nháp thứ hai', () => {
+    const truoc = duLieu().nhapTracNghiem.length
+    mayChamCaLoTracNghiem('bg-g1')
+    mayChamCaLoTracNghiem('bg-g1')
+    expect(duLieu().nhapTracNghiem).toHaveLength(truoc)
   })
 })

@@ -14,6 +14,9 @@ import {
   dangBai,
   datDapAn,
   datLuat,
+  chotMotBaiTracNghiem,
+  chotTracNghiemCaLop,
+  dienDapAnThieu,
   deXuatChoCo,
   duyetNhanDe,
   doiVai,
@@ -151,6 +154,36 @@ export function ghiDiemDanhHanhVi(y: {
   vang: { hocVienId: string; phep: boolean }[]
 }): { loi?: string } {
   return thu(() => ghiDiemDanh(vaiHienTai(), y))
+}
+
+/**
+ * Cô chốt điểm trắc nghiệm cả lớp — một hành động, nhiều nhận xét gửi đi.
+ *
+ * `review.send` nằm trong `send_actions_owner_only`, nên trợ giảng bấm vào cũng bị chặn ở
+ * cửa 4 của `can()` — không phải vì màn này kiểm tra vai, mà vì chính sách nói thế.
+ */
+export function chotTracNghiemHanhVi(baiGiaoId: string): { loi?: string; so?: number } {
+  try {
+    const so = chotTracNghiemCaLop(vaiHienTai(), baiGiaoId)
+    return { so }
+  } catch (e) {
+    return { loi: loiChoNguoiDung(e) }
+  }
+}
+
+/** Cô chốt một bài — đường dùng cho bài cam sau khi cô đã xem. */
+export function chotMotBaiHanhVi(baiNopId: string): { loi?: string } {
+  return thu(() => chotMotBaiTracNghiem(vaiHienTai(), baiNopId))
+}
+
+/** Cô điền đáp án còn thiếu cho một câu của bài giao, rồi máy chấm lại cả lô. */
+export function dienDapAnThieuHanhVi(
+  baiGiaoId: string,
+  cauNo: number,
+  dapAn: string,
+): { loi?: string } {
+  if (!dapAn.trim()) return { loi: 'Cô chưa chọn đáp án.' }
+  return thu(() => dienDapAnThieu(vaiHienTai(), baiGiaoId, cauNo, dapAn))
 }
 
 export function luuGhiChuHanhVi(hocVienId: string, ghiChu: string): { loi?: string } {
