@@ -19,6 +19,7 @@ import {
   baiLuyenCuaEm,
   baiPhaiNop,
   baiTuLuanPhaiNop,
+  diHocEm,
   hoSoCuaEm,
   lopCuaEm,
   tuanCuaEm,
@@ -52,6 +53,7 @@ export default function HomNay() {
   const du = duLieu()
   const em = du.taiKhoan.find((t) => t.id === EM)
   const ho = hoSoCuaEm(EM)
+  const diEm = diHocEm(EM, EM)
   const lop = lopCuaEm(EM)
   const phaiNop = baiPhaiNop(EM)
   const nopDuoc = new Set(baiTuLuanPhaiNop(EM).map((g) => g.id))
@@ -93,7 +95,7 @@ export default function HomNay() {
               </div>
               <div>
                 <b className="block font-display text-[18px] leading-tight text-text">
-                  {ho?.diHoc ?? '—'}
+                  {!diEm || diEm.tong === 0 ? '—' : `${diEm.coMat}/${diEm.tong}`}
                 </b>
                 <small className="text-[12px] text-text-2">buổi đi học</small>
               </div>

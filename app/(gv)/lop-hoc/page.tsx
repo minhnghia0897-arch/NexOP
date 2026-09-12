@@ -2,18 +2,20 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 
 import { DauMan, Wrap } from '@/components/ung-dung/khung'
 import { LuoiLop } from '@/components/ung-dung/luoi-lop'
+import { NganDiemDanh } from '@/components/ung-dung/ngan-diem-danh'
 import { KhoiTrong, Nut } from '@/components/ung-dung/phan-tu'
 import { TrangLop } from '@/components/ung-dung/trang-lop'
 import { useKho } from '@/lib/demo/dung-kho'
-import { baiCanCham, duLieu, soLieuLop, vaiHienTai } from '@/lib/demo/kho'
+import { baiCanCham, duLieu, duocDiemDanh, soLieuLop, vaiHienTai } from '@/lib/demo/kho'
 
 function LopHocNoi() {
   useKho()
   const lop = useSearchParams()?.get('lop') ?? null
+  const [diemDanh, datDiemDanh] = useState<string | null>(null)
   const vai = vaiHienTai()
   const du = duLieu()
 
@@ -36,6 +38,8 @@ function LopHocNoi() {
    * Một đường dẫn hai màn thay vì hai đường dẫn, vì bản tĩnh không dựng được route động mà
    * không có `generateStaticParams` — và query thì `useSearchParams` đã dùng sẵn ở panel.
    */
+  const moLop = diemDanh ? (du.lop.find((l) => l.id === diemDanh) ?? null) : null
+
   if (!lop) {
     const the = soLieuLop(vai)
     const dangChayN = the.filter((t) => t.lop.trangThai === 'running').length
@@ -58,9 +62,19 @@ function LopHocNoi() {
           {the.length === 0 ? (
             <KhoiTrong>Chưa có lớp nào.</KhoiTrong>
           ) : (
-            <LuoiLop the={the} />
+            <LuoiLop
+              the={the}
+              /* Hỏi `can()` một lần cho lớp đầu: bốn lớp cùng một chính sách, và câu hỏi là
+                 "vai này điểm danh được không", không phải "lớp nào". */
+              moDiemDanh={
+                the[0] && duocDiemDanh(vai, the[0].lop.id)
+                  ? (id) => datDiemDanh(id)
+                  : undefined
+              }
+            />
           )}
         </Wrap>
+        {moLop ? <NganDiemDanh lop={moLop} dong={() => datDiemDanh(null)} /> : null}
       </>
     )
   }
@@ -106,16 +120,24 @@ function LopHocNoi() {
           .filter(Boolean)
           .join(' · ')}
         hanhDong={
-          vai === 'owner' ? (
-            <span className="flex items-center gap-3">
-              <Nut>Thêm học viên</Nut>
-              <Nut kieu="chinh">Giao bài</Nut>
-            </span>
-          ) : undefined
+          <span className="flex items-center gap-3">
+            {/* Điểm danh nằm ở đây, không nằm sau `vai === 'owner'`: trợ giảng có mức
+                `auto` nên điểm danh được, và đó chính là việc cô giao cho trợ giảng. */}
+            {duocDiemDanh(vai, dangXem.id) ? (
+              <Nut onClick={() => datDiemDanh(dangXem.id)}>Điểm danh</Nut>
+            ) : null}
+            {vai === 'owner' ? (
+              <>
+                <Nut>Thêm học viên</Nut>
+                <Nut kieu="chinh">Giao bài</Nut>
+              </>
+            ) : null}
+          </span>
         }
       />
 
       <TrangLop lop={dangXem} />
+      {moLop ? <NganDiemDanh lop={moLop} dong={() => datDiemDanh(null)} /> : null}
     </>
   )
 }

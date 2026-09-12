@@ -50,7 +50,7 @@ fees            id, membership_id, package, amount, due_at, paid_via(platform|ma
 proposals       id, tenant_id, kind(renewal|retain|promote|invite|practice), target_id,
                 payload jsonb, reason, expires_at, decided(by, at, action)                  ← lớp 3
 posts           id, class_id, author_id, kind(post|assignment|reminder), body, pinned
-attendance      id, class_id, session_no, student_id, present
+attendance      id, class_id, session_no, student_id, present, excused, recorded_by  (0014)
 events          id, tenant_id, class_id?, actor_id, actor_role, action, object_type, object_id,
                 payload jsonb, visibility[], at                                          ← lớp 1
 teacher_edits   id, tenant_id, draft_id, review_id, diff jsonb                            ← nguyên liệu học giọng cô
@@ -60,9 +60,15 @@ rate_limit_events id, key, at                   ← đếm lần thử trong CSD
 ## 3. Ba lớp dữ liệu
 | Lớp | Bảng | Ai ghi | Sửa? | Nếu mất |
 |---|---|---|---|---|
-| 1 Sự thật | submissions, reviews, fees, attendance, posts, events, teacher_edits | Người (qua hành động thật) | Chỉ thêm | Mất thật |
+| 1 Sự thật | submissions, reviews, fees, attendance¹, posts, events, teacher_edits | Người (qua hành động thật) | Chỉ thêm | Mất thật |
 | 2 Suy luận | profiles, questions.answer (OCR), errors trong drafts | Máy; cô sửa được | Tính lại được từ lớp 1 | Chạy lại |
 | 3 Đề xuất | drafts, proposals, practice_sets (chưa làm) | Máy / trợ giảng | Có `expires_at` | Không sao |
+
+¹ `attendance` là NGOẠI LỆ của "chỉ thêm", và là ngoại lệ có chủ ý. Migration 0004 đặt
+`unique (class_id, session_no, student_id)`, nên điểm danh lại một buổi là SỬA tại chỗ, không
+phải thêm dòng — ràng buộc ấy chặn một lỗi thật (đếm một buổi hai lần trong mọi con số "đi học
+đều"). Lịch sử vẫn còn đủ, nhưng nằm ở `events`, chỗ duy nhất có trigger chặn cả UPDATE lẫn
+DELETE. Xem migration 0014 và LOGIC §8 câu 9.
 
 Luật: **AI không ghi lớp 1.** Chuyển từ lớp 3 → lớp 1 chỉ qua hành động của `owner` (hoặc luật cô đã bật, vẫn ghi `by = system:rule:<id>`).
 

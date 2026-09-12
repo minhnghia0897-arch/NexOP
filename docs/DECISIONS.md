@@ -380,3 +380,70 @@ học viên — cột trống là cột vô nghĩa, nay suy ra nửa bậc trên
 Chỗ thứ năm là **hình dạng dữ liệu, không phải lỗi**: chia đều ba hướng band thì một phần ba lớp
 đang tụt và màn "Cần chú ý" liệt kê 16/58 em. Đó là lớp đang vỡ, không phải lớp của cô Thảo. Số
 em cần can thiệp phải đủ ít để cô làm hết trong một buổi tối, nếu không thì danh sách cũng vô dụng.
+
+### 2026-09-12 · Điểm danh, và ba chỗ tài liệu tự nói ngược nhau
+Nút "Điểm danh" trên thẻ lớp đang hiện-mà-tắt, nên dựng nó là việc kế tiếp rõ nhất. Dựng xong
+thì nó lôi ra ba chỗ tài liệu nói một đằng, mã hoặc CSDL làm một nẻo. Ghi cả ba ở đây vì cái
+đáng giá không phải màn điểm danh — là ba chỗ đó.
+
+**Điểm danh là chỗ mức `auto` của trợ giảng có nghĩa thật.** `attendance.assistant` là `auto`:
+trợ giảng ghi THẲNG, không đề xuất rồi chờ cô duyệt. Đây là việc phải làm ngay trong phòng —
+bắt nó chờ cô duyệt thì đến mai cô duyệt một buổi học đã tan. Bản mẫu ghi đúng thế trong lời
+mời trợ giảng. Nút "Điểm danh" vì vậy KHÔNG nằm sau `vai === 'owner'`; màn hỏi `duocDiemDanh()`,
+và hàm đó hỏi `can()`. Viết `vai === 'owner' || vai === 'assistant'` thì hôm nào cô hạ quyền
+trợ giảng xuống `read`, cái `if` vẫn mở nút và trợ giảng bấm vào mới biết.
+
+**Bỏ `diHoc: '28/30'` khỏi hồ sơ.** Đó là con số tổng kết không có gì đỡ bên dưới: thẻ lớp và
+hồ sơ có thể nói hai điều khác nhau mà không chỗ nào phát hiện, vì không có bảng sự thật nào để
+đối chiếu. Nay có `diemDanh`, và mọi con số đi học tính lại từ nó. Bỏ field đi thì trình biên
+dịch chỉ ra đúng hai chỗ đang đọc nó — đó là cách tìm chỗ dùng, không phải đi grep.
+Ba lỗi lộ ra ngay khi in số ra xem, mà đọc mã thì không thấy:
+- **Lớp chưa khai giảng hiện "Đi học đều 100%".** Hai em đã đăng ký lớp 7.0+ vẫn đang học lớp
+  6.5, và hàm cộng xuyên lớp nên thẻ lớp mới mượn số của lớp cũ. Phải có bản theo lớp riêng
+  (`diHocTrongLop`) cho thẻ lớp, và bản xuyên lớp (`diHocCuaEm`) cho hồ sơ theo NGƯỜI.
+- **"Buổi đã dạy" đếm theo bài giao thì ba trong bốn lớp lệch.** Lớp Speaking đã dạy 12 buổi
+  nhưng chỉ giao bài từ buổi 6, nên thẻ đọc "Buổi 6/20" — lớp trông như đang chậm một nửa.
+  Bài về nhà nói về bài về nhà; buổi đã dạy thì điểm danh mới biết.
+- **Lớp sắp mở hiện "Buổi 1/36"** vì `Math.min` của lộ trình làm tròn 0 lên 1, và thanh tiến độ
+  đè mất dòng "2/6 đăng ký · khai giảng 22/9" cần nằm đó.
+Còn một lỗi trong chính dữ liệu mẫu: `VANG_65[id] ?? vangSinhRa(i, het)` làm bảy em lớp 6.5 đi
+học đủ — em không có dòng nào trong bảng đặt tay — rơi xuống hàm sinh và nhận vắng bịa. Trọng
+Nghĩa (7.1, đi đều) bỗng "vắng 2 buổi liên tiếp": dữ liệu mẫu tự kể một câu chuyện không ai
+viết. Chọn nguồn theo LỚP, không theo em.
+
+**Chỗ thứ nhất tài liệu nói ngược: LOGIC §2 nói máy rà điểm danh, ma trận không cho.** Dòng
+cron 07:00 ghi "rà `fees` + `profiles` + `attendance` → `proposal.create`". Cả hai nửa đều
+không qua được `can()`: `attendance.system` là `none` nên máy không đọc nổi bảng điểm danh, và
+`proposal.system` là `propose` — mức `propose` không bao gồm động từ `create`, nên một sự kiện
+tên `proposal.create` do máy sinh bị chặn ở cửa 6. Hệ quả thấy được: luật "vắng không phép + có
+tài khoản → nhắc nhẹ sau 21:00" của bản mẫu **chưa chạy**. Không tự nới ma trận — ghi thành
+LOGIC §8 câu 8 để cô chốt, và ngăn điểm danh nói thẳng ra là luật đó chưa bật. Im lặng thì cô
+tin là nó đang chạy, mà đó là kiểu hỏng tệ nhất.
+
+**Chỗ thứ hai: ARCHITECTURE §3 xếp `attendance` vào "chỉ thêm", nhưng bảng thật không cho
+thêm.** Migration 0004 đặt `unique (class_id, session_no, student_id)`, nên điểm danh lại một
+buổi không thể là thêm dòng. Bản demo em viết lúc đầu THÊM dòng và chạy êm — nó sẽ đổ đúng hôm
+nối Supabase, kiểu hỏng đắt nhất vì lúc đó mọi màn đã dựng xong trên một giả định sai. Chốt:
+giữ ràng buộc, sửa tại chỗ, vì ràng buộc ấy đang chặn một lỗi thật — điểm danh hai lần một buổi
+thì mọi con số "đi học đều" đếm buổi đó hai lần. Lịch sử "cô đã đổi ý" thì `events` giữ, và giữ
+chắc hơn: `events` có trigger chặn cả UPDATE lẫn DELETE (0001), còn `attendance` không có gì
+ép. Ghi thành §8 câu 9.
+
+**Chỗ thứ ba: bản mẫu ghi một luật mà bảng không có cột để chạy nó.** "Vắng KHÔNG PHÉP" — mà
+`attendance` ở 0004 chỉ có `present boolean`, nên vắng có phép và vắng trốn học vào cùng một
+cột. Migration **0014** thêm `excused` và `recorded_by`, một ràng buộc chặn "có mặt mà có
+phép", một trigger chặn ghi thiếu người ghi (`attendance.system = none` — máy không ghi bảng
+này), và `app.record_attendance` làm cửa duy nhất: nhận danh sách VẮNG, sĩ số lấy từ
+`memberships`. Bắt ứng dụng gửi lên 18 dòng có mặt là mở đường cho nó gửi thiếu một dòng.
+
+**Hai chỗ cố tình khác bản mẫu.** Bản mẫu bỏ tích sẵn cho em "vắng buổi trước"; ở đây không —
+ai có mặt là sự thật lớp 1, và máy không đoán sự thật hộ cô. Em đó vẫn được nhắc bằng nhãn cạnh
+tên. Và ô "có phép" chỉ hiện sau khi đã bỏ tích: hiện sẵn mười tám ô là mười tám câu hỏi cô
+không cần trả lời.
+
+**Bài kiểm bắt được hai chỗ hai bản không khớp nhau.** `app.record_attendance` đặt
+`visibility = array[v_actor]`, nên buổi trợ giảng điểm danh thành buổi CÔ KHÔNG ĐỌC ĐƯỢC trong
+nhật ký của chính mình — `events_read_visible` là `auth.uid() = any (visibility)`, không có
+ngoại lệ cho chủ tên miền. Và hàm cắm sẵn `actor_role = 'owner'`, nên mọi buổi trợ giảng ghi
+đọc thành cô ghi: nhật ký nói sai đúng chỗ cô cần nó nói đúng, khi em khiếu nại một buổi vắng.
+Cả hai chỉ lộ ra vì bài kiểm chạy trên Postgres thật, không chạy trên bản demo.

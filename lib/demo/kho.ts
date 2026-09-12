@@ -745,6 +745,202 @@ export function luuGhiChu(vai: VaiDemo, hocVienId: string, ghiChu: string): void
 }
 
 /**
+ * Cô — hoặc trợ giảng — điểm danh một buổi. **Lớp 1: chỉ thêm.**
+ *
+ * Đây là chỗ mức `auto` của trợ giảng có nghĩa thật: `attendance.assistant` là `auto` nên
+ * trợ giảng ghi THẲNG, không phải đề xuất rồi chờ cô duyệt. Bản mẫu ghi đúng thế trong lời
+ * mời trợ giảng ("nháp nhận xét, bảng tin, điểm danh"), và đó là việc phải làm ngay trong
+ * phòng — bắt nó chờ cô duyệt thì đến mai cô duyệt một buổi học đã tan.
+ *
+ * Máy KHÔNG gọi được hàm này: `attendance.system` là `none`, nên `can()` chặn ở cửa 6.
+ *
+ * Chỉ nhận danh sách VẮNG. Ai đang học lớp mà không có tên trong đó thì có mặt — vì trong
+ * phòng cô chỉ gọi tên người thiếu, và bắt cô tích mười bảy cái để ghi một người vắng là
+ * bắt cô làm việc cho máy.
+ */
+export function ghiDiemDanh(
+  vai: VaiDemo,
+  y: { lopId: string; buoiNo: number; vang: { hocVienId: string; phep: boolean }[] },
+): void {
+  const du = duLieu()
+  const lop = du.lop.find((l) => l.id === y.lopId)
+  if (!lop) throw new Error('Không có lớp này')
+
+  // Vắng phải là em CỦA LỚP. Không lọc thì một id gõ sai vào thẳng bảng sự thật, và bảng
+  // sự thật thì chỉ thêm — không có đường sửa lại cho sạch.
+  const vang = y.vang.filter((v) => lop.hocVienIds.includes(v.hocVienId))
+  const coMat = lop.hocVienIds.filter((id) => !vang.some((v) => v.hocVienId === id))
+
+  const actor = actorCuaVai(vai)
+
+  ghi(
+    actor,
+    'attendance.create',
+    { type: 'attendance', tenantId: du.tenant.id, classId: y.lopId },
+    /*
+     * Payload ghi ĐỦ TÊN em vắng — khác `profile.update` ở trên, chỗ đó chỉ ghi độ dài.
+     *
+     * Ở đây "ai vắng" CHÍNH LÀ sự thật cần truy lại, không phải nội dung riêng tư của cô.
+     * Đường rò được bịt bằng `visibility` thay vì bằng cách ghi thiếu: danh sách chỉ có cô
+     * và người điểm danh, và `events.student` là mức `own` nên em không mở được dòng không
+     * mang tên chủ — mà dòng này không mang tên chủ nào.
+     */
+    {
+      buoi_no: y.buoiNo,
+      co_mat: coMat.length,
+      vang: vang.map((v) => ({ hoc_vien_id: v.hocVienId, phep: v.phep })),
+    },
+    [du.vai.owner, actor.accountId],
+    /*
+     * Điểm danh lại một buổi đã ghi = SỬA TẠI CHỖ, không thêm dòng thứ hai.
+     *
+     * Thoạt nhìn thì trái với ARCHITECTURE §3 ("attendance: chỉ thêm") — và đúng là §3
+     * nói thế. Nhưng bảng thật ở migration 0004 có
+     * `unique (class_id, session_no, student_id)`, nên dòng thứ hai cho cùng một buổi BỊ
+     * CHẶN ở tầng CSDL. Bản demo thêm dòng thì chạy êm ở đây rồi đổ ngay hôm nối Supabase.
+     *
+     * Ràng buộc ấy đang chặn một lỗi thật: điểm danh hai lần một buổi thì mọi con số
+     * "đi học đều" đếm buổi đó hai lần. Nên giữ ràng buộc, và để `events` giữ lịch sử —
+     * chỗ đó có trigger chặn cả UPDATE lẫn DELETE (0001), chắc hơn một bảng không có gì
+     * ép. Mỗi lần cô đổi ý vẫn còn nguyên một dòng nhật ký với giá trị cũ.
+     *
+     * Đã ghi thành LOGIC §8 câu 9. Đổi ý thì sửa ARCHITECTURE §3 và migration 0014.
+     */
+    (d) => {
+      const cu = d.diemDanh.find((x) => x.lopId === y.lopId && x.buoiNo === y.buoiNo)
+      if (cu) {
+        cu.luc = new Date().toISOString()
+        cu.ghiBoi = actor.accountId
+        cu.coMat = coMat
+        cu.vang = vang
+        return
+      }
+      d.diemDanh.push({
+        id: maMoi(`dd-${y.lopId}-${y.buoiNo}`),
+        lopId: y.lopId,
+        buoiNo: y.buoiNo,
+        luc: new Date().toISOString(),
+        ghiBoi: actor.accountId,
+        coMat,
+        vang,
+      })
+    },
+  )
+}
+
+/**
+ * Buổi điểm danh của một lớp, MỚI NHẤT TRƯỚC.
+ *
+ * Vẫn gom theo `buoiNo` dù `ghiDiemDanh` đã sửa tại chỗ: chỗ này là chỗ duy nhất mọi câu
+ * đếm đi qua, nên nó là chỗ rẻ nhất để giữ bất biến "một buổi đếm một lần" — kể cả khi một
+ * bản lưu cũ, hay một lần nhập dữ liệu tay, để lại hai dòng cùng buổi.
+ */
+function buoiDaDiemDanh(lopId: string): import('./du-lieu').DiemDanh[] {
+  const theoBuoi = new Map<number, import('./du-lieu').DiemDanh>()
+  for (const d of duLieu().diemDanh) {
+    if (d.lopId === lopId) theoBuoi.set(d.buoiNo, d)
+  }
+  return [...theoBuoi.values()].sort((a, b) => b.buoiNo - a.buoiNo)
+}
+
+/**
+ * Em đi được bao nhiêu buổi trên bao nhiêu buổi CỦA EM. **Lớp 2 — tính lại được.**
+ *
+ * Mẫu số là số buổi em có trong bảng, không phải số buổi lớp đã dạy: em vào lớp từ buổi 18
+ * thì mười bảy buổi trước đó không phải buổi em nghỉ. Trước đây con số này là chuỗi
+ * `diHoc: '28/30'` nằm sẵn trong hồ sơ — không có gì đỡ, và không ai phát hiện khi nó lệch
+ * với thẻ lớp.
+ */
+export function diHocCuaEm(hocVienId: string): { coMat: number; tong: number } {
+  const du = duLieu()
+  let coMat = 0
+  let tong = 0
+
+  for (const l of du.lop) {
+    if (!l.hocVienIds.includes(hocVienId)) continue
+    const x = diHocTrongLop(l.id, hocVienId)
+    coMat += x.coMat
+    tong += x.tong
+  }
+  return { coMat, tong }
+}
+
+/**
+ * Đi học của em TRONG MỘT LỚP.
+ *
+ * Phải có bản theo lớp riêng, không dùng `diHocCuaEm` cho thẻ lớp được: hai em lớp 7.0+ vẫn
+ * đang học lớp 6.5, nên cộng xuyên lớp làm thẻ "IELTS 7.0+ · nhóm 6" — lớp CHƯA dạy buổi
+ * nào — hiện "Đi học đều 100%". Con số mượn từ lớp khác, và nó trông hợp lý nên không ai
+ * soi lại.
+ */
+export function diHocTrongLop(
+  lopId: string,
+  hocVienId: string,
+): { coMat: number; tong: number } {
+  let coMat = 0
+  let tong = 0
+
+  for (const d of buoiDaDiemDanh(lopId)) {
+    if (d.coMat.includes(hocVienId)) {
+      coMat += 1
+      tong += 1
+    } else if (d.vang.some((v) => v.hocVienId === hocVienId)) {
+      tong += 1
+    }
+  }
+  return { coMat, tong }
+}
+
+/**
+ * Em vắng mấy buổi LIÊN TIẾP tính từ buổi gần nhất. **Lớp 2.**
+ *
+ * Bản mẫu: "Vắng 2 buổi liên tiếp → tự vào Cần chú ý". Liên tiếp chứ không phải tổng —
+ * em vắng tám buổi rải đều cả khoá là em hay có việc; em vắng hai buổi cuối là em đang rời
+ * lớp, và hai chuyện đó cô xử lý khác nhau.
+ */
+export function vangLienTiep(hocVienId: string): number {
+  const du = duLieu()
+  const l = du.lop.find((x) => x.hocVienIds.includes(hocVienId))
+  if (!l) return 0
+
+  let dem = 0
+  for (const d of buoiDaDiemDanh(l.id)) {
+    if (d.vang.some((v) => v.hocVienId === hocVienId)) dem += 1
+    else if (d.coMat.includes(hocVienId)) break
+    // Em chưa vào lớp ở buổi này: không tính, cũng không cắt chuỗi.
+  }
+  return dem
+}
+
+/**
+ * Vai này điểm danh được lớp này không?
+ *
+ * Một hàm cho giao diện hỏi, để KHÔNG màn nào viết `vai === 'owner' || vai === 'assistant'`.
+ * Viết thế là component tự kiểm quyền — CLAUDE.md cấm, và lý do rất cụ thể: hôm nào cô hạ
+ * `attendance` của trợ giảng xuống `read`, cái `if` kia vẫn mở nút, và trợ giảng bấm vào
+ * mới biết là không được.
+ */
+export function duocDiemDanh(vai: VaiDemo, lopId: string): boolean {
+  return can(actorCuaVai(vai), 'attendance.create', {
+    type: 'attendance',
+    tenantId: duLieu().tenant.id,
+    classId: lopId,
+  })
+}
+
+/** Buổi tiếp theo phải điểm danh. Chưa dạy buổi nào thì là buổi 1. */
+export function buoiKeTiep(lopId: string): number {
+  const da = buoiDaDiemDanh(lopId)
+  return (da[0]?.buoiNo ?? 0) + 1
+}
+
+/** Em vắng buổi vừa rồi — ngăn điểm danh nhắc cô để cô để mắt, chứ không tự bỏ tích. */
+export function vangBuoiTruoc(lopId: string): string[] {
+  const da = buoiDaDiemDanh(lopId)
+  return (da[0]?.vang ?? []).map((v) => v.hocVienId)
+}
+
+/**
  * Bật/tắt một luật của cô.
  *
  * Hỏi `rubric.update`: "máy được tự làm gì" là một phần của cách cô chấm, và `rubric` là
@@ -848,6 +1044,21 @@ export function hoSoDayDu(vai: VaiDemo, hocVienId: string) {
     .sort((a, b) => b.luc.localeCompare(a.luc))
     .slice(0, 6)
 
+  /*
+   * Điểm danh hỏi quyền RIÊNG, không đi ké `profile.view`.
+   *
+   * Hai object khác nhau trong permissions.json thì hai lần hỏi. Đi ké thì hôm nào cô hạ
+   * `attendance` của trợ giảng xuống `none`, ngăn hồ sơ vẫn hiện số buổi vắng — vì nó chưa
+   * từng hỏi về `attendance`. Trợ giảng hiện là `auto` nên vẫn thấy; cái được giữ là chỗ
+   * hỏi, không phải kết quả hôm nay.
+   */
+  const xemDiemDanh = can(actor, 'attendance.view', {
+    type: 'attendance',
+    tenantId: du.tenant.id,
+    classId: lop?.id,
+    ownerId: hocVienId,
+  })
+
   const { ghiChu, ...conLai } = h
   return {
     ...conLai,
@@ -855,6 +1066,8 @@ export function hoSoDayDu(vai: VaiDemo, hocVienId: string) {
     mau: tk?.mau ?? 'off',
     baiGanDay,
     ghiChu: vai === 'owner' ? (ghiChu ?? '') : null,
+    diHoc: xemDiemDanh ? diHocCuaEm(hocVienId) : null,
+    vangLienTiep: xemDiemDanh ? vangLienTiep(hocVienId) : null,
     lop: lop ?? null,
   }
 }
@@ -894,14 +1107,28 @@ export function soLieuLop(vai: VaiDemo): {
     const band = hoSo.filter((h) => h.bandTb > 0)
     const lt = du.loTrinh.find((x) => x.dangDung.includes(l.id))
 
-    /* "Buổi đã dạy" = buổi lớn nhất trong lộ trình mà lớp đã có bài giao từ đó. Chưa giao
-       buổi nào thì lấy buổi nhỏ nhất của lộ trình — lớp đang ở đầu chặng đó. */
-    const buoiDaGiao = du.baiGiao
-      .filter((g) => g.lopId === l.id && g.tuBuoi)
-      .map((g) => g.tuBuoi!.no)
-    const buoiDaDay = lt
-      ? Math.max(...(buoiDaGiao.length > 0 ? buoiDaGiao : lt.buoi.map((b) => b.no)))
-      : null
+    /*
+     * "Buổi đã dạy" = số buổi ĐÃ ĐIỂM DANH, không phải buổi lớn nhất có bài giao.
+     *
+     * Trước đây đếm theo bài giao, và ba trong bốn lớp lệch: lớp Speaking đã dạy 12 buổi
+     * nhưng chỉ giao bài từ buổi 6, nên thẻ đọc thành "Buổi 6/20" — lớp trông như đang
+     * chậm một nửa. Bài về nhà nói về bài về nhà; buổi đã dạy thì điểm danh mới biết.
+     *
+     * Lớp có lộ trình mà chưa điểm danh buổi nào thì lấy buổi nhỏ nhất của lộ trình — lớp
+     * đang ở đầu chặng đó, chưa phải "đã dạy 0 buổi".
+     */
+    const daDiemDanh = buoiKeTiep(l.id) - 1
+    const buoiDaDay =
+      l.trangThai === 'opening'
+        ? /* Lớp chưa khai giảng KHÔNG có buổi đã dạy — kể cả buổi 1.
+             Để nó là 0-rồi-làm-tròn-lên-1 thì thẻ đọc "Buổi 1/36" cho một lớp mở ngày 22/9,
+             và thanh tiến độ đè mất dòng "2/6 đăng ký · khai giảng 22/9" cần nằm ở đó. */
+          null
+        : daDiemDanh > 0
+          ? daDiemDanh
+          : lt
+            ? Math.min(...lt.buoi.map((b) => b.no))
+            : null
 
     const quaHan = du.baiGiao.filter(
       (g) =>
@@ -914,9 +1141,12 @@ export function soLieuLop(vai: VaiDemo): {
         ),
     ).length
 
+    /* "Đi học đều" TÍNH LẠI từ bảng điểm danh, không đọc con số tổng kết trong hồ sơ.
+       Trước đây hồ sơ mang chuỗi `diHoc: '28/30'` — thẻ lớp và hồ sơ có thể lệch nhau mà
+       không chỗ nào phát hiện, vì không có bảng sự thật nào để đối chiếu. */
     const diHoc = hoSo
-      .map((h) => h.diHoc.split('/').map(Number))
-      .filter((x) => x.length === 2 && x[1]! > 0)
+      .map((h) => diHocTrongLop(l.id, h.id))
+      .filter((x) => x.tong > 0)
 
     return {
       lop: l,
@@ -947,7 +1177,7 @@ export function soLieuLop(vai: VaiDemo): {
         diHoc.length === 0
           ? null
           : Math.round(
-              (diHoc.reduce((t, [a, b]) => t + a! / b!, 0) / diHoc.length) * 100,
+              (diHoc.reduce((t, x) => t + x.coMat / x.tong, 0) / diHoc.length) * 100,
             ),
     }
   })

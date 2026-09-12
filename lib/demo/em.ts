@@ -12,7 +12,7 @@
 import { can, type Actor } from '@/lib/auth/can'
 
 import type { BaiGiao, BaiLuyen, LoiDanhDau, NhanXet } from './du-lieu'
-import { dangChay, duLieu } from './kho'
+import { dangChay, diHocTrongLop, duLieu } from './kho'
 
 /**
  * Em đang đăng nhập trong bản demo.
@@ -36,6 +36,43 @@ export function actorEm(hocVienId: string): Actor {
 /** Lớp em đang học. Em học một lớp thì đây là lớp đó. */
 export function lopCuaEm(hocVienId: string) {
   return duLieu().lop.find((l) => l.hocVienIds.includes(hocVienId)) ?? null
+}
+
+/**
+ * Em đi học bao nhiêu buổi. Hàm NHẬN HAI id, và đó là chỗ quan trọng.
+ *
+ * `attendance.student` là mức `own`, nên em chỉ đọc được dòng NÓI VỀ em. Nếu hàm chỉ nhận
+ * một id rồi tự dựng actor từ chính id đó thì cửa `own` luôn khớp — kiểm quyền thành thủ
+ * tục, và không test nào chứng minh được em không đọc được của bạn. Tách người XEM khỏi
+ * người ĐƯỢC XEM thì `diHocEm('hv-01', 'hv-02')` trả `null`, và câu đó kiểm được.
+ *
+ * `attendance` còn nằm trong `own_is_subject_not_author`: em là CHỦ ĐỀ của điểm danh, không
+ * phải người ghi ra nó — nên `own` ở đây chỉ cho xem, không cho sửa.
+ */
+export function diHocEm(
+  nguoiXem: string,
+  chuThe: string,
+): { coMat: number; tong: number } | null {
+  const du = duLieu()
+  const lop = du.lop.filter((l) => l.hocVienIds.includes(chuThe))
+
+  const duoc = lop.every((l) =>
+    can(actorEm(nguoiXem), 'attendance.view', {
+      type: 'attendance',
+      tenantId: du.tenant.id,
+      classId: l.id,
+      ownerId: chuThe,
+    }),
+  )
+  if (lop.length === 0 || !duoc) return null
+
+  return lop.reduce(
+    (t, l) => {
+      const x = diHocTrongLop(l.id, chuThe)
+      return { coMat: t.coMat + x.coMat, tong: t.tong + x.tong }
+    },
+    { coMat: 0, tong: 0 },
+  )
 }
 
 export interface BaiTrongHoSo {

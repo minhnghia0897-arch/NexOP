@@ -191,7 +191,13 @@ export interface HoSoHocVien {
   id: string
   bandTb: number
   huong: 'up' | 'down' | 'flat'
-  diHoc: string
+  /*
+   * KHÔNG có `diHoc` ở đây nữa.
+   *
+   * Trước là chuỗi `'28/30'` nằm sẵn trong hồ sơ — một con số tổng kết không có gì đỡ bên
+   * dưới, nên thẻ lớp và hồ sơ lệch nhau được mà không chỗ nào phát hiện. Giờ đọc bằng
+   * `diHocCuaEm()` / `diHocTrongLop()`, tính lại từ bảng `diemDanh` mỗi lần.
+   */
   coTaiKhoan: boolean
   loiHayGap: string
   hanHocPhi: string
@@ -251,6 +257,31 @@ export interface LuatMay {
   khoa?: boolean
 }
 
+/**
+ * Một buổi đã điểm danh. **Lớp 1 — sự thật, chỉ thêm.**
+ *
+ * Máy không bao giờ ghi bảng này: ai có mặt trong phòng thì chỉ người trong phòng biết.
+ * `attendance.system` là `none` trong permissions.json, nên `can()` chặn ngay cả động từ
+ * `view` của vai máy — không phải vì quên cấp, mà vì đây là chỗ máy không có việc gì.
+ *
+ * Bản thật (ARCHITECTURE §2) là MỘT DÒNG MỘT EM MỘT BUỔI: `class_id, session_no,
+ * student_id, present`. Ở đây gộp thành một dòng một buổi, nhưng vẫn ghi CẢ `coMat` lẫn
+ * `vang` thay vì suy "có mặt = sĩ số trừ vắng": sĩ số hôm nay không nói được ai đang học
+ * ở buổi 12, nên suy như thế là đọc sai quá khứ mỗi lần có em vào lớp muộn.
+ */
+export interface DiemDanh {
+  id: string
+  lopId: string
+  buoiNo: number
+  /** Buổi diễn ra lúc nào — không phải lúc cô bấm lưu. */
+  luc: string
+  /** Ai điểm danh. Trợ giảng có mức `auto` nên ghi thẳng, không qua cô. */
+  ghiBoi: string
+  coMat: string[]
+  /** `phep: false` là vắng KHÔNG phép — đó là thứ sinh ra việc cho cô. */
+  vang: { hocVienId: string; phep: boolean }[]
+}
+
 export interface BaiDang {
   id: string
   lopId: string
@@ -274,6 +305,7 @@ export interface DuLieuDemo {
   loTrinh: LoTrinh[]
   hocPhi: HocPhi[]
   baiLuyen: BaiLuyen[]
+  diemDanh: DiemDanh[]
   luat: LuatMay[]
   /** Ai đang đăng nhập ở mỗi vai — cho công tắc đổi vai của bản demo. */
   vai: Record<VaiDemo, string>
@@ -351,6 +383,128 @@ const THEM = (so: number, tien: string): string[] =>
   HOC_VIEN_PHU.filter((h) => h.lop === tien)
     .slice(0, so)
     .map((h) => h.id)
+
+/**
+ * Buổi đã dạy của từng lớp. Một con số, dùng cho cả điểm danh lẫn thanh tiến độ thẻ lớp.
+ *
+ * Lớp 6.5 ở buổi 31 — đúng con số bản mẫu ghi trên ngăn điểm danh.
+ */
+const BUOI_DA_DAY: Record<string, number> = {
+  'lop-65': 31,
+  'lop-55': 22,
+  'lop-cap-toc': 14,
+  'lop-speak': 12,
+}
+
+/**
+ * Em vào lớp từ buổi nào. Tám em lớp 6.5 vào muộn, nên MẪU SỐ của em nhỏ hơn.
+ *
+ * Đây là lý do dòng điểm danh phải ghi cả `coMat`: sĩ số hôm nay không cho biết ai đang
+ * học ở buổi 12, nên "có mặt = sĩ số trừ vắng" sẽ cộng oan mười chín buổi cho em vào muộn.
+ */
+const VAO_TU: Record<string, number> = {
+  'hv-11': 18, 'hv-12': 18, 'hv-13': 18, 'hv-14': 18, 'hv-15': 18, 'hv-16': 18,
+  'hv-17': 22, 'hv-18': 22,
+}
+
+/**
+ * Buổi vắng của mười tám em lớp 6.5 — đặt tay, vì đây là lớp mọi màn demo đi qua.
+ *
+ * Trước đây hồ sơ mang sẵn chuỗi `diHoc: '28/30'`: một con số tổng kết không có gì đỡ bên
+ * dưới. Thẻ lớp và hồ sơ có thể nói hai điều khác nhau mà không chỗ nào phát hiện được.
+ * Giờ cả hai TÍNH LẠI từ bảng này.
+ *
+ * Có chuyện để kể: Quang Huy và Gia Bảo vắng hai buổi cuối liên tiếp — luật "vắng 2 buổi
+ * liên tiếp → Cần chú ý" bắt được. Đức Thắng vắng đúng buổi vừa rồi, MỘT buổi, nên không
+ * bị bắt: đó là chỗ chứng minh luật đếm liên tiếp chứ không đếm tổng.
+ */
+const VANG_65: Record<string, [number, boolean][]> = {
+  'hv-01': [[12, true], [24, true]],
+  'hv-03': [[9, false], [14, true], [19, false], [25, false], [30, false], [31, false]],
+  'hv-04': [[20, true]],
+  'hv-05': [[7, true], [15, false], [22, true], [31, true]],
+  'hv-08': [[6, true], [17, false], [27, true]],
+  'hv-09': [[4, false], [8, false], [11, true], [16, false], [21, false], [26, true],
+            [30, false], [31, false]],
+  'hv-10': [[5, true], [13, true], [18, false], [23, true], [29, true]],
+  'hv-12': [[26, true]],
+  'hv-14': [[21, false], [30, false], [31, false]],
+  'hv-16': [[19, true], [28, true]],
+  'hv-17': [[24, true]],
+}
+
+/**
+ * Buổi vắng của bốn mươi em ba lớp còn lại — sinh ra, không gõ tay.
+ *
+ * Em thứ năm mỗi nhóm vắng hai buổi CUỐI liên tiếp: luật "2 buổi liên tiếp" phải bắt được ở
+ * mọi lớp, không riêng lớp có dữ liệu đặt tay. Bản demo mà chỉ một lớp chạy đúng luật thì
+ * không phân biệt được "luật chạy" với "dữ liệu mẫu tình cờ trông giống luật chạy".
+ */
+function vangSinhRa(i: number, het: number): [number, boolean][] {
+  const so = i % 5
+  const daCo = new Set<number>()
+  const ket: [number, boolean][] = []
+
+  for (let k = 0; k < so; k++) {
+    const buoi = so === 4 && k < 2 ? het - k : het - 3 - k * 4
+    if (buoi < 1 || daCo.has(buoi)) continue
+    daCo.add(buoi)
+    ket.push([buoi, (i + k) % 3 !== 0])
+  }
+  return ket
+}
+
+/**
+ * Dựng bảng điểm danh từ ba thứ trên. Một dòng một buổi, xếp theo thời gian tăng.
+ *
+ * Lớp `opening` không có dòng nào — chưa dạy buổi nào thì không có gì để điểm danh, và một
+ * bảng rỗng đọc đúng hơn là một bảng đầy số 0.
+ */
+function sinhDiemDanh(lop: Lop[], ghiBoi: string): DiemDanh[] {
+  const ket: DiemDanh[] = []
+
+  for (const l of lop) {
+    const het = BUOI_DA_DAY[l.id]
+    if (het === undefined) continue
+
+    /*
+     * Chọn nguồn theo LỚP, không theo em.
+     *
+     * Viết `VANG_65[id] ?? vangSinhRa(i, het)` thì bảy em lớp 6.5 đi học đủ — em không có
+     * dòng nào trong bảng đặt tay — rơi xuống hàm sinh và nhận vắng bịa. Kiểm lại số thì
+     * Trọng Nghĩa (7.1, đi đều) bỗng "vắng 2 buổi liên tiếp": dữ liệu mẫu tự kể một câu
+     * chuyện không ai viết. Lớp 6.5 đặt tay hết, kể cả em vắng 0 buổi.
+     */
+    const datTay = l.id === 'lop-65'
+    const vangCuaEm = new Map<string, Map<number, boolean>>()
+    l.hocVienIds.forEach((id, i) => {
+      vangCuaEm.set(id, new Map(datTay ? (VANG_65[id] ?? []) : vangSinhRa(i, het)))
+    })
+
+    for (let no = 1; no <= het; no += 1) {
+      const coMat: string[] = []
+      const vang: { hocVienId: string; phep: boolean }[] = []
+
+      for (const id of l.hocVienIds) {
+        if (no < (VAO_TU[id] ?? 1)) continue // em chưa vào lớp — không có dòng nào cho buổi này
+        const phep = vangCuaEm.get(id)?.get(no)
+        if (phep === undefined) coMat.push(id)
+        else vang.push({ hocVienId: id, phep })
+      }
+
+      ket.push({
+        id: `dd-${l.id}-${no}`,
+        lopId: l.id,
+        buoiNo: no,
+        luc: luc(-Math.round((het - no) * 3.5), 19),
+        ghiBoi,
+        coMat,
+        vang,
+      })
+    }
+  }
+  return ket
+}
 
 /**
  * Ảnh chụp câu hỏi cho một bài giao (migration 0007).
@@ -719,7 +873,7 @@ export function duLieuBanDau(): DuLieuDemo {
    * Bảng điểm mà em nào cũng 6.0 thì cô nhìn xong không rút ra được gì.
    */
   const hoSo: HoSoHocVien[] = [
-    { id: 'hv-01', bandTb: 6.3, huong: 'up', diHoc: '28/30', coTaiKhoan: true,
+    { id: 'hv-01', bandTb: 6.3, huong: 'up', coTaiKhoan: true,
       loiHayGap: 'Hoà hợp chủ–vị ×3', hanHocPhi: '30/9', mucTieu: 6.5,
       ghiChu: 'Bố mẹ muốn em thi tháng 12. Hơi vội — nói chuyện lại sau Mock 2.',
       loiLap: [
@@ -729,40 +883,40 @@ export function duLieuBanDau(): DuLieuDemo {
       ],
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 6.0 }, 'bg-t2tech': { band: 6.0 },
               'bg-t1bar': { band: 6.5 }, 'bg-w1': { band: null } } },
-    { id: 'hv-02', bandTb: 6.9, huong: 'up', diHoc: '30/30', coTaiKhoan: true,
+    { id: 'hv-02', bandTb: 6.9, huong: 'up', coTaiKhoan: true,
       loiHayGap: '—', hanHocPhi: '12/10',
       diem: { 'bg-t1a': { band: 6.0 }, 'bg-mock1': { band: 6.5 }, 'bg-t2tech': { band: 7.0 },
               'bg-t1bar': { band: 7.0 }, 'bg-w1': { band: null } } },
-    { id: 'hv-03', bandTb: 5.2, huong: 'down', diHoc: '24/30', coTaiKhoan: true,
+    { id: 'hv-03', bandTb: 5.2, huong: 'down', coTaiKhoan: true,
       loiHayGap: 'Liên kết máy móc ×4', hanHocPhi: '30/9',
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 5.0 },
               'bg-t1bar': { band: 5.0 }, 'bg-w1': { band: null } } },
-    { id: 'hv-04', bandTb: 6.1, huong: 'flat', diHoc: '29/30', coTaiKhoan: true,
+    { id: 'hv-04', bandTb: 6.1, huong: 'flat', coTaiKhoan: true,
       loiHayGap: 'Phản biện chưa có đỡ', hanHocPhi: '15/10',
       diem: { 'bg-t1a': { band: 6.0 }, 'bg-mock1': { band: 6.0 }, 'bg-t2tech': { band: 6.5 },
               'bg-t1bar': { band: 6.0 }, 'bg-w1': { band: null } } },
-    { id: 'hv-05', bandTb: 6.2, huong: 'flat', diHoc: '26/30', coTaiKhoan: true,
+    { id: 'hv-05', bandTb: 6.2, huong: 'flat', coTaiKhoan: true,
       loiHayGap: 'Nộp muộn 4/6', hanHocPhi: '30/9',
       diem: { 'bg-t1a': { band: 6.0, muon: true }, 'bg-mock1': { band: 6.5 },
               'bg-t2tech': { band: 6.0, muon: true }, 'bg-t1bar': { band: null },
               'bg-w1': { band: null, muon: true } } },
-    { id: 'hv-06', bandTb: 5.8, huong: 'up', diHoc: '30/30', coTaiKhoan: false,
+    { id: 'hv-06', bandTb: 5.8, huong: 'up', coTaiKhoan: false,
       loiHayGap: 'Câu phức còn ít', hanHocPhi: '30/9',
       diem: { 'bg-t1a': { band: 5.0 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 6.0 },
               'bg-t1bar': { band: 6.0 }, 'bg-w1': { band: null } } },
-    { id: 'hv-07', bandTb: 6.9, huong: 'up', diHoc: '30/30', coTaiKhoan: true,
+    { id: 'hv-07', bandTb: 6.9, huong: 'up', coTaiKhoan: true,
       loiHayGap: '—', hanHocPhi: '12/10',
       diem: { 'bg-t1a': { band: 6.5 }, 'bg-mock1': { band: 6.5 }, 'bg-t2tech': { band: 7.0 },
               'bg-t1bar': { band: 7.0 }, 'bg-w1': { band: null } } },
-    { id: 'hv-08', bandTb: 5.5, huong: 'flat', diHoc: '27/30', coTaiKhoan: true,
+    { id: 'hv-08', bandTb: 5.5, huong: 'flat', coTaiKhoan: true,
       loiHayGap: 'Bài ngắn ×2', hanHocPhi: '15/10',
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 5.5 },
               'bg-t1bar': { band: 5.5 }, 'bg-w1': { band: null } } },
-    { id: 'hv-09', bandTb: 4.9, huong: 'down', diHoc: '22/30', coTaiKhoan: true,
+    { id: 'hv-09', bandTb: 4.9, huong: 'down', coTaiKhoan: true,
       loiHayGap: 'Đọc hiểu', hanHocPhi: '30/9',
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.0 }, 'bg-t2tech': { band: 4.5 },
               'bg-t1bar': { band: 4.5 }, 'bg-w1': { band: null } } },
-    { id: 'hv-10', bandTb: 5.6, huong: 'flat', diHoc: '25/30', coTaiKhoan: false,
+    { id: 'hv-10', bandTb: 5.6, huong: 'flat', coTaiKhoan: false,
       loiHayGap: 'Bị động ×5', hanHocPhi: '30/9',
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 5.5 },
               'bg-t1bar': { band: 6.0, muon: true }, 'bg-w1': { band: null } } },
@@ -782,20 +936,20 @@ export function duLieuBanDau(): DuLieuDemo {
    * `diem` rỗng và bảng điểm vẫn phải đọc được với ô trống — đó là trạng thái thật của em
    * vào giữa khoá, và cũng là chỗ cô nhìn ra ai đang bị bỏ lại.
    */
-  const HO_SO_LOP_KHAC: [string, number, HoSoHocVien['huong'], string, boolean, string, string][] = [
-    ['hv-11', 7.2, 'up', '14/14', true, '—', '20/10'],
-    ['hv-12', 6.8, 'flat', '13/14', true, 'Dấu câu trong câu ghép', '20/10'],
-    ['hv-13', 7.0, 'up', '14/14', true, '—', '20/10'],
-    ['hv-14', 6.5, 'down', '11/14', true, 'Nghe số liệu ×3', '5/10'],
-    ['hv-15', 7.1, 'flat', '14/14', true, '—', '20/10'],
-    ['hv-16', 6.6, 'up', '12/14', false, 'Phát âm đuôi -ed', '5/10'],
-    ['hv-17', 4.2, 'up', '9/10', true, 'Trật tự từ', '28/9'],
-    ['hv-18', 4.5, 'flat', '10/10', false, 'Thì quá khứ', '28/9'],
+  const HO_SO_LOP_KHAC: [string, number, HoSoHocVien['huong'], boolean, string, string][] = [
+    ['hv-11', 7.2, 'up', true, '—', '20/10'],
+    ['hv-12', 6.8, 'flat', true, 'Dấu câu trong câu ghép', '20/10'],
+    ['hv-13', 7.0, 'up', true, '—', '20/10'],
+    ['hv-14', 6.5, 'down', true, 'Nghe số liệu ×3', '5/10'],
+    ['hv-15', 7.1, 'flat', true, '—', '20/10'],
+    ['hv-16', 6.6, 'up', false, 'Phát âm đuôi -ed', '5/10'],
+    ['hv-17', 4.2, 'up', true, 'Trật tự từ', '28/9'],
+    ['hv-18', 4.5, 'flat', false, 'Thì quá khứ', '28/9'],
   ]
 
-  for (const [id, bandTb, huong, diHoc, coTaiKhoan, loiHayGap, hanHocPhi] of HO_SO_LOP_KHAC) {
+  for (const [id, bandTb, huong, coTaiKhoan, loiHayGap, hanHocPhi] of HO_SO_LOP_KHAC) {
     hoSo.push({
-      id, bandTb, huong, diHoc, coTaiKhoan, loiHayGap, hanHocPhi,
+      id, bandTb, huong, coTaiKhoan, loiHayGap, hanHocPhi,
       mucTieu: mucTieuTu(bandTb), diem: {},
     })
   }
@@ -819,7 +973,6 @@ export function duLieuBanDau(): DuLieuDemo {
        * cô làm hết được trong một buổi tối, nếu không thì danh sách đó cũng vô dụng.
        */
       huong: i % 7 === 3 ? 'down' : i % 2 === 0 ? 'up' : 'flat',
-      diHoc: `${10 + (i % 5)}/14`,
       coTaiKhoan: i % 3 !== 2,
       loiHayGap: ['—', 'Thì quá khứ', 'Giới từ', 'Phát âm đuôi -s'][i % 4]!,
       hanHocPhi: ['30/9', '5/10', '15/10', '20/10'][i % 4]!,
@@ -1050,6 +1203,8 @@ export function duLieuBanDau(): DuLieuDemo {
     },
   ]
 
+  const diemDanh: DiemDanh[] = sinhDiemDanh(lop, CO_THAO)
+
   const luat: LuatMay[] = [
     { id: 'nhac-nop', bat: true, ten: 'Nhắc nộp bài, nhắc lịch',
       phu: 'Chỉ với học viên đã bật tài khoản · 9:00–21:30' },
@@ -1095,6 +1250,7 @@ export function duLieuBanDau(): DuLieuDemo {
     loTrinh,
     hocPhi,
     baiLuyen,
+    diemDanh,
     luat,
     vai: { owner: CO_THAO, assistant: TRO_GIANG, student: 'hv-01' },
   })

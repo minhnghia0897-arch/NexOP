@@ -146,9 +146,10 @@ maybe('quyền theo lớp trên Postgres thật', () => {
   describe('điểm danh — em không thấy em khác', () => {
     beforeEach(async () => {
       await db.query(
-        `insert into attendance (class_id, session_no, student_id, present) values
-           ($1, 1, $2, true), ($1, 1, $3, false)`,
-        [LOP_A, EM_A, EM_B],
+        // `recorded_by` NOT NULL từ 0014: máy không ghi bảng này, nên mọi dòng có người đứng tên.
+        `insert into attendance (class_id, session_no, student_id, present, recorded_by) values
+           ($1, 1, $2, true, $4), ($1, 1, $3, false, $4)`,
+        [LOP_A, EM_A, EM_B, CO],
       )
     })
 
@@ -200,13 +201,15 @@ maybe('quyền theo lớp trên Postgres thật', () => {
   describe('điểm danh không ghi trùng', () => {
     it('một em một buổi chỉ một dòng', async () => {
       await db.query(
-        `insert into attendance (class_id, session_no, student_id, present) values ($1,1,$2,true)`,
-        [LOP_A, EM_A],
+        `insert into attendance (class_id, session_no, student_id, present, recorded_by)
+           values ($1,1,$2,true,$3)`,
+        [LOP_A, EM_A, CO],
       )
       await expect(
         db.query(
-          `insert into attendance (class_id, session_no, student_id, present) values ($1,1,$2,false)`,
-          [LOP_A, EM_A],
+          `insert into attendance (class_id, session_no, student_id, present, recorded_by)
+             values ($1,1,$2,false,$3)`,
+          [LOP_A, EM_A, CO],
         ),
       ).rejects.toThrow(/attendance_one_per_session/)
     })

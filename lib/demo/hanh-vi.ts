@@ -18,6 +18,7 @@ import {
   duyetNhanDe,
   doiVai,
   duyetBaiGiao,
+  ghiDiemDanh,
   giaoBai,
   guiNhanXet,
   lamBaiLuyen,
@@ -136,6 +137,20 @@ export function datDapAnHanhVi(
 export function luuDeSoHoaHanhVi(de: Omit<De, 'id'>): { loi?: string } {
   if (!de.ten.trim()) return { loi: 'Đề chưa có tên.' }
   return thu(() => void luuDeSoHoa(vaiHienTai(), de))
+}
+
+/**
+ * Cô — hoặc trợ giảng — lưu điểm danh một buổi.
+ *
+ * Không có `if vai === ...` ở đây: một hàm, `can()` quyết. Trợ giảng đi qua được vì
+ * `attendance.assistant` là `auto`; em bấm vào thì bị chặn ở mức `own` (chỉ xem).
+ */
+export function ghiDiemDanhHanhVi(y: {
+  lopId: string
+  buoiNo: number
+  vang: { hocVienId: string; phep: boolean }[]
+}): { loi?: string } {
+  return thu(() => ghiDiemDanh(vaiHienTai(), y))
 }
 
 export function luuGhiChuHanhVi(hocVienId: string, ghiChu: string): { loi?: string } {

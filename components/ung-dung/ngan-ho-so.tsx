@@ -91,20 +91,38 @@ export function NganHoSo({
             </div>
           </div>
 
-          <div className="mb-4 grid grid-cols-3 gap-2.5">
+          {/* Bốn ô, không ba: "đi học" là con số cô hỏi ngay sau band, và nó không nằm
+              được ở đâu khác trong ngăn này. */}
+          <div className="mb-4 grid grid-cols-4 gap-2.5">
             {[
               [em.bandTb > 0 ? em.bandTb.toFixed(1) : '—', 'Writing hiện tại'],
               [em.mucTieu ? em.mucTieu.toFixed(1) : '—', 'mục tiêu'],
+              [
+                em.diHoc && em.diHoc.tong > 0 ? `${em.diHoc.coMat}/${em.diHoc.tong}` : '—',
+                'buổi đi học',
+              ],
               [em.hanHocPhi, 'học phí đến'],
             ].map(([so, nhan]) => (
               <div key={nhan} className="rounded-l bg-field px-3.5 py-3">
-                <b className="block font-display text-[22px] font-semibold leading-7 tabular-nums text-text">
+                <b className="block font-display text-[19px] font-semibold leading-7 tabular-nums text-text">
                   {so}
                 </b>
                 <small className="text-[12px] text-text-2">{nhan}</small>
               </div>
             ))}
           </div>
+
+          {/*
+            Vắng liên tiếp hiện thành MỘT CÂU, không thành một con số nữa trong lưới ô.
+            "Vắng 2 buổi" là trạng thái cần cô làm gì đó; xếp nó cạnh band và học phí là
+            hạ nó xuống ngang một số liệu, và cô quét qua không dừng lại.
+          */}
+          {em.vangLienTiep !== null && em.vangLienTiep >= 2 ? (
+            <div className="mb-4 rounded-m border border-st-orange-line bg-callout-orange px-3.5 py-2.5 text-[13px] leading-[21px] text-ta-text">
+              Vắng <b>{em.vangLienTiep} buổi liên tiếp</b> tính từ buổi gần nhất — em đang
+              rời lớp, không phải hay có việc. Cô gọi trước khi nhắc bài.
+            </div>
+          ) : null}
 
           <h5 className="mb-2 font-display text-[12px] font-semibold text-text-2">Lỗi lặp</h5>
           {(em.loiLap ?? []).length === 0 ? (

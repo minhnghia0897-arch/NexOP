@@ -163,9 +163,15 @@ Việc chạy qua hàng đợi, **không** gọi trực tiếp. Nguồn kích ho
 | | ② lưu cặp cô sửa | `teacher_edit.create` | 1 |
 | | ③ lỗi lặp ≥3 → sinh bài luyện | `practice.propose` | 3 |
 | | ④ báo em có nhận xét mới | `notify.auto` | 1 |
-| cron 07:00 | rà `fees` + `profiles` + `attendance` | `proposal.create` | 3 |
+| cron 07:00 | rà `fees` + `profiles` + ~~`attendance`~~† | `proposal.propose`† | 3 |
 | cron mỗi đêm | quét `expires_at` | `draft.auto:expire`, `proposal.auto:expire` | 3 |
 | cron mỗi đêm | quét lời mời quá 7 ngày | `membership.auto:expire` | 1 |
+
+† Hai chỗ đã sửa lại cho khớp `can()`, xem §8 câu 8. `proposal.create` là tên sai: mức
+`propose` của vai máy không bao gồm động từ `create`, nên sự kiện tên đó không bao giờ qua
+được cửa quyền. Và `attendance` gạch đi vì `attendance.system` là `none` — máy chưa đọc được
+bảng điểm danh, nên luật "nhắc nhẹ em vắng không phép sau 21:00" **chưa chạy**. Cô chốt câu 8
+thì mở lại.
 
 Nhắc chỉ gửi cho học viên **đã có tài khoản**, trong khung **9:00–21:30**. Ngoài khung → dời tới 9:00 hôm sau.
 Không có dòng nào trong bảng này sinh ra `*.send` cho tin dính tiền — đó là việc của cô.
@@ -345,6 +351,8 @@ Lớp mới chỉ mở khi đủ N người (cô đặt N). Học phí còn lạ
 | 5 | Em học 2 lớp của cùng một cô: một hồ sơ hay hai? (`SRS` nói hồ sơ xuyên lớp → một; xác nhận) | 7 |
 | 6 | ~~`permissions.json` thiếu 5 thực thể~~ — **đã áp §8.1** ngày 9/9 để dựng bài luyện của em. Cô xem lại bảng ở §8.1; đổi ý thì sửa `docs/permissions.json`, không sửa chỗ khác. | (đã mở) |
 | 7 | **Trợ giảng có mức `propose` ở `assignment` nhưng không có lối vào nào hợp lệ.** `path` là `none` (không thấy lộ trình) và `exam` là `read` giới hạn "chỉ đề đã giao" — nên trợ giảng không chọn được đề nào để đề xuất giao. Khả năng có, đường đi không. Hai cách: (a) cho trợ giảng "giao lại" một bài lớp ĐÃ có (lần 2) — hợp `exam: read`; (b) hạ `assignment` của trợ giảng xuống `read` cho khớp thực tế. Cần cô chốt. | 1 |
+| 8 | **§2 nói máy rà `attendance` mỗi 7:00, nhưng ma trận không cho.** Dòng cron ở §2 ghi "rà `fees` + `profiles` + `attendance` → `proposal.create`". Hai chỗ sai: (a) `attendance.system` là `none` ở §8.1, nên `can()` chặn cả `attendance.view` của vai máy — máy không đọc được bảng điểm danh; (b) `proposal.system` là `propose`, mà mức `propose` không bao gồm động từ `create`, nên tên sự kiện `proposal.create` do máy sinh không bao giờ qua được `can()` — phải là `proposal.propose`. Hệ quả thấy được: luật "vắng không phép + có tài khoản → nhắc nhẹ sau 21:00" của bản mẫu **chưa chạy**, và ngăn điểm danh đang nói thẳng ra như thế. Hai cách: (a) nâng `attendance.system` lên `read` (máy đọc để nháp nhắc và tính "đi học đều", vẫn KHÔNG `create`/`update` — ai có mặt thì chỉ người trong phòng biết); (b) giữ `none` và xoá `attendance` khỏi dòng cron ở §2 + khỏi ARCHITECTURE §4 lớp 4, tức là bỏ luôn luật nhắc vắng. Em nghiêng về (a): `read` là mức đúng cho "được xem để nháp, không được ghi sự thật". Cần cô chốt. | 7 |
+| 9 | **`attendance` là "chỉ thêm" ở ARCHITECTURE §3, nhưng bảng thật không cho thêm.** Migration 0004 đặt `unique (class_id, session_no, student_id)`, nên điểm danh lại một buổi KHÔNG thể là thêm dòng — ràng buộc chặn dòng thứ hai. Hai câu đó không cùng đúng được. Em đã chọn **giữ ràng buộc, sửa tại chỗ** (0014 + bản demo), vì ràng buộc ấy đang chặn một lỗi thật: điểm danh hai lần một buổi thì mọi con số "đi học đều" đếm buổi đó hai lần. Lịch sử "cô đã đổi ý" thì `events` giữ, và giữ chắc hơn — `events` có trigger chặn cả UPDATE lẫn DELETE (0001), còn `attendance` không có gì ép. Nếu cô muốn lịch sử nằm TRONG bảng sự thật thì phải bỏ ràng buộc và thêm cột `supersedes_id`; khi đó sửa ARCHITECTURE §3 cùng lúc. | (đã chọn, chờ xác nhận) |
 
 ### §8.1 Năm dòng còn thiếu — đã áp dụng 9/9/2026
 
