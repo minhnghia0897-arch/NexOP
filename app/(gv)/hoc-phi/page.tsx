@@ -1,9 +1,13 @@
 'use client'
 
+import { useState } from 'react'
+
 import { Avatar, DauMan, Wrap } from '@/components/ung-dung/khung'
 import { ChiSo, KhoiTrong, Nhan, ViSao } from '@/components/ung-dung/phan-tu'
+import { DaiTab } from '@/components/ung-dung/tab-man'
+import { TinHocPhi } from '@/components/ung-dung/tin-hoc-phi'
 import { useKho } from '@/lib/demo/dung-kho'
-import { duLieu, vaiHienTai } from '@/lib/demo/kho'
+import { duLieu, tinHocPhiChoDuyet, vaiHienTai } from '@/lib/demo/kho'
 
 function tien(n: number): string {
   return n.toLocaleString('vi-VN')
@@ -17,6 +21,7 @@ function tien(n: number): string {
  */
 export default function HocPhiMan() {
   useKho()
+  const [tab, datTab] = useState('sap-han')
   const vai = vaiHienTai()
   const du = duLieu()
 
@@ -39,6 +44,9 @@ export default function HocPhiMan() {
   const sapHan = du.hocPhi.filter((h) => h.trangThai === 'sap_han')
   const tongCho = [...quaHan, ...sapHan].reduce((t, h) => t + h.soTien, 0)
 
+  const tin = tinHocPhiChoDuyet(vai)
+  const hanTheoEm = Object.fromEntries(du.hocPhi.map((h) => [h.hocVienId, h.hanDong]))
+
   return (
     <>
       <DauMan
@@ -46,7 +54,28 @@ export default function HocPhiMan() {
         phu="Nền tảng không thu tiền hộ. Màn này chỉ giúp cô biết nhắc ai, và nhắc thế nào."
         song={`${quaHan.length} quá hạn · ${sapHan.length} sắp tới hạn`}
       />
+      <DaiTab
+        tabs={[
+          { id: 'sap-han', ten: 'Sắp đến hạn', dem: tin.length },
+          { id: 'thang-nay', ten: 'Tháng này', dem: du.hocPhi.length },
+        ]}
+        dang={tab}
+        doi={datTab}
+      />
       <Wrap>
+        {tab === 'sap-han' ? (
+          <>
+            <ViSao mau="orange">
+              Máy rà lúc 7:00 và nháp tin theo tình trạng THẬT của từng em — ba em ba chuyện
+              khác nhau, không dùng chung mẫu. Em đang buông thì tin không nhắc học phí: mục
+              tiêu đổi từ thu tiền sang giữ người. Cô duyệt mới gửi, và gửi lúc 9:00.
+            </ViSao>
+            <div className="mt-5">
+              <TinHocPhi tin={tin} taiKhoan={du.taiKhoan} han={hanTheoEm} />
+            </div>
+          </>
+        ) : (
+        <>
         <div className="mb-5 grid gap-4 sm:grid-cols-3">
           <ChiSo
             nhan="Đang chờ thu"
@@ -108,6 +137,8 @@ export default function HocPhiMan() {
             )
           })}
         </div>
+        </>
+        )}
       </Wrap>
     </>
   )

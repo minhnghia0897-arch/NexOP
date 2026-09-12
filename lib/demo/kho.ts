@@ -30,6 +30,7 @@ import { can, type Actor, type TargetObject } from '@/lib/auth/can'
 import {
   chamTracNghiem,
   duLieuBanDau,
+  nhapTinHocPhi,
   type DuLieuDemo,
   type LoiDanhDau,
   type TaiKhoan,
@@ -380,6 +381,135 @@ export function mayChamCaLoTracNghiem(baiGiaoId: string): number {
   const nop = du.baiNop.filter((b) => b.baiGiaoId === baiGiaoId && b.nopLuc !== null)
   for (const b of nop) mayChamTracNghiem(b.id)
   return nop.length
+}
+
+/**
+ * Máy rà học phí và nháp tin — bước 7, cron 7:00 sáng. **Lớp 3.**
+ *
+ * Động từ là `proposal.propose`, KHÔNG phải `proposal.create` như `LOGIC` §2 ghi: mức
+ * `propose` của vai máy không bao gồm `create`, nên cái tên ở §2 không bao giờ qua được
+ * `can()`. Đã ghi thành §8 câu 8.
+ *
+ * Máy KHÔNG đọc bảng điểm danh ở đây, dù §2 nói có: `attendance.system` là `none`. Tín hiệu
+ * "em đang buông" lấy từ hồ sơ (`huong`) và bài nộp — hai thứ máy đọc được thật. Cũng ở §8
+ * câu 8.
+ */
+export function mayNhapTinHocPhi(hocVienId: string): void {
+  const du = duLieu()
+  const h = du.hoSo.find((x) => x.id === hocVienId)
+  const hp = du.hocPhi.find((x) => x.hocVienId === hocVienId)
+  const tk = du.taiKhoan.find((x) => x.id === hocVienId)
+  const lop = du.lop.find((l) => l.hocVienIds.includes(hocVienId))
+  if (!h || !hp || !tk) throw new Error('Không đủ dữ liệu để nháp tin')
+
+  /* Lớp cao hơn để mời lên: lớp `opening` mà em CHƯA học. Không có thì không đề nghị lên lớp
+     — mời em vào một lớp không tồn tại là tin tệ hơn không gửi gì. */
+  const lopCaoHon =
+    du.lop.find((l) => l.trangThai === 'opening' && !l.hocVienIds.includes(hocVienId))?.ten ??
+    du.lop.find((l) => l.trangThai === 'opening')?.ten ??
+    null
+
+  const nhap = nhapTinHocPhi(tk.ten, h, hp, lopCaoHon)
+
+  ghi(
+    actorMay(lop?.id ?? 'lop-65'),
+    'proposal.propose',
+    { type: 'proposal', tenantId: du.tenant.id, classId: lop?.id, ownerId: hocVienId },
+    // Không ghi NỘI DUNG tin vào nhật ký: tin nói về band và tiền của một em cụ thể.
+    { hoc_vien: hocVienId, loai: nhap.loai },
+    [du.vai.owner],
+    (d) => {
+      const moi = { id: `dx-${hocVienId}`, hetHan: batDauNgay(new Date(Date.now() + 7 * 864e5).toISOString()), ...nhap }
+      const cu = d.deXuat.findIndex((x) => x.hocVienId === hocVienId)
+      if (cu >= 0) d.deXuat[cu] = moi
+      else d.deXuat.push(moi)
+    },
+  )
+}
+
+/** Tin học phí cô chưa duyệt. Trợ giảng không thấy — `proposal` là mức `none` với vai đó. */
+export function tinHocPhiChoDuyet(vai: VaiDemo): import('./du-lieu').DeXuat[] {
+  const du = duLieu()
+  const actor = actorCuaVai(vai)
+
+  return du.deXuat.filter((d) => {
+    if (d.daDuyet) return false
+    const lop = du.lop.find((l) => l.hocVienIds.includes(d.hocVienId))
+    return can(actor, 'proposal.view', {
+      type: 'proposal',
+      tenantId: du.tenant.id,
+      classId: lop?.id,
+      ownerId: d.hocVienId,
+    })
+  })
+}
+
+/**
+ * Cô sửa tin trước khi gửi. Nháp là lớp 3 nên sửa được — chưa tới tay em.
+ *
+ * Hỏi `proposal.propose`: cô có `full` nên qua, và nếu sau này cô muốn cấp cho trợ giảng thì
+ * mức `propose` là đúng mức cho "soạn được, không gửi được". Hiện `proposal.assistant` là
+ * `none` vì đề xuất hay dính tiền, nên trợ giảng vẫn bị chặn.
+ */
+export function suaTinHocPhi(vai: VaiDemo, hocVienId: string, noiDung: string): void {
+  const du = duLieu()
+  const d0 = du.deXuat.find((x) => x.hocVienId === hocVienId)
+  if (!d0) throw new Error('Không có tin nháp cho em này')
+  if (d0.daDuyet) throw new Error('Tin đã xếp lịch gửi, không sửa được nữa')
+  const lop = du.lop.find((l) => l.hocVienIds.includes(hocVienId))
+
+  ghi(
+    actorCuaVai(vai),
+    'proposal.propose',
+    { type: 'proposal', tenantId: du.tenant.id, classId: lop?.id, ownerId: hocVienId },
+    { hoc_vien: hocVienId, dai: noiDung.length },
+    [du.vai.owner],
+    (d) => {
+      const x = d.deXuat.find((y) => y.hocVienId === hocVienId)!
+      x.noiDung = noiDung
+    },
+  )
+}
+
+/**
+ * Cô duyệt và XẾP LỊCH GỬI một tin học phí. Lớp 3 → lớp 1.
+ *
+ * `fee.message.send` nằm trong `send_actions_owner_only`, nên cửa 4 của `can()` chặn cả trợ
+ * giảng lẫn máy — không phải vì hàm này kiểm vai, mà vì chính sách nói thế. Đây là câu số 2
+ * của CLAUDE.md: "Máy chỉ nháp và đề xuất. Cô mới gửi."
+ *
+ * Gửi lúc **9:00**, không gửi ngay: `OPERATIONS` ghi "tin gửi 9:00 sau khi cô duyệt", và
+ * `LOGIC` §2 giới hạn khung 9:00–21:30. Cô duyệt lúc 23h thì tin vẫn tới em sáng mai — nhắc
+ * học phí lúc nửa đêm là tin đòi tiền, không phải tin của cô.
+ */
+export function duyetTinHocPhi(vai: VaiDemo, hocVienId: string): void {
+  const du = duLieu()
+  const d0 = du.deXuat.find((x) => x.hocVienId === hocVienId)
+  if (!d0) throw new Error('Không có tin nháp cho em này')
+  const lop = du.lop.find((l) => l.hocVienIds.includes(hocVienId))
+
+  ghi(
+    actorCuaVai(vai),
+    'fee.message.send',
+    { type: 'fee', tenantId: du.tenant.id, classId: lop?.id, ownerId: hocVienId },
+    { hoc_vien: hocVienId, loai: d0.loai, gui_luc: '09:00' },
+    // Em thấy tin này — nhưng chỉ tin của em. Không có id em nào khác trong danh sách.
+    [du.vai.owner, hocVienId],
+    (d) => {
+      const x = d.deXuat.find((y) => y.hocVienId === hocVienId)!
+      x.daDuyet = true
+    },
+  )
+}
+
+/** Cô duyệt cả cụm — "Duyệt cả 3" của bản mẫu. Mỗi tin một sự kiện. */
+export function duyetCaCumTinHocPhi(vai: VaiDemo): number {
+  let dem = 0
+  for (const d of tinHocPhiChoDuyet(vai)) {
+    duyetTinHocPhi(vai, d.hocVienId)
+    dem += 1
+  }
+  return dem
 }
 
 // ───────────────────────────── việc của người ─────────────────────────────
