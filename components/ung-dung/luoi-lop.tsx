@@ -46,7 +46,15 @@ function Dong({ nhan, gia }: { nhan: string; gia: string }) {
   )
 }
 
-export function LuoiLop({ the }: { the: TheLop[] }) {
+export function LuoiLop({
+  the,
+  moDiemDanh,
+}: {
+  the: TheLop[]
+  /** Không truyền = vai này không điểm danh được, nút hiện-mà-tắt. Quyền do `can()` quyết,
+      không do thẻ này đoán. */
+  moDiemDanh?: (lopId: string) => void
+}) {
   return (
     <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
       {the.map((t) => {
@@ -138,10 +146,13 @@ export function LuoiLop({ the }: { the: TheLop[] }) {
                   <span className="w-full text-center">{sapMo ? 'Xem lớp' : 'Bảng tin'}</span>
                 </Nut>
               </Link>
-              {/* Điểm danh: `attendance` có chính sách thật, nhưng màn điểm danh chưa dựng.
-                  Hiện-mà-tắt nói đúng sự thật thay vì dẫn vào màn trống. */}
+              {/* Lớp sắp mở chưa có buổi nào để điểm danh — nút đổi thành "Mời lên lớp",
+                  và cái đó thì chưa dựng, nên vẫn hiện-mà-tắt. */}
               <span className="flex-1">
-                <Nut disabled>
+                <Nut
+                  disabled={sapMo || !moDiemDanh}
+                  onClick={moDiemDanh ? () => moDiemDanh(t.lop.id) : undefined}
+                >
                   <span className="w-full text-center">
                     {sapMo ? 'Mời lên lớp' : 'Điểm danh'}
                   </span>

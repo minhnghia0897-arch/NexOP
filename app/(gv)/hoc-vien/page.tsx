@@ -20,7 +20,7 @@ import { Avatar, Khoi, KhoiTrong, Nhan, Nut, ThanhTienDo } from '@/components/un
 import { DaiTab } from '@/components/ung-dung/tab-man'
 import { useKho } from '@/lib/demo/dung-kho'
 import type { HoSoHocVien } from '@/lib/demo/du-lieu'
-import { duLieu, vaiHienTai } from '@/lib/demo/kho'
+import { duLieu, vangLienTiep, vaiHienTai } from '@/lib/demo/kho'
 
 const COT = 'grid min-w-[900px] grid-cols-[1.9fr_1.2fr_84px_84px_112px_1.3fr_124px] gap-4'
 
@@ -31,6 +31,20 @@ const COT = 'grid min-w-[900px] grid-cols-[1.9fr_1.2fr_84px_84px_112px_1.3fr_124
  * khoản chưa, và đã đạt mục tiêu chưa.
  */
 function trangThai(h: HoSoHocVien): { chu: string; mau: 'green' | 'blue' | 'orange' | 'red' } {
+  /*
+   * Vắng liên tiếp xét TRƯỚC band, và đó là thứ tự có lý.
+   *
+   * Bản mẫu: "Vắng 2 buổi liên tiếp → tự vào Cần chú ý". Em vắng hai buổi cuối thì band
+   * của em là số cũ — nó nói về những bài em còn đang học, không nói về việc em đang rời
+   * lớp. Xếp band lên trước thì một em 7.1 vắng hai buổi đọc thành "Vượt mục tiêu".
+   *
+   * Liên tiếp chứ không phải tổng: vắng tám buổi rải cả khoá là em hay có việc, và cô xử
+   * lý chuyện đó khác.
+   */
+  const lienTiep = vangLienTiep(h.id)
+  if (lienTiep >= 2) {
+    return { chu: `Vắng ${lienTiep} buổi`, mau: h.coTaiKhoan ? 'orange' : 'red' }
+  }
   if (h.bandTb === 0) return { chu: 'Chưa có bài', mau: 'blue' }
   if (h.huong === 'down' && !h.coTaiKhoan) return { chu: 'Đang buông', mau: 'red' }
   if (h.huong === 'down') return { chu: 'Cần chú ý', mau: 'orange' }
@@ -69,7 +83,10 @@ export default function HocVien() {
   const mau = (id: string) => du.taiKhoan.find((t) => t.id === id)?.mau ?? 'off'
   const lopCua = (id: string) => du.lop.find((l) => l.hocVienIds.includes(id))?.ten ?? '—'
 
-  const canChuY = trongTam.filter((h) => h.huong === 'down')
+  /* "Cần chú ý" gồm CẢ hai đường vào: band đang tụt, và vắng 2 buổi liên tiếp. Chỉ lọc
+     theo band thì em vắng hai buổi cuối mà điểm còn cao không xuất hiện ở đâu — và đó
+     đúng là em cô cần gọi sớm nhất. */
+  const canChuY = trongTam.filter((h) => h.huong === 'down' || vangLienTiep(h.id) >= 2)
   const chuaBat = trongTam.filter((h) => !h.coTaiKhoan)
   const sapHetPhi = du.hocPhi.filter(
     (f) => f.trangThai !== 'da_dong' && trongTam.some((h) => h.id === f.hocVienId),
@@ -120,7 +137,7 @@ export default function HocVien() {
                   <i
                     aria-hidden
                     className={`h-2.5 w-2.5 flex-none rounded-full ${
-                      h.coTaiKhoan ? 'bg-st-orange' : 'bg-st-red'
+                      h.coTaiKhoan && vangLienTiep(h.id) < 2 ? 'bg-st-orange' : 'bg-st-red'
                     }`}
                   />
                   <div className="min-w-0 flex-1">
@@ -128,7 +145,11 @@ export default function HocVien() {
                       {ten(h.id)} · {lopCua(h.id)}
                     </b>
                     <small className="text-[13px] leading-[19px] text-text-2">
-                      {h.loiHayGap !== '—' ? `${h.loiHayGap}. ` : ''}
+                      {vangLienTiep(h.id) >= 2
+                        ? `Vắng ${vangLienTiep(h.id)} buổi liên tiếp. `
+                        : h.loiHayGap !== '—'
+                          ? `${h.loiHayGap}. `
+                          : ''}
                       {h.coTaiKhoan
                         ? 'Có tài khoản nên máy nhắc được.'
                         : 'Chưa có tài khoản nên không ai nhắc.'}{' '}

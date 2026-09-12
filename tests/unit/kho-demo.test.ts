@@ -13,6 +13,11 @@ import {
   KhongDuQuyen,
   actorCuaVai,
   baiCanCham,
+  buoiKeTiep,
+  diHocCuaEm,
+  diHocTrongLop,
+  ghiDiemDanh,
+  vangLienTiep,
   dangBai,
   datLai,
   datLuat,
@@ -37,7 +42,7 @@ import {
   suaNhap,
 } from '@/lib/demo/kho'
 import { duLieuBanDau } from '@/lib/demo/du-lieu'
-import { baiCuaEm } from '@/lib/demo/em'
+import { baiCuaEm, diHocEm } from '@/lib/demo/em'
 import { can, type Actor } from '@/lib/auth/can'
 
 const BAI = 'bn-hv-01'
@@ -641,5 +646,222 @@ describe('bản lưu cũ không được làm vỡ bản mới', () => {
 
     expect(duLieu().baiDang).toHaveLength(0)
     expect(truoc).toBeGreaterThan(0)
+  })
+})
+
+/**
+ * Điểm danh — sự thật lớp 1, và mọi con số đi học đều tính lại từ nó.
+ *
+ * Trước đây hồ sơ mang sẵn chuỗi `diHoc: '28/30'`. Con số tổng kết không có gì đỡ bên dưới
+ * thì thẻ lớp và hồ sơ lệch nhau được mà không chỗ nào phát hiện — nên phần lớn test dưới
+ * đây soi đúng chỗ đó: bảng sự thật đổi thì con số phải đổi theo.
+ */
+describe('điểm danh: cô và trợ giảng ghi, máy không chạm, em chỉ xem của mình', () => {
+  beforeEach(() => {
+    datLai()
+  })
+
+  it('cô ghi được, và sự kiện ghi TRƯỚC khi bảng đổi', () => {
+    const truoc = duLieu().diemDanh.length
+    const buoi = buoiKeTiep('lop-65')
+
+    ghiDiemDanh('owner', {
+      lopId: 'lop-65',
+      buoiNo: buoi,
+      vang: [{ hocVienId: 'hv-02', phep: false }],
+    })
+
+    expect(duLieu().diemDanh).toHaveLength(truoc + 1)
+
+    const ev = nhatKy()[0]!
+    expect(ev.action).toBe('attendance.create')
+    expect(ev.objectType).toBe('attendance')
+    expect(ev.classId).toBe('lop-65')
+    expect(ev.payload).toMatchObject({ buoi_no: buoi, co_mat: 17 })
+  })
+
+  it('trợ giảng ghi THẲNG — mức `auto` không phải đề xuất', () => {
+    const buoi = buoiKeTiep('lop-65')
+    ghiDiemDanh('assistant', {
+      lopId: 'lop-65',
+      buoiNo: buoi,
+      vang: [{ hocVienId: 'hv-03', phep: true }],
+    })
+
+    const moi = duLieu().diemDanh.find((d) => d.buoiNo === buoi && d.lopId === 'lop-65')
+    expect(moi?.ghiBoi).toBe(duLieu().vai.assistant)
+    // Không có bước duyệt nào ở giữa: dòng vào bảng sự thật ngay.
+    expect(moi?.vang.map((v) => v.hocVienId)).toEqual(['hv-03'])
+    expect(nhatKy()[0]!.actorRole).toBe('assistant')
+  })
+
+  it('em bấm vào thì bị chặn — `own` ở attendance chỉ cho XEM', () => {
+    expect(() =>
+      ghiDiemDanh('student', { lopId: 'lop-65', buoiNo: 99, vang: [] }),
+    ).toThrow(KhongDuQuyen)
+  })
+
+  it('máy không đọc, không ghi bảng điểm danh', () => {
+    const o = { type: 'attendance', tenantId: duLieu().tenant.id, classId: 'lop-65' }
+    expect(can(actorMay('lop-65'), 'attendance.create', o)).toBe(false)
+    // Kể cả `view`: đây là chỗ máy không có việc gì, không phải chỗ quên cấp.
+    expect(can(actorMay('lop-65'), 'attendance.view', o)).toBe(false)
+  })
+
+  it('em vắng không thuộc lớp thì bị lọc bỏ, không vào bảng sự thật', () => {
+    const buoi = buoiKeTiep('lop-65')
+    ghiDiemDanh('owner', {
+      lopId: 'lop-65',
+      buoiNo: buoi,
+      vang: [
+        { hocVienId: 'hv-02', phep: false },
+        { hocVienId: 'hv-l55-1', phep: false }, // em lớp 5.5
+        { hocVienId: 'khong-co-that', phep: false },
+      ],
+    })
+
+    const moi = duLieu().diemDanh.find((d) => d.buoiNo === buoi && d.lopId === 'lop-65')
+    expect(moi?.vang.map((v) => v.hocVienId)).toEqual(['hv-02'])
+    expect(moi?.coMat).toHaveLength(17)
+  })
+
+  it('nhật ký điểm danh KHÔNG tới em — visibility chỉ cô và người ghi', () => {
+    ghiDiemDanh('owner', {
+      lopId: 'lop-65',
+      buoiNo: buoiKeTiep('lop-65'),
+      vang: [{ hocVienId: 'hv-02', phep: false }],
+    })
+
+    const ev = nhatKy()[0]!
+    expect(ev.visibility).toContain(duLieu().vai.owner)
+    // Em vắng KHÔNG được nhìn dòng này: nó kể ai vắng trong cả lớp.
+    expect(ev.visibility).not.toContain('hv-02')
+    expect(ev.visibility).not.toContain(duLieu().vai.student)
+  })
+
+  it('điểm danh lại một buổi: bảng vẫn MỘT dòng, nhật ký thành HAI', () => {
+    const buoi = 5
+    const soCu = duLieu().diemDanh.length
+
+    ghiDiemDanh('owner', { lopId: 'lop-65', buoiNo: buoi, vang: [] })
+    ghiDiemDanh('owner', {
+      lopId: 'lop-65',
+      buoiNo: buoi,
+      vang: [{ hocVienId: 'hv-01', phep: true }],
+    })
+
+    /*
+     * Không thêm dòng nào: `unique (class_id, session_no, student_id)` của migration 0004
+     * chặn dòng thứ hai cho cùng một buổi, nên bản demo phải sửa tại chỗ y như bản thật.
+     */
+    expect(duLieu().diemDanh).toHaveLength(soCu)
+    expect(
+      duLieu().diemDanh.filter((d) => d.lopId === 'lop-65' && d.buoiNo === buoi),
+    ).toHaveLength(1)
+
+    // Nhưng lịch sử "cô đã đổi ý" còn đủ trong nhật ký — chỗ duy nhất chỉ-thêm thật.
+    expect(
+      nhatKy().filter(
+        (e) => e.objectType === 'attendance' && e.payload['buoi_no'] === buoi,
+      ),
+    ).toHaveLength(2)
+
+    // Và mỗi buổi vẫn đếm MỘT lần.
+    const d = diHocTrongLop('lop-65', 'hv-01')
+    expect(d.tong).toBe(31)
+    expect(d.coMat).toBe(28) // 29 trước đó, buổi 5 giờ thành vắng
+  })
+
+  it('hai dòng cùng một buổi vẫn chỉ đếm MỘT lần', () => {
+    /*
+     * Test này có vì bản đọc gom theo `buoiNo`, và nếu không có nó thì dòng gom đó là code
+     * không đường nào chạy tới: `ghiDiemDanh` sửa tại chỗ nên không bao giờ sinh trùng.
+     *
+     * Dựng trùng bằng tay đúng như cách nó có thể vào thật — một bản lưu cũ, hay một lần
+     * nhập dữ liệu tay. Không có lớp chắn này thì mọi con số "đi học đều" đếm buổi đó hai
+     * lần, và con số sai vẫn trông hợp lý nên không ai soi lại.
+     */
+    const truoc = diHocTrongLop('lop-65', 'hv-01')
+    const mau = duLieu().diemDanh.find((d) => d.lopId === 'lop-65' && d.buoiNo === 7)!
+    duLieu().diemDanh.push({ ...mau, id: `${mau.id}-trung` })
+
+    expect(diHocTrongLop('lop-65', 'hv-01')).toEqual(truoc)
+    expect(buoiKeTiep('lop-65')).toBe(32)
+  })
+
+  it('"đi học đều" của thẻ lớp đổi theo bảng sự thật, không phải số cắm sẵn', () => {
+    const truoc = soLieuLop('owner').find((t) => t.lop.id === 'lop-65')!.diHocDeu!
+
+    // Cả lớp vắng một buổi mới.
+    ghiDiemDanh('owner', {
+      lopId: 'lop-65',
+      buoiNo: buoiKeTiep('lop-65'),
+      vang: duLieu().lop.find((l) => l.id === 'lop-65')!.hocVienIds.map((id) => ({
+        hocVienId: id,
+        phep: false,
+      })),
+    })
+
+    expect(soLieuLop('owner').find((t) => t.lop.id === 'lop-65')!.diHocDeu!).toBeLessThan(truoc)
+  })
+
+  it('lớp chưa khai giảng không mượn số đi học của lớp khác', () => {
+    // hv-02 và hv-07 đã đăng ký lớp 7.0+ nhưng vẫn đang học lớp 6.5.
+    expect(diHocCuaEm('hv-02').tong).toBeGreaterThan(0)
+    expect(diHocTrongLop('lop-moi', 'hv-02').tong).toBe(0)
+
+    const the = soLieuLop('owner').find((t) => t.lop.id === 'lop-moi')!
+    expect(the.diHocDeu).toBeNull()
+    // Và chưa dạy buổi nào thì không có "Buổi 1/36" trên thẻ.
+    expect(the.buoiDaDay).toBeNull()
+  })
+
+  it('"buổi đã dạy" đếm buổi ĐÃ ĐIỂM DANH, không đếm buổi có bài giao', () => {
+    // Lớp Speaking đã dạy 12 buổi nhưng bài giao chỉ tới buổi 6.
+    const the = soLieuLop('owner').find((t) => t.lop.id === 'lop-speak')!
+    expect(the.buoiDaDay).toBe(12)
+    expect(buoiKeTiep('lop-speak')).toBe(13)
+  })
+
+  it('vắng liên tiếp đếm LIÊN TIẾP, không đếm tổng', () => {
+    // Gia Bảo vắng 8 buổi, hai buổi cuối liên tiếp.
+    expect(diHocTrongLop('lop-65', 'hv-09')).toEqual({ coMat: 23, tong: 31 })
+    expect(vangLienTiep('hv-09')).toBe(2)
+
+    // Đức Thắng vắng 4 buổi nhưng chỉ buổi cuối — không phải em đang rời lớp.
+    expect(vangLienTiep('hv-05')).toBe(1)
+
+    // Thu Hà đi đủ.
+    expect(vangLienTiep('hv-02')).toBe(0)
+  })
+
+  it('em vào lớp muộn có MẪU SỐ của riêng em', () => {
+    // Tuấn Kiệt vào từ buổi 18: 14 buổi, không phải 31.
+    expect(diHocTrongLop('lop-65', 'hv-11').tong).toBe(14)
+    // Đăng Khôi vào từ buổi 22: 10 buổi.
+    expect(diHocTrongLop('lop-65', 'hv-17').tong).toBe(10)
+    // Mười bảy buổi trước khi em vào KHÔNG phải buổi em nghỉ.
+    expect(vangLienTiep('hv-11')).toBe(0)
+  })
+
+  it('em đọc được điểm danh CỦA MÌNH, không đọc của bạn', () => {
+    expect(diHocEm('hv-01', 'hv-01')).toEqual({ coMat: 29, tong: 31 })
+    expect(diHocEm('hv-01', 'hv-02')).toBeNull()
+    expect(diHocEm('hv-01', 'hv-l55-1')).toBeNull()
+  })
+
+  it('ngăn hồ sơ: cô và trợ giảng thấy số đi học, và thấy cảnh báo vắng liên tiếp', () => {
+    for (const vai of ['owner', 'assistant'] as const) {
+      const ho = hoSoDayDu(vai, 'hv-09')!
+      expect(ho.diHoc).toEqual({ coMat: 23, tong: 31 })
+      expect(ho.vangLienTiep).toBe(2)
+    }
+  })
+
+  it('bảng điểm danh nằm trong bản lưu — bản cũ thiếu nó thì bị bỏ', () => {
+    expect(Array.isArray(duLieu().diemDanh)).toBe(true)
+    expect(duLieu().diemDanh.length).toBeGreaterThan(0)
+    // `diemDanh` có trong dữ liệu mẫu, nên `dungHinhDang` đòi nó ở mọi bản lưu.
+    expect(Object.keys(duLieuBanDau())).toContain('diemDanh')
   })
 })

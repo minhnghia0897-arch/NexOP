@@ -11,7 +11,7 @@ import { useState } from 'react'
 
 import type { BaiDang, Lop, TaiKhoan } from '@/lib/demo/du-lieu'
 import { dangBaiHanhVi } from '@/lib/demo/hanh-vi'
-import { baiCanCham, duLieu, vaiHienTai } from '@/lib/demo/kho'
+import { baiCanCham, diHocTrongLop, duLieu, vaiHienTai } from '@/lib/demo/kho'
 
 import { Avatar, KhoiTrong, Nhan, Nut } from './phan-tu'
 import { DaiTab, OSteer } from './tab-man'
@@ -233,7 +233,14 @@ export function TrangLop({ lop }: { lop: Lop }) {
                     >
                       {h.bandTb.toFixed(1)}
                     </span>
-                    <span className="text-text-2">{h.diHoc}</span>
+                    {/* Đi học TRONG LỚP NÀY, không phải tổng xuyên lớp: đây là tab của
+                        một lớp, và em học hai lớp thì con số xuyên lớp đọc sai ở cả hai. */}
+                    <span className="text-text-2">
+                      {(() => {
+                        const d = diHocTrongLop(lop.id, h.id)
+                        return d.tong === 0 ? '—' : `${d.coMat}/${d.tong}`
+                      })()}
+                    </span>
                     <span>
                       {h.coTaiKhoan ? (
                         <Nhan mau="green">Đã bật</Nhan>
