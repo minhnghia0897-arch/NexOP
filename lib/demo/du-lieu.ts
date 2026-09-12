@@ -334,6 +334,108 @@ export interface HocPhi {
 }
 
 /**
+ * Máy nháp tin học phí cho một em. **Hàm THUẦN** — không đọc kho, không ghi gì.
+ *
+ * Ở `du-lieu.ts` vì cả hai chỗ cần: dữ liệu mẫu dựng ba tin sẵn (máy đã rà lúc 7:02 sáng,
+ * đúng như bản mẫu ghi), và `mayNhapTinHocPhi` nháp lại khi tình trạng em đổi.
+ *
+ * Tin viết từ SỐ THẬT của em: band đầu chặng → band bây giờ, lỗi lặp giảm bao nhiêu, còn mấy
+ * tuần, hạn ngày nào. Một mẫu chung điền tên vào thì em đọc ra ngay là tin tự động, và cái
+ * mất đi không phải là lịch sự — là lý do em tin rằng cô đang theo em.
+ */
+export function nhapTinHocPhi(
+  ten: string,
+  hoSo: HoSoHocVien,
+  hp: HocPhi,
+  lopCaoHon: string | null,
+): Omit<DeXuat, 'id' | 'hetHan'> {
+  const goi = ten.split(' ').slice(-2).join(' ')
+  const daVuot = hoSo.mucTieu !== undefined && hoSo.bandTb >= hoSo.mucTieu
+
+  if (daVuot && lopCaoHon) {
+    return {
+      hocVienId: hoSo.id,
+      loai: 'vuot_muc_tieu',
+      nhan: 'Vượt mục tiêu',
+      noiDung:
+        `${goi} ơi, band gần nhất của em là ${hoSo.bandTb.toFixed(1)} — vượt mục tiêu ` +
+        `${hoSo.mucTieu!.toFixed(1)}. Cô đề nghị em không gia hạn lớp này nữa mà lên thẳng ` +
+        `${lopCaoHon}. Nhóm nhỏ học phí cao hơn, nhưng học viên đang học được giữ giá cũ khóa ` +
+        `đầu, và phần học phí còn lại của em cô chuyển sang, không thu lại.`,
+      viSao:
+        `Gộp gia hạn với nâng lớp: vượt mục tiêu mà học lại lớp cũ sẽ chán trong một tháng. ` +
+        `Hạn học phí ${hp.hanDong}.`,
+    }
+  }
+
+  if (hoSo.huong === 'down') {
+    return {
+      hocVienId: hoSo.id,
+      loai: 'dang_buong',
+      nhan: 'Đang buông',
+      /*
+       * Tin này KHÔNG nhắc học phí, và đó là chủ ý — không phải thiếu sót.
+       *
+       * Em đang rời lớp thì tin gia hạn là tin chia tay. Đòi tiền lúc đó là đẩy em đi nhanh
+       * hơn, mà em ở lại mới là thứ đáng tiền. Nên tin đổi mục tiêu: hỏi thật một câu.
+       */
+      noiDung:
+        `${goi} ơi, cô thấy mấy bài gần đây em xuống ${hoSo.bandTb.toFixed(1)}` +
+        `${hoSo.loiHayGap !== '—' ? ` và lỗi "${hoSo.loiHayGap.toLowerCase()}" lặp lại` : ''}. ` +
+        `Cô không nhắc học phí — cô muốn hỏi thật: em đang bận việc ở trường, hay thấy lớp ` +
+        `không còn hợp? Nếu bận thì cô dời hạn và giữ chỗ cho em, không tính buổi. Em nhắn cô ` +
+        `một câu là được.`,
+      viSao:
+        `Em đang buông thì tin gia hạn là tin chia tay. Tin này đổi mục tiêu từ thu tiền sang ` +
+        `giữ người — nếu cô đồng ý. Hạn ${hp.hanDong}, cô chưa nhắc tiền trong tin này.`,
+    }
+  }
+
+  return {
+    hocVienId: hoSo.id,
+    loai: 'tien_bo',
+    nhan: hoSo.huong === 'up' ? 'Tiến bộ' : 'Đang giữ nhịp',
+    noiDung:
+      `Chào ${goi}, cô gửi em tóm tắt chặng vừa rồi: band hiện tại ${hoSo.bandTb.toFixed(1)}` +
+      `${hoSo.mucTieu ? `, mục tiêu ${hoSo.mucTieu.toFixed(1)}` : ''}` +
+      `${hoSo.loiHayGap !== '—' ? `, lỗi cần để mắt là "${hoSo.loiHayGap.toLowerCase()}"` : ''}. ` +
+      `Gói tiếp theo cô giữ nguyên học phí cũ cho học viên đang học. Em xác nhận trước ` +
+      `${hp.hanDong} để cô giữ chỗ nhé.`,
+    viSao:
+      `Gửi trước hạn ${hp.hanDong}, ngay sau một chặng có tiến bộ. Không nhắc "hết hạn", ` +
+      `chỉ nhắc "đang đi tới đâu".`,
+  }
+}
+
+/**
+ * Đề xuất của máy. **Lớp 3 — có hạn, cô quyết, em không thấy.**
+ *
+ * `loai` quyết định tin nói gì, và ba loại này là toàn bộ giá trị của bước 7:
+ *
+ * - `tien_bo`       em đang đi lên → tóm tắt tiến bộ rồi mới nói gia hạn, giữ giá cũ
+ * - `dang_buong`    em đang rời lớp → **KHÔNG nhắc học phí**. Mục tiêu đổi từ thu tiền sang
+ *                   giữ người: cô hỏi thật em đang bận hay thấy lớp không hợp
+ * - `vuot_muc_tieu` em đã vượt mục tiêu → đề nghị KHÔNG gia hạn lớp cũ mà lên lớp cao hơn
+ *
+ * Gộp ba loại thành một mẫu chung là bỏ mất cả điểm bán. Bản mẫu ghi thẳng ở dòng phụ:
+ * "viết theo tình trạng từng em, không dùng chung mẫu".
+ */
+export interface DeXuat {
+  id: string
+  hocVienId: string
+  loai: 'tien_bo' | 'dang_buong' | 'vuot_muc_tieu'
+  /** Nội dung tin máy nháp. Cô sửa được trước khi gửi. */
+  noiDung: string
+  /** Vì sao gửi BÂY GIỜ — dòng nhỏ dưới tin ở bản mẫu. Cô cần biết máy dựa vào đâu. */
+  viSao: string
+  /** Nhãn tình trạng hiện cạnh tên: "Tiến bộ +0.5", "Đang buông", "Vượt mục tiêu". */
+  nhan: string
+  hetHan: string
+  /** Cô đã duyệt và xếp lịch gửi lúc 9:00 chưa. */
+  daDuyet?: boolean
+}
+
+/**
  * Một công tắc trong "Luật của cô".
  *
  * `khoa: true` = không có công tắc, đây là luật của nền tảng. Hiện chung một chỗ với các
@@ -397,6 +499,7 @@ export interface DuLieuDemo {
   hocPhi: HocPhi[]
   baiLuyen: BaiLuyen[]
   diemDanh: DiemDanh[]
+  deXuat: DeXuat[]
   luat: LuatMay[]
   /** Ai đang đăng nhập ở mỗi vai — cho công tắc đổi vai của bản demo. */
   vai: Record<VaiDemo, string>
@@ -1040,7 +1143,19 @@ export function duLieuBanDau(): DuLieuDemo {
       ],
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 6.0 }, 'bg-t2tech': { band: 6.0 },
               'bg-t1bar': { band: 6.5 }, 'bg-w1': { band: null } } },
-    { id: 'hv-02', bandTb: 6.9, huong: 'up', coTaiKhoan: true,
+    /*
+     * `mucTieu: 6.5` đặt TAY cho hai em đủ điều kiện lên lớp — và đây là chỗ phải đặt tay.
+     *
+     * `mucTieuTu()` suy mục tiêu là NỬA BẬC TRÊN band hiện tại, nên không em nào do nó sinh
+     * ra có thể "vượt mục tiêu" — điều kiện `bandTb >= mucTieu` không bao giờ đúng. Hệ quả:
+     * cả nhánh "lên lớp" của sản phẩm (LOGIC §4.5, và tin gia hạn loại `vuot_muc_tieu`) không
+     * có dữ liệu nào để chạy, dù lớp 7.0+ đã tồn tại sẵn cho đúng hai em này. Lộ ra khi dựng
+     * bước 7: máy nháp được hai trong ba loại tin, loại thứ ba không bao giờ tới.
+     *
+     * Hai em này học lớp IELTS 6.5 nên mục tiêu của em LÀ 6.5, và em đã ở 6.9. Đó chính là
+     * lý do em có tên trong `lop-moi`.
+     */
+    { id: 'hv-02', bandTb: 6.9, huong: 'up', coTaiKhoan: true, mucTieu: 6.5,
       loiHayGap: '—', hanHocPhi: '12/10',
       diem: { 'bg-t1a': { band: 6.0 }, 'bg-mock1': { band: 6.5 }, 'bg-t2tech': { band: 7.0 },
               'bg-t1bar': { band: 7.0 }, 'bg-w1': { band: null } } },
@@ -1061,7 +1176,7 @@ export function duLieuBanDau(): DuLieuDemo {
       loiHayGap: 'Câu phức còn ít', hanHocPhi: '30/9',
       diem: { 'bg-t1a': { band: 5.0 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 6.0 },
               'bg-t1bar': { band: 6.0 }, 'bg-w1': { band: null } } },
-    { id: 'hv-07', bandTb: 6.9, huong: 'up', coTaiKhoan: true,
+    { id: 'hv-07', bandTb: 6.9, huong: 'up', coTaiKhoan: true, mucTieu: 6.5,
       loiHayGap: '—', hanHocPhi: '12/10',
       diem: { 'bg-t1a': { band: 6.5 }, 'bg-mock1': { band: 6.5 }, 'bg-t2tech': { band: 7.0 },
               'bg-t1bar': { band: 7.0 }, 'bg-w1': { band: null } } },
@@ -1456,6 +1571,32 @@ export function duLieuBanDau(): DuLieuDemo {
 
   const diemDanh: DiemDanh[] = sinhDiemDanh(lop, CO_THAO)
 
+  /*
+   * Ba tin học phí máy đã nháp lúc 7:02 sáng — bước 7 của vòng vận hành.
+   *
+   * Chọn MỘT em mỗi loại, không phải ba em đầu danh sách: cả điểm bán của bước này nằm ở chỗ
+   * ba tin nói ba chuyện khác nhau. Ba tin giống nhau thì màn này chỉ là ba cái nút.
+   */
+  const deXuat: DeXuat[] = (() => {
+    const chuaDong = hocPhi.filter((h) => h.trangThai !== 'da_dong')
+    const ket: DeXuat[] = []
+
+    for (const loai of ['tien_bo', 'dang_buong', 'vuot_muc_tieu'] as const) {
+      for (const hp of chuaDong) {
+        const h = hoSo.find((x) => x.id === hp.hocVienId)
+        const tk = taiKhoan.find((t) => t.id === hp.hocVienId)
+        if (!h || !tk || ket.some((d) => d.hocVienId === h.id)) continue
+
+        const nhap = nhapTinHocPhi(tk.ten, h, hp, 'nhóm IELTS 7.0+ khai giảng 22/9')
+        if (nhap.loai !== loai) continue
+
+        ket.push({ id: `dx-${h.id}`, hetHan: luc(7), ...nhap })
+        break
+      }
+    }
+    return ket
+  })()
+
   const luat: LuatMay[] = [
     { id: 'nhac-nop', bat: true, ten: 'Nhắc nộp bài, nhắc lịch',
       phu: 'Chỉ với học viên đã bật tài khoản · 9:00–21:30' },
@@ -1505,6 +1646,7 @@ export function duLieuBanDau(): DuLieuDemo {
     hocPhi,
     baiLuyen,
     diemDanh,
+    deXuat,
     luat,
     vai: { owner: CO_THAO, assistant: TRO_GIANG, student: 'hv-01' },
   })

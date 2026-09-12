@@ -18,12 +18,17 @@ import {
   chotMotBaiTracNghiem,
   chotTracNghiemCaLop,
   dienDapAnThieu,
+  duyetCaCumTinHocPhi,
+  duyetTinHocPhi,
   diHocCuaEm,
   diHocTrongLop,
   ghiDiemDanh,
   mayChamCaLoTracNghiem,
+  mayNhapTinHocPhi,
   mayChamTracNghiem,
   soLieuTracNghiem,
+  suaTinHocPhi,
+  tinHocPhiChoDuyet,
   vangLienTiep,
   dangBai,
   datLai,
@@ -1046,5 +1051,138 @@ describe('chốt điểm trắc nghiệm cả lớp', () => {
     mayChamCaLoTracNghiem('bg-g1')
     mayChamCaLoTracNghiem('bg-g1')
     expect(duLieu().nhapTracNghiem).toHaveLength(truoc)
+  })
+})
+
+/**
+ * Bước 7 — máy nháp tin học phí, CÔ gửi.
+ *
+ * Đây là bước dính tiền, nên ranh giới quan trọng hơn nội dung: máy không gửi được, trợ giảng
+ * không THẤY, và tin của em đang buông không được nhắc tiền. Cái cuối không phải chuyện văn
+ * phong — nó là cả lý do bước này tồn tại.
+ */
+describe('bước 7: tin học phí — máy nháp, cô gửi', () => {
+  beforeEach(() => {
+    datLai()
+  })
+
+  it('máy nháp BA loại tin khác nhau từ tình trạng thật của em', () => {
+    const tin = tinHocPhiChoDuyet('owner')
+    expect(tin).toHaveLength(3)
+    expect(new Set(tin.map((t) => t.loai))).toEqual(
+      new Set(['tien_bo', 'dang_buong', 'vuot_muc_tieu']),
+    )
+    // Ba nội dung khác nhau hẳn, không phải một mẫu điền tên.
+    expect(new Set(tin.map((t) => t.noiDung)).size).toBe(3)
+  })
+
+  it('tin cho em ĐANG BUÔNG không nhắc học phí — đó là chủ ý', () => {
+    const t = tinHocPhiChoDuyet('owner').find((x) => x.loai === 'dang_buong')!
+    for (const cam of ['học phí', 'gia hạn', 'đóng tiền', 'thanh toán']) {
+      // Trừ đúng một câu: "cô KHÔNG nhắc học phí".
+      const noiDung = t.noiDung.replace('Cô không nhắc học phí', '')
+      expect(noiDung.toLowerCase()).not.toContain(cam)
+    }
+    expect(t.noiDung).toContain('không nhắc học phí')
+  })
+
+  it('tin VƯỢT MỤC TIÊU đề nghị lên lớp, không đề nghị gia hạn lớp cũ', () => {
+    const t = tinHocPhiChoDuyet('owner').find((x) => x.loai === 'vuot_muc_tieu')!
+    expect(t.noiDung).toContain('không gia hạn lớp này')
+    // Và nêu tên lớp thật, không mời vào một lớp không tồn tại.
+    expect(t.noiDung).toMatch(/7\.0\+/)
+    expect(duLieu().lop.some((l) => l.trangThai === 'opening')).toBe(true)
+  })
+
+  it('mỗi tin nêu VÌ SAO gửi bây giờ', () => {
+    for (const t of tinHocPhiChoDuyet('owner')) {
+      expect(t.viSao.length).toBeGreaterThan(30)
+    }
+  })
+
+  it('máy KHÔNG gửi được — `fee.message.send` chỉ của cô', () => {
+    const may = actorMay('lop-65')
+    expect(
+      can(may, 'fee.message.send', {
+        type: 'fee',
+        tenantId: duLieu().tenant.id,
+        classId: 'lop-65',
+      }),
+    ).toBe(false)
+    // Nhưng máy ĐỀ XUẤT được — đó là ranh giới, không phải chặn hết.
+    expect(
+      can(may, 'proposal.propose', {
+        type: 'proposal',
+        tenantId: duLieu().tenant.id,
+        classId: 'lop-65',
+      }),
+    ).toBe(true)
+  })
+
+  it('trợ giảng KHÔNG thấy tin học phí, và không duyệt được', () => {
+    expect(tinHocPhiChoDuyet('assistant')).toHaveLength(0)
+    expect(() => duyetTinHocPhi('assistant', 'hv-01')).toThrow(KhongDuQuyen)
+  })
+
+  it('em không thấy tin nháp — lớp 3 không tới em', () => {
+    expect(tinHocPhiChoDuyet('student')).toHaveLength(0)
+    expect(() => duyetTinHocPhi('student', 'hv-01')).toThrow(KhongDuQuyen)
+  })
+
+  it('cô duyệt → sự kiện `fee.message.send`, xếp lịch 9:00', () => {
+    const em = tinHocPhiChoDuyet('owner')[0]!.hocVienId
+    duyetTinHocPhi('owner', em)
+
+    const ev = nhatKy()[0]!
+    expect(ev.action).toBe('fee.message.send')
+    expect(ev.payload['gui_luc']).toBe('09:00')
+    // Em thấy tin CỦA EM. Không có id em nào khác.
+    expect(ev.visibility).toEqual([duLieu().vai.owner, em])
+  })
+
+  it('nhật ký KHÔNG chứa nội dung tin — tin nói về band và tiền của một em', () => {
+    const t = tinHocPhiChoDuyet('owner')[0]!
+    suaTinHocPhi('owner', t.hocVienId, 'Nội dung rất riêng tư về hoàn cảnh của em.')
+    duyetTinHocPhi('owner', t.hocVienId)
+
+    const ky = JSON.stringify(nhatKy())
+    expect(ky).not.toContain('rất riêng tư')
+    expect(ky).not.toContain(t.noiDung.slice(0, 40))
+  })
+
+  it('cô sửa được tin trước khi gửi, KHÔNG sửa được sau khi đã xếp lịch', () => {
+    const em = tinHocPhiChoDuyet('owner')[0]!.hocVienId
+    suaTinHocPhi('owner', em, 'Cô viết lại theo ý cô.')
+    expect(duLieu().deXuat.find((d) => d.hocVienId === em)!.noiDung).toBe(
+      'Cô viết lại theo ý cô.',
+    )
+
+    duyetTinHocPhi('owner', em)
+    expect(() => suaTinHocPhi('owner', em, 'đổi ý')).toThrow(/đã xếp lịch/)
+  })
+
+  it('"Duyệt cả cụm" gửi mỗi tin một sự kiện, không gộp một', () => {
+    const so = tinHocPhiChoDuyet('owner').length
+    expect(duyetCaCumTinHocPhi('owner')).toBe(so)
+
+    const ev = nhatKy().filter((e) => e.action === 'fee.message.send')
+    expect(ev).toHaveLength(so)
+    // Mỗi sự kiện đúng hai người: cô và em của tin đó.
+    for (const e of ev) expect(e.visibility).toHaveLength(2)
+    expect(tinHocPhiChoDuyet('owner')).toHaveLength(0)
+  })
+
+  it('máy nháp lại thì ghi đè, không sinh tin thứ hai cho cùng một em', () => {
+    const truoc = duLieu().deXuat.length
+    const em = tinHocPhiChoDuyet('owner')[0]!.hocVienId
+    mayNhapTinHocPhi(em)
+    mayNhapTinHocPhi(em)
+    expect(duLieu().deXuat).toHaveLength(truoc)
+  })
+
+  it('tin nháp có HẠN — lớp 3 không sống mãi', () => {
+    for (const t of duLieu().deXuat) {
+      expect(new Date(t.hetHan).getTime()).toBeGreaterThan(Date.now())
+    }
   })
 })

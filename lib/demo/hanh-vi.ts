@@ -21,6 +21,8 @@ import {
   duyetNhanDe,
   doiVai,
   duyetBaiGiao,
+  duyetCaCumTinHocPhi,
+  duyetTinHocPhi,
   ghiDiemDanh,
   giaoBai,
   guiNhanXet,
@@ -29,6 +31,7 @@ import {
   luuGhiChu,
   nopBai,
   suaNhap,
+  suaTinHocPhi,
   vaiHienTai,
 } from './kho'
 
@@ -184,6 +187,31 @@ export function dienDapAnThieuHanhVi(
 ): { loi?: string } {
   if (!dapAn.trim()) return { loi: 'Cô chưa chọn đáp án.' }
   return thu(() => dienDapAnThieu(vaiHienTai(), baiGiaoId, cauNo, dapAn))
+}
+
+/**
+ * Cô duyệt một tin học phí → xếp lịch gửi 9:00.
+ *
+ * `fee.message.send` nằm trong `send_actions_owner_only`, nên trợ giảng và máy đều bị chặn ở
+ * cửa 4 của `can()` — không phải vì hàm này kiểm vai.
+ */
+export function duyetTinHocPhiHanhVi(hocVienId: string): { loi?: string } {
+  return thu(() => duyetTinHocPhi(vaiHienTai(), hocVienId))
+}
+
+/** "Duyệt cả 3" của bản mẫu — mỗi tin vẫn một sự kiện riêng. */
+export function duyetCaCumHanhVi(): { loi?: string; so?: number } {
+  try {
+    return { so: duyetCaCumTinHocPhi(vaiHienTai()) }
+  } catch (e) {
+    return { loi: loiChoNguoiDung(e) }
+  }
+}
+
+/** Cô sửa tin trước khi gửi. Nháp chưa tới tay em nên sửa được. */
+export function suaTinHocPhiHanhVi(hocVienId: string, noiDung: string): { loi?: string } {
+  if (!noiDung.trim()) return { loi: 'Tin không được để trống.' }
+  return thu(() => suaTinHocPhi(vaiHienTai(), hocVienId, noiDung.trim()))
 }
 
 export function luuGhiChuHanhVi(hocVienId: string, ghiChu: string): { loi?: string } {

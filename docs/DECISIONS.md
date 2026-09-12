@@ -508,3 +508,40 @@ tên luật; `aria-checked` đã nói bật/tắt rồi.
 Một lỗi nữa nằm ở chính bài kiểm: `getByText('Đã chốt')` khớp chuỗi con không phân biệt hoa
 thường, nên nó khớp luôn dòng tiến độ "17/18 bài đã chốt" và đếm ra 18. Cùng họ với lỗi
 `getByRole({name})` ngày 11/9 — lần thứ hai, nên ghi lại để lần sau nhớ dùng `exact: true`.
+
+### 2026-09-12 · Bước 7: máy nháp tin học phí, cô gửi
+Ba tin, ba chuyện khác nhau — và đó là toàn bộ giá trị của bước này. Bản mẫu ghi thẳng ở dòng
+phụ: "viết theo tình trạng từng em, không dùng chung mẫu."
+
+- **Tiến bộ** → tóm tắt em đang đi tới đâu rồi mới nói gia hạn, giữ giá cũ.
+- **Đang buông** → **tin KHÔNG nhắc học phí.** Em đang rời lớp thì tin gia hạn là tin chia
+  tay; đòi tiền lúc đó đẩy em đi nhanh hơn, mà em ở lại mới là thứ đáng tiền. Tin đổi mục tiêu:
+  cô hỏi thật một câu — em bận việc ở trường, hay thấy lớp không còn hợp.
+- **Vượt mục tiêu** → đề nghị em **không** gia hạn lớp cũ mà lên lớp cao hơn, học phí còn lại
+  chuyển sang.
+
+Gộp ba loại thành một mẫu là bỏ mất cả điểm bán, nên `nhapTinHocPhi` là hàm thuần nhận hồ sơ
+thật của em và trả về ba nhánh khác nhau, kèm dòng "vì sao gửi bây giờ" để cô biết máy dựa vào
+đâu. Nút ghi "Gửi 9:00", không ghi "Gửi": nhắc học phí lúc nửa đêm là tin đòi tiền, không phải
+tin của cô.
+
+**Chỗ tài liệu nói ngược, lần này ở OPERATIONS bước 7 — ba cái trong một dòng.** Dòng đó ghi
+`proposal.create` → `message.send`, đầu vào `fees, profiles, attendance`. Cả ba đều không chạy
+được: mức `propose` của vai máy không có động từ `create`; `message` không phải object nào
+trong `permissions.json` (tên đúng là `fee.message.send`); và `attendance.system` là `none` nên
+máy không đọc nổi bảng điểm danh. Đã sửa dòng đó cho khớp, và tín hiệu "đang buông" lấy từ
+`profiles` + bài nộp — hai thứ máy đọc được thật. Đột biến đổi về `proposal.create` đúng như
+tài liệu ghi thì test đỏ ngay, nên chỗ này có kiểm chứ không chỉ có ghi chú.
+
+**Một nhánh cả sản phẩm không có dữ liệu để chạy.** `mucTieuTu()` suy mục tiêu là nửa bậc TRÊN
+band hiện tại, nên không em nào do nó sinh ra có thể "vượt mục tiêu" — điều kiện
+`bandTb >= mucTieu` không bao giờ đúng. Hệ quả: cả nhánh lên lớp (LOGIC §4.5, và loại tin
+`vuot_muc_tieu`) chưa từng chạy, dù lớp 7.0+ đã tồn tại sẵn cho đúng hai em. Lộ ra vì máy nháp
+được hai trong ba loại tin và loại thứ ba không bao giờ tới. Hai em ấy học lớp IELTS 6.5 nên
+mục tiêu của em LÀ 6.5 và em đã ở 6.9 — đó chính là lý do em có tên trong `lop-moi`. Đặt tay
+`mucTieu: 6.5` cho hai em.
+
+Nhật ký ghi ĐỘ DÀI tin, không ghi nội dung — cùng lý do với ghi chú riêng của cô: tin nói về
+band và tiền của một em cụ thể, và một payload đầy đủ là một đường rò. Mỗi tin một sự kiện
+`fee.message.send` riêng với `visibility` đúng hai người, không gộp cả cụm vào một dòng: gộp
+thì em thấy tin của bạn.

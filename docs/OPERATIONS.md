@@ -13,8 +13,14 @@ Ba màu = ba loại việc. Cùng màu với UI (Cấu hình → Vòng vận hà
 | 4 | Tối | Duyệt / sửa / gửi. Trắc nghiệm chốt cả lớp; tự luận từng bài | 🔵 Cô (~25 phút/14 bài) | `review.send`, `teacher_edit.create` | drafts | review (lớp 1); cặp học cho lần sau |
 | 5 | Sau gửi | Cập nhật hồ sơ, ma trận điểm; lỗi lặp ≥2 → bài luyện; thông báo em | 🟢 Máy | `profile.auto`, `practice.propose` | reviews | profiles, practice_sets |
 | 6 | Trước buổi | Đọc "Cả lớp sai chung ở đâu" | 🔵 Cô (5 phút) | `view` | profiles của lớp | 3–4 điểm dạy lại |
-| 7 | Mỗi sáng 7:00 | Rà học phí & học viên rời: nháp tin theo tình trạng; đang buông → tin giữ người | 🟠 Máy nháp, cô gửi | `proposal.create` → `message.send` | fees, profiles, attendance | tin gửi 9:00 sau khi cô duyệt |
+| 7 | Mỗi sáng 7:00 | Rà học phí & học viên rời: nháp tin theo tình trạng; đang buông → tin giữ người | 🟠 Máy nháp, cô gửi | `proposal.propose` → `fee.message.send`§ | fees, profiles, ~~attendance~~§ | tin gửi 9:00 sau khi cô duyệt |
 | 8 | Cuối chặng | Đủ điều kiện → đề xuất lên lớp; đủ N → mở lớp mới từ lộ trình | 🟠 Máy đề xuất, cô quyết | `proposal.create` → `class.create` | profiles, capacity | lớp mới, học phí chuyển |
+
+§ Hai chỗ đã sửa cho khớp `can()`. `proposal.create` là tên sai — mức `propose` của vai máy
+không có động từ `create`, nên sự kiện tên đó bị chặn ở cửa 6; và `message.send` không phải
+object nào trong `permissions.json`, tên đúng là `fee.message.send`. Còn `attendance` gạch đi
+vì `attendance.system` là `none`: tín hiệu "em đang buông" hiện lấy từ `profiles` + bài nộp.
+Xem LOGIC §8 câu 8.
 
 Thời gian cô bỏ ra với 4 lớp/58 học viên: ≈ 40 phút/tuần (trước: ≈ 7 giờ).
 
