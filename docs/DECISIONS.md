@@ -447,3 +447,64 @@ nhật ký của chính mình — `events_read_visible` là `auth.uid() = any (v
 ngoại lệ cho chủ tên miền. Và hàm cắm sẵn `actor_role = 'owner'`, nên mọi buổi trợ giảng ghi
 đọc thành cô ghi: nhật ký nói sai đúng chỗ cô cần nó nói đúng, khi em khiếu nại một buổi vắng.
 Cả hai chỉ lộ ra vì bài kiểm chạy trên Postgres thật, không chạy trên bản demo.
+
+### 2026-09-12 · Chốt điểm trắc nghiệm cả lớp, và chỗ thứ tư tài liệu nói ngược
+Bước 4 của vòng vận hành có hai nửa rất khác nhau — bản mẫu ghi đúng một câu: **"Trắc nghiệm
+chốt cả lớp; tự luận đọc từng bài."** Nửa tự luận đã có (`TheCham`). Nửa này thì ngược lại: 18
+bài trên một bảng, cô đọc hai dòng cam rồi bấm một nút. Nên màn Chấm bài giờ có hai đường, y
+như `#q1`/`#q2` của bản mẫu; gộp một danh sách thì 18 bài trắc nghiệm đè mất 4 bài tự luận, mà
+4 bài kia mới là chỗ cô phải đọc.
+
+**Chỗ thứ tư tài liệu nói ngược, và chỗ này nâng mức quyền KHÔNG phải cách sửa.** `LOGIC` §4.4
+nói máy tự chốt trắc nghiệm khi tin cậy ≥97%; chính dòng `review` trong `permissions.json` cũng
+ghi chú thế. Nhưng mức của nó là `propose`, và `propose` không cho động từ `auto:*` nào. Em thử
+nâng lên `auto` để xem hậu quả thật, không đoán: nó mở luôn `review.auto:essay_autoclose` —
+máy gửi được nhận xét TỰ LUẬN mà cô chưa đọc, đúng thứ công tắc `gui-tu-luan` (mặc định tắt)
+sinh ra để chặn. Một dòng `review` không phân biệt được hai quyền đó. Ba trong bốn nguồn nói cô
+mới là người chốt (bản mẫu vẽ nút "Chốt 8 & mở 2", `OPERATIONS` bước 4 ghi 🔵 Cô, ma trận cho
+`review.send` là owner-only), nên dựng theo hướng đó và ghi §8 câu 10 để cô chốt.
+
+**Chỗ thứ năm, và nó chặn cả bước 4:** đề có một câu máy không tìm ra đáp án, nên cả 18 bài
+đều "chờ cô". Cô điền đáp án vào ngân hàng đề KHÔNG giải quyết được — `propagate_exam_edit`
+(0007) bỏ qua mọi bài giao đã có người nộp. Bỏ qua là đúng cho phần đề bài, nhưng điền một
+đáp án còn thiếu khác về bản chất: sửa `de`/`luaChon` là đổi thứ em **đã đọc**; điền `dapAn`
+đang rỗng là đổi thứ em **chưa bao giờ thấy** — em không nhìn đáp án, nó chỉ để chấm. Không có
+cửa này thì cô chấm tay 18 lần cho đúng một câu. Nên mở đúng một cửa hẹp: chỉ khi đáp án đang
+rỗng, không ghi đè đáp án đã có, chỉ chạm `dapAn`/`canhBao`, và chấm lại cả lô ngay trong cùng
+hành động của cô — để không có trạng thái nửa vời "đáp án đã có mà điểm vẫn cũ".
+
+**Điểm không nằm trong bài nộp.** Bài nộp chỉ mang đáp án em chọn; điểm là thứ `chamTracNghiem`
+suy ra, và suy lại được. Đó là lý do điền một đáp án làm điểm cả lớp đổi theo trong cùng một
+nhịp. Hàm chấm là hàm THUẦN và nằm ở `du-lieu.ts` vì cả hai chỗ cần nó — dữ liệu mẫu dựng nháp
+sẵn, và `mayChamTracNghiem` chấm lại. Hai bản cài đặt thì lệch nhau ở chỗ tệ nhất: bảng nói một
+điểm, bấm "chấm lại" ra điểm khác.
+
+**Ba lần phải sửa dữ liệu mẫu, cả ba vì IN SỐ RA XEM:**
+`(i + no) % max(3, 12 - i)` cho Minh Anh 19/19 (trái với chính ghi chú vừa viết) và tám em cuối
+chỉ có ba mẫu câu sai lặp lại ba lần. Đổi sang nhịp lớn hơn thì SÁU em được 19/19 — vì với nhịp
+lớn, chẳng bội số nào của nó rơi vào khoảng 1–20. **Chia lấy dư cho ra "trúng hoặc không", nó
+không cho ra một TỈ LỆ.** Muốn điều khiển tỉ lệ thì đếm trước rồi chọn sau: số câu sai suy từ
+band của chính em (band 7.2 → 1 câu, band 4.2 → 6 câu), rồi chọn câu nào bằng `(i*7 + j*3) % 19`
+— 19 nguyên tố nên không trùng. Kết quả: 18/18 mẫu khác nhau, 65–95%, không ai tuyệt đối, và em
+yếu ở bài viết cũng yếu ở ngữ pháp. Buộc vào band quan trọng hơn vẻ ngoài: hai bộ dữ liệu kể hai
+câu chuyện rời nhau về cùng một đứa trẻ thì cô thôi tin số trên màn.
+Lỗi thứ ba chỉ lộ ra SAU khi điền đáp án: em coi lựa chọn A là "đúng" cho câu chưa có đáp án,
+nên khi cô điền đáp án thật là lựa chọn B, những em bị đánh dấu "làm đúng" hoá ra chọn sai và
+ngược lại — đảo ngược hoàn toàn. Không có đáp án thì không có khái niệm đúng-sai để suy.
+
+`de-g1` cũng là một chỗ tên nói một đằng nội dung một nẻo: tên "Trắc nghiệm ngữ pháp 3 · 40 câu"
+mà mang đúng 5 câu đọc hiểu về trà, dùng chung mảng với đề Reading — và nó chưa bao giờ được
+giao nên không ai phát hiện. Nay có 20 câu ngữ pháp thật, mỗi câu mang `chuDeCau` để cột "Sai ở
+đâu" đọc "Câu 3, 11, 16 — bị động" thay vì đọc số câu trơn. Số câu không dạy cô điều gì.
+
+**Bài kiểm lại bắt được hai chỗ, và một chỗ là lỗi trợ năng thật.** Đột biến "gộp cả lô vào một
+`visibility`" thoạt trông không bị bắt — nhưng hoá ra bản vá chưa hề áp: mốc thay thế xuất hiện
+HAI lần (cả `guiNhanXet` lẫn `chotMotBaiTracNghiem`) nên `str.replace` im lặng không khớp. Đổi
+sang mốc duy nhất thì đỏ đúng. Và khi viết bài kiểm trình duyệt, em không nhắm được công tắc nào
+cả: `aria-label` của cả năm công tắc đều là "đang bật" / "đang tắt". Đó không chỉ bất tiện cho
+bài kiểm — trình đọc màn hình đọc năm lần một câu giống nhau, nên người dùng bàn phím không biết
+đâu là "Gửi nhận xét tự luận không cần cô duyệt", cái công tắc cô chủ ý để tắt. Nhãn giờ mang
+tên luật; `aria-checked` đã nói bật/tắt rồi.
+Một lỗi nữa nằm ở chính bài kiểm: `getByText('Đã chốt')` khớp chuỗi con không phân biệt hoa
+thường, nên nó khớp luôn dòng tiến độ "17/18 bài đã chốt" và đếm ra 18. Cùng họ với lỗi
+`getByRole({name})` ngày 11/9 — lần thứ hai, nên ghi lại để lần sau nhớ dùng `exact: true`.

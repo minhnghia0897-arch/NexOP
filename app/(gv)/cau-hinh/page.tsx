@@ -62,11 +62,23 @@ const LUAT_HE_THONG = [
   'Luật 4 · Ai thấy nhật ký nào. Cô thấy toàn bộ của lớp mình. Em thấy dòng về chính em. Trợ giảng thấy việc mình làm. Nền tảng chỉ thấy sự kiện hệ thống, không đọc nội dung bài.',
 ]
 
+/*
+ * `ten` là bắt buộc, không phải tuỳ chọn.
+ *
+ * Trước đây `aria-label` chỉ ghi "đang bật" / "đang tắt", nên người dùng bàn phím hoặc trình
+ * đọc màn hình đi qua năm công tắc và nghe đúng một câu năm lần — không biết công tắc nào là
+ * "Nhắc nộp bài" và công tắc nào là "Gửi nhận xét tự luận không cần cô duyệt". Cái thứ hai
+ * là thứ cô chủ ý để TẮT; bật nhầm nó thì máy gửi nhận xét mà cô chưa đọc.
+ *
+ * `aria-checked` đã nói bật hay tắt rồi, nên nhãn để dành cho việc nói nó là công tắc GÌ.
+ */
 function CongTac({
+  ten,
   bat,
   khoa,
   doi,
 }: {
+  ten: string
   bat: boolean
   khoa?: boolean
   doi: () => void
@@ -76,7 +88,7 @@ function CongTac({
       type="button"
       role="switch"
       aria-checked={bat}
-      aria-label={bat ? 'đang bật' : 'đang tắt'}
+      aria-label={ten}
       disabled={khoa}
       onClick={doi}
       className={`relative h-6 w-11 flex-none rounded-pill transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
@@ -303,6 +315,7 @@ export default function CauHinh() {
                       <small className="text-[13px] leading-[19px] text-text-2">{l.phu}</small>
                     </div>
                     <CongTac
+                      ten={l.ten}
                       bat={l.bat}
                       doi={() => datLoi(datLuatHanhVi(l.id, !l.bat).loi ?? null)}
                     />
@@ -325,7 +338,7 @@ export default function CauHinh() {
                         <b className="block font-display font-semibold text-text">{l.ten}</b>
                         <small className="text-[13px] leading-[19px] text-text-2">{l.phu}</small>
                       </div>
-                      <CongTac bat={l.bat} khoa doi={() => undefined} />
+                      <CongTac ten={l.ten} bat={l.bat} khoa doi={() => undefined} />
                     </div>
                   ))}
               </Khoi>
