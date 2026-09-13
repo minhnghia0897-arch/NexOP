@@ -83,5 +83,17 @@ export function can(actor: Actor, action: string, object: TargetObject): boolean
   // 7. `own` chỉ áp lên đồ của chính mình. Không biết chủ là ai thì không cho.
   if (level === 'own' && object.ownerId !== actor.accountId) return false
 
+  /*
+   * 7b. `read_own` — XEM theo phạm vi, SỬA thì chỉ của mình.
+   *
+   * Cửa này phải ở đây, không nằm trong `levelAllows`: hàm đó chỉ nhận mức và động từ, nó
+   * không biết ai là chủ dòng. Thiếu cửa này thì `read_own` hoá thành "sửa được của bất cứ
+   * ai trong phạm vi" — em đổi được tên bạn cùng lớp. Bài kiểm bắt được ngay lần chạy đầu,
+   * trước khi mức mới kịp đi tới màn nào.
+   */
+  if (level === 'read_own' && verb !== 'view' && object.ownerId !== actor.accountId) {
+    return false
+  }
+
   return levelAllows(level, verb, object.type)
 }

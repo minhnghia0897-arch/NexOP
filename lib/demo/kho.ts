@@ -254,25 +254,58 @@ export function nhatKy(): SuKien[] {
 
 // ───────────────────────────── ai đang làm việc ─────────────────────────────
 
+/**
+ * Lớp trợ giảng được cô PHÂN CÔNG — đọc từ quan hệ, không từ một chuỗi cắm sẵn.
+ *
+ * Danh sách rỗng là một trạng thái THẬT, không phải lỗi: cô mời trợ giảng vào mà chưa phân
+ * lớp thì họ đăng nhập được và không thấy gì. Phần mềm phải nói ra điều đó (xem `KhoiTrong`
+ * của từng màn), chứ không để họ nhìn màn trống rồi tưởng phần mềm hỏng.
+ */
+export function lopPhuTrach(accountId: string): string[] {
+  return duLieu()
+    .lop.filter((l) => l.troGiangIds.includes(accountId))
+    .map((l) => l.id)
+}
+
 /** Dựng actor cho `can()` từ vai đang chọn. Cùng hình dạng với bản thật. */
 export function actorCuaVai(vai: VaiDemo): Actor {
   const du = duLieu()
   const accountId = du.vai[vai]
+
+  /*
+   * Phạm vi lớp, theo đúng ba luật khác nhau của ba vai:
+   *   · cô     — không liệt kê lớp; cô sở hữu cả tên miền (can.ts, cửa 3).
+   *   · trợ giảng — lớp có tên mình trong `troGiangIds`. Quyền theo QUAN HỆ.
+   *   · em     — lớp mình đang học.
+   *
+   * Trước đây trợ giảng là `['lop-65']` cắm thẳng ở đây, và màn Học viên cắm lần thứ hai.
+   * Cô phân trợ giảng sang lớp khác thì `can()` mở lớp mới còn màn Học viên vẫn lọc lớp cũ —
+   * hai bản sao của một quan hệ, lệch nhau mà không có gì báo.
+   */
   const classIds =
     vai === 'owner'
-      ? [] // Cô sở hữu cả tên miền, không liệt kê lớp (can.ts, cửa 3).
-      : du.lop.filter((l) => l.hocVienIds.includes(accountId) || vai === 'assistant')
-          .map((l) => l.id)
+      ? []
+      : vai === 'assistant'
+        ? lopPhuTrach(accountId)
+        : du.lop.filter((l) => l.hocVienIds.includes(accountId)).map((l) => l.id)
 
   return {
     accountId,
     tenantId: du.tenant.id,
     role: vai,
-    // Trợ giảng chỉ phụ trách lớp 6.5 — để bản demo cho thấy quyền đi theo lớp.
-    classIds: vai === 'assistant' ? ['lop-65'] : classIds,
+    classIds,
+    /*
+     * Quyền cô cấp riêng, theo từng lớp được phân. Cấp cho lớp trợ giảng không phụ trách là
+     * vô nghĩa — cửa 3 chặn trước khi tới cửa 6 — nên chỉ dựng cho lớp có quan hệ.
+     */
     permissions:
       vai === 'assistant'
-        ? { 'lop-65': { submission: 'read', review: 'propose', post: 'own' } }
+        ? Object.fromEntries(
+            classIds.map((id) => [
+              id,
+              { submission: 'read' as const, review: 'propose' as const, post: 'own' as const },
+            ]),
+          )
         : undefined,
   }
 }
@@ -945,6 +978,124 @@ export function lichSuLamBai(
       return { luc: e.luc, viec: 'Bài luyện', y: String(e.payload.vi_loi ?? '') }
     })
     .reverse()
+}
+
+/**
+ * Câu hỏi quyền cho GIAO DIỆN — một chỗ, để không màn nào viết `vai === 'owner'`.
+ *
+ * §B của đặc tả phân quyền: quyền được kiểm ở hai tầng độc lập, và **hai tầng phải luôn nói
+ * cùng một điều**. Khi chúng lệch nhau, tầng giao diện là tầng nói dối — vì nó không chặn được
+ * ai. Cách chắc nhất để hai tầng lệch là cho tầng giao diện cắm sẵn KẾT LUẬN (`vai === 'owner'`)
+ * thay vì hỏi cùng một hàm: hôm nào ma trận đổi, nút vẫn ẩn/hiện theo bản cũ.
+ *
+ * Nên giao diện hỏi `lamDuoc(vai, 'fee.view')`, và câu trả lời tới từ đúng `can()` mà đường
+ * ghi dùng. Ẩn nút vẫn KHÔNG phải hàng rào — hàng rào là RLS; đây chỉ là để người dùng khỏi
+ * bấm vào thứ sẽ bị từ chối.
+ */
+export function lamDuoc(
+  vai: VaiDemo,
+  action: string,
+  y?: { lopId?: string; cuaAi?: string },
+): boolean {
+  const du = duLieu()
+  const actor = actorCuaVai(vai)
+  return can(actor, action, {
+    type: action.split('.')[0]!,
+    tenantId: du.tenant.id,
+    ...(y?.lopId ? { classId: y.lopId } : {}),
+    // `cuaAi: 'toi'` là đường tắt cho "đồ của chính người đang xem" — chỗ gọi không phải tự
+    // tra id, và không tra sai.
+    ...(y?.cuaAi ? { ownerId: y.cuaAi === 'toi' ? actor.accountId : y.cuaAi } : {}),
+  })
+}
+
+/**
+ * Lớp người đang xem thấy được — cô cả tên miền, trợ giảng lớp được phân, em lớp mình học.
+ *
+ * Đây là bản sao thứ BA của quan hệ phân công bị gỡ đi: `actorCuaVai` cắm `'lop-65'`, màn Học
+ * viên cắm lần nữa, màn Lớp học cắm lần thứ ba. Ba chỗ cùng trả lời một câu thì chúng chỉ
+ * cùng đúng cho tới lần đầu cô đổi phân công.
+ */
+export function lopTrongTam(vai: VaiDemo): import('./du-lieu').Lop[] {
+  const du = duLieu()
+  const actor = actorCuaVai(vai)
+  return du.lop.filter((l) =>
+    can(actor, 'class.view', { type: 'class', tenantId: du.tenant.id, classId: l.id }),
+  )
+}
+
+/**
+ * Sửa hồ sơ TÀI KHOẢN của chính mình — §C4 "Sửa hồ sơ của chính mình: cả ba vai ✅".
+ *
+ * Ba vai đều làm được, và đều chỉ làm được với hồ sơ của mình: mức `read_own` cho xem theo
+ * phạm vi (trợ giảng đọc tên học viên trong lớp để chấm bài) nhưng chỉ sửa dòng của mình —
+ * cửa 7b của `can()`.
+ *
+ * Khác `luuGhiChu` (ghi chú riêng của cô về một em) và khác hồ sơ NĂNG LỰC (`profile`: band,
+ * lỗi lặp — thứ của cô và của máy, em chỉ là chủ đề). Ba thứ dễ gộp thành một chữ "hồ sơ", và
+ * gộp là chỗ mất quyền: trợ giảng ở mức `profile: read` từng không sửa nổi tên của chính mình.
+ */
+export function suaHoSoCuaToi(vai: VaiDemo, ten: string): void {
+  const du = duLieu()
+  const actor = actorCuaVai(vai)
+  const sach = ten.trim()
+  if (sach.length === 0) throw new Error('Tên không được để trống.')
+
+  ghi(
+    actor,
+    'account.update',
+    { type: 'account', tenantId: du.tenant.id, ownerId: actor.accountId },
+    // Nhật ký ghi ĐỘ DÀI tên mới, không ghi tên — cùng lý do với tin học phí: một payload
+    // đầy đủ là một đường rò, và ở đây nó không thêm gì cho người sửa lỗi.
+    { do_dai: sach.length },
+    [actor.accountId],
+    (d) => {
+      const tk = d.taiKhoan.find((t) => t.id === actor.accountId)
+      if (tk) tk.ten = sach
+    },
+  )
+}
+
+/**
+ * Học viên trong phạm vi của người đang xem — §C4 "Xem danh sách học viên".
+ *
+ * Cô thấy cả tên miền; trợ giảng chỉ thấy học viên của LỚP MÌNH ĐƯỢC PHÂN. Trước đây màn Học
+ * viên tự lọc bằng `lop-65` cắm trong mã: cô phân trợ giảng sang lớp khác thì màn vẫn hiện
+ * học viên lớp cũ, tức là lộ đúng thứ ranh giới này sinh ra để che.
+ *
+ * Hỏi `profile.view` cho từng em, không lọc bằng tay rồi tin vào phép lọc: một em không nằm
+ * trong lớp nào của trợ giảng thì `can()` chặn ở cửa 3, và đó mới là câu trả lời thật.
+ */
+export function hocVienTrongTam(vai: VaiDemo): import('./du-lieu').HoSoHocVien[] {
+  const du = duLieu()
+  const actor = actorCuaVai(vai)
+  return du.hoSo.filter((h) => {
+    const lop = du.lop.find((l) => l.hocVienIds.includes(h.id))
+    return can(actor, 'profile.view', {
+      type: 'profile',
+      tenantId: du.tenant.id,
+      classId: lop?.id,
+      ownerId: h.id,
+    })
+  })
+}
+
+/**
+ * Học viên cô/trợ giảng CHỌN ĐƯỢC để thêm vào một lớp — §G, ranh giới giữa hai giáo viên.
+ *
+ * Cô thấy mọi em, kèm nhãn "đang ở lớp X" để chuyển lớp khi cần. Trợ giảng chỉ thấy em CHƯA
+ * thuộc lớp nào: em của đồng nghiệp bị ẩn hoàn toàn khỏi danh sách, không phải hiện ra rồi
+ * báo lỗi khi bấm — hiện rồi từ chối là vừa lộ thông tin, vừa làm người dùng bực.
+ *
+ * Và chuyển em giữa các lớp là quyết định của người điều hành, không phải của người dạy.
+ */
+export function hocVienThemDuoc(vai: VaiDemo): { id: string; dangOLop: string | null }[] {
+  const du = duLieu()
+  const lopCua = (id: string) => du.lop.find((l) => l.hocVienIds.includes(id)) ?? null
+
+  return hocVienTrongTam(vai)
+    .map((h) => ({ id: h.id, dangOLop: lopCua(h.id)?.ten ?? null }))
+    .filter((x) => vai === 'owner' || x.dangOLop === null)
 }
 
 /** Bài giao đã có hiệu lực. Đề xuất của trợ giảng chưa tính — em không thấy, hạn chưa chạy. */
@@ -2111,12 +2262,13 @@ export function soLieuLop(vai: VaiDemo): {
   const du = duLieu()
   const cho = baiCanCham(vai)
 
-  const thay =
-    vai === 'owner'
-      ? du.lop
-      : vai === 'assistant'
-        ? du.lop.filter((l) => l.id === 'lop-65')
-        : du.lop.filter((l) => l.hocVienIds.includes(du.vai.student))
+  /*
+   * Bản sao thứ NĂM của quan hệ phân công, và là bản sao khó thấy nhất: màn Lớp học tính `cua`
+   * bằng `lopTrongTam` rồi lại vẽ từ `soLieuLop` — sửa một chỗ mà màn không đổi gì, vì chỗ
+   * thật nằm ở đây. Bài kiểm trình duyệt bắt được ("cô phân sang lớp 5.5 → không thấy lớp
+   * mới"), test đơn vị thì không: nó gọi `hocVienTrongTam`, không gọi hàm này.
+   */
+  const thay = lopTrongTam(vai)
 
   return thay.map((l) => {
     const hoSo = du.hoSo.filter((h) => l.hocVienIds.includes(h.id))

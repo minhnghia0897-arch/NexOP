@@ -7,7 +7,7 @@ import { ChiSo, Khoi, KhoiTrong, Nhan, ViSao } from '@/components/ung-dung/phan-
 import { DaiTab } from '@/components/ung-dung/tab-man'
 import { TinHocPhi } from '@/components/ung-dung/tin-hoc-phi'
 import { useKho } from '@/lib/demo/dung-kho'
-import { duLieu, tinHocPhiChoDuyet, vaiHienTai } from '@/lib/demo/kho'
+import { duLieu, lamDuoc, tinHocPhiChoDuyet, vaiHienTai } from '@/lib/demo/kho'
 
 function tien(n: number): string {
   return n.toLocaleString('vi-VN')
@@ -25,7 +25,9 @@ export default function HocPhiMan() {
   const vai = vaiHienTai()
   const du = duLieu()
 
-  if (vai !== 'owner') {
+  /* `fee` nằm trong trần cứng của trợ giảng: cô cấp quyền gì cũng không mở được. Hỏi `can()`
+     để màn này và cửa chặn thật không bao giờ nói hai điều khác nhau. */
+  if (!lamDuoc(vai, 'fee.view')) {
     return (
       <>
         <DauMan ten="Học phí" />

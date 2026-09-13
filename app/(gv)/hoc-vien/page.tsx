@@ -16,11 +16,19 @@ import { useState } from 'react'
 
 import { DauMan, Wrap } from '@/components/ung-dung/khung'
 import { NganHoSo } from '@/components/ung-dung/ngan-ho-so'
-import { Avatar, Khoi, KhoiTrong, Nhan, Nut, ThanhTienDo } from '@/components/ung-dung/phan-tu'
+import {
+  Avatar,
+  ChuaPhanLop,
+  Khoi,
+  KhoiTrong,
+  Nhan,
+  Nut,
+  ThanhTienDo,
+} from '@/components/ung-dung/phan-tu'
 import { DaiTab } from '@/components/ung-dung/tab-man'
 import { useKho } from '@/lib/demo/dung-kho'
 import type { HoSoHocVien } from '@/lib/demo/du-lieu'
-import { duLieu, vangLienTiep, vaiHienTai } from '@/lib/demo/kho'
+import { duLieu, hocVienTrongTam, lamDuoc, vangLienTiep, vaiHienTai } from '@/lib/demo/kho'
 
 const COT = 'grid min-w-[900px] grid-cols-[1.9fr_1.2fr_84px_84px_112px_1.3fr_124px] gap-4'
 
@@ -74,10 +82,21 @@ export default function HocVien() {
     )
   }
 
-  const trongTam =
-    vai === 'assistant'
-      ? du.hoSo.filter((h) => du.lop.find((l) => l.id === 'lop-65')?.hocVienIds.includes(h.id))
-      : du.hoSo
+  /* Phạm vi hỏi `can()` cho từng em — xem `hocVienTrongTam`. Trước đây màn này tự lọc bằng
+     `lop-65` cắm trong mã, tức là một bản sao thứ hai của quan hệ phân công. */
+  const trongTam = hocVienTrongTam(vai)
+
+  /* Trợ giảng chưa được phân lớp: danh sách rỗng là ĐÚNG, nhưng phải nói ra lý do. */
+  if (vai === 'assistant' && trongTam.length === 0) {
+    return (
+      <>
+        <DauMan ten="Học viên" />
+        <Wrap>
+          <ChuaPhanLop viec="danh sách học viên" />
+        </Wrap>
+      </>
+    )
+  }
 
   const ten = (id: string) => du.taiKhoan.find((t) => t.id === id)?.ten ?? id
   const mau = (id: string) => du.taiKhoan.find((t) => t.id === id)?.mau ?? 'off'
@@ -101,7 +120,7 @@ export default function HocVien() {
         ten="Học viên"
         phu={`${trongTam.length} đang học · ${trongTam.length - chuaBat.length} có tài khoản riêng · ${sapHetPhi} sắp hết học phí · ${canChuY.length} cần chú ý`}
         hanhDong={
-          vai === 'owner' ? (
+          lamDuoc(vai, 'membership.create') ? (
             <span className="flex gap-2">
               <Nut disabled>Nhập từ Excel / Zalo</Nut>
               <Nut disabled kieu="chinh">

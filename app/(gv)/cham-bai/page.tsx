@@ -15,6 +15,7 @@ import {
   baiCanCham,
   baiTracNghiemCanChot,
   duLieu,
+  lamDuoc,
   loiChungCuaLop,
   soLieuTracNghiem,
   vaiHienTai,
@@ -87,7 +88,8 @@ function ChamBaiNoi() {
         tabs={[
           { id: 'cho-duyet', ten: 'Chờ duyệt', dem: trongLop.length + soTn },
           { id: 'sai-chung', ten: 'Cả lớp sai chung ở đâu', dem: loiChung.length },
-          ...(vai === 'owner' ? [{ id: 'rubric', ten: 'Rubric của cô' }] : []),
+          // Rubric là trần cứng của trợ giảng — hỏi `rubric.view`, đừng gõ lại kết luận.
+          ...(lamDuoc(vai, 'rubric.view') ? [{ id: 'rubric', ten: 'Rubric của cô' }] : []),
         ]}
         dang={tab}
         doi={datTab}
@@ -98,10 +100,10 @@ function ChamBaiNoi() {
             lopId={lopLoi}
             lopTen={tenLopLoi}
             loi={loiChung}
-            laCo={vai === 'owner'}
+            laCo={lamDuoc(vai, 'review.send')}
           />
         ) : tab === 'rubric' ? (
-          <RubricCuaCo rubric={du.rubric} laCo={vai === 'owner'} />
+          <RubricCuaCo rubric={du.rubric} laCo={lamDuoc(vai, 'review.send')} />
         ) : (
         <>
         <VuaGui />
@@ -138,7 +140,7 @@ function ChamBaiNoi() {
                 <p className="mb-3.5 text-[13px] text-text-2">
                   Trọng số {bg.trongSo ?? 0}% · {bg.cauHoi.length} câu · chấm tự động
                 </p>
-                <BangTracNghiem bg={bg} soLieu={so} laCo={vai === 'owner'} />
+                <BangTracNghiem bg={bg} soLieu={so} laCo={lamDuoc(vai, 'review.send')} />
               </div>
             )
           })

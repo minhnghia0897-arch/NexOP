@@ -8,6 +8,18 @@
     "auto"
   ],
   "objects": {
+    "account": {
+      "owner": "full",
+      "assistant": "read_own",
+      "student": "read_own",
+      "parent": "read_own",
+      "system": "read",
+      "notes": {
+        "_": "Hồ sơ TÀI KHOẢN: tên, số điện thoại, ảnh. Khác `profile` là hồ sơ NĂNG LỰC (band, lỗi lặp) — cái đó của cô và của máy, người học chỉ là chủ đề.",
+        "assistant": "đọc tên học viên trong lớp mình để chấm bài; sửa thì chỉ hồ sơ của chính mình",
+        "system": "đọc tên để soạn tin và nhận xét; không đổi tên ai"
+      }
+    },
     "class": {
       "owner": "full",
       "assistant": "read",

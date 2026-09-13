@@ -7,7 +7,21 @@
  */
 import matrix from '@/docs/permissions.json'
 
-export const LEVELS = ['none', 'read', 'own', 'propose', 'full', 'auto'] as const
+/**
+ * Sáu mức cũ cộng `read_own`.
+ *
+ * `read_own` = **xem theo phạm vi, sửa của mình**. Nó sinh ra vì năm mức kia không diễn đạt
+ * nổi một câu rất thường: trợ giảng phải ĐỌC được hồ sơ học viên trong lớp mình, và phải
+ * SỬA được hồ sơ của chính mình. `read` thì không sửa được gì — kể cả tên mình; `own` thì chỉ
+ * đọc được của mình — hết thấy học viên. Trước khi có mức này, trợ giảng ở mức `read` không
+ * đổi nổi số điện thoại của bản thân, và đó không phải chính sách của ai cả: nó là chỗ mô
+ * hình thiếu chữ.
+ *
+ * Ranh giới giữ nguyên kiểu của `can()`: MỨC quyết định được VIẾT gì, còn PHẠM VI ĐỌC vẫn do
+ * các cửa trước (tên miền, lớp) chặn. Nên `read_own` không mở rộng gì về đọc — nó chỉ thêm
+ * quyền sửa trên dòng của chính mình.
+ */
+export const LEVELS = ['none', 'read', 'read_own', 'own', 'propose', 'full', 'auto'] as const
 export type Level = (typeof LEVELS)[number]
 
 export const ROLES = ['owner', 'assistant', 'student', 'parent', 'system'] as const
@@ -98,6 +112,9 @@ export const ASSISTANT_GRANTABLE: ReadonlySet<Level> = new Set(
 const VERBS_BY_LEVEL: Record<Level, ReadonlySet<string>> = {
   none: new Set(),
   read: new Set(['view']),
+  // `create` KHÔNG có ở đây: `read_own` là "sửa cái của mình", không phải "tạo thêm cái mới".
+  // Trợ giảng sửa hồ sơ của mình, chứ không tự tạo hồ sơ thứ hai.
+  read_own: new Set(['view', 'update', 'export']),
   own: new Set(['view', 'create', 'update', 'export']),
   propose: new Set(['view', 'draft', 'propose']),
   // "Tự làm": làm thẳng, không phải xin. Vẫn không vượt được trần cứng và SEND_ACTIONS.
@@ -110,7 +127,7 @@ export function levelAllows(level: Level, verb: Verb, objectType?: ObjectType): 
   if (verb.startsWith('auto:')) return level === 'auto' || level === 'full'
 
   // Chủ đề thì chỉ được xem, không được sửa.
-  if (level === 'own' && objectType && OWN_IS_READ_ONLY.has(objectType)) {
+  if ((level === 'own' || level === 'read_own') && objectType && OWN_IS_READ_ONLY.has(objectType)) {
     return verb === 'view' || verb === 'export'
   }
 
