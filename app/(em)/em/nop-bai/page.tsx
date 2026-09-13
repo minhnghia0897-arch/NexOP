@@ -11,14 +11,16 @@
  * bằng bốn dòng chữ.
  */
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { DauManEm, WrapEm } from "@/components/em/khung";
+import { DongHo, dongHoDoc } from "@/components/em/phan-tu";
 import { Khoi, KhoiTrong, Nut } from "@/components/ung-dung/phan-tu";
 import { useKho } from "@/lib/demo/dung-kho";
-import { EM, baiCuaEm, baiTuLuanPhaiNop, hoSoCuaEm } from "@/lib/demo/em";
+import { EM, baiCuaEm, baiTuLuanPhaiNop, loiCuaEm } from "@/lib/demo/em";
 import { nopBaiHanhVi } from "@/lib/demo/hanh-vi";
 import { duLieu } from "@/lib/demo/kho";
+import { boNhap, docNhap, luuNhap } from "@/lib/demo/nhap-bai";
 
 const TOI_THIEU = 250;
 
@@ -43,16 +45,54 @@ function Tich({ on, ten, phu }: { on: boolean; ten: string; phu?: string }) {
   );
 }
 
+/** "hạn 19:00 ngày 15/9" — bản mẫu để hạn ngay trên đầu màn viết, và đó là chỗ đúng của nó. */
+function hanDocLa(iso: string): string {
+  const d = new Date(iso);
+  const gio = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `hạn ${gio} ngày ${d.getDate()}/${d.getMonth() + 1}`;
+}
+
 export default function NopBai() {
   useKho();
   const [bai, datBai] = useState("");
   const [loi, datLoi] = useState<string | null>(null);
-  const [vuaNop, datVuaNop] = useState<{ soTu: number } | null>(null);
+  const [vuaNop, datVuaNop] = useState<{
+    soTu: number;
+    giay: number;
+    truocHan: number;
+  } | null>(null);
+  const [daLuu, datDaLuu] = useState(false);
+  // Đồng hồ ghi vào ref, không vào state: mỗi giây một lần vẽ lại cả màn thì ô viết bị
+  // dựng lại và con trỏ nhảy về đầu — lỗi chỉ lộ khi gõ thật.
+  const giay = useRef(0);
 
   const du = duLieu();
-  const ho = hoSoCuaEm(EM);
   const bg = baiTuLuanPhaiNop(EM)[0];
   const truoc = baiCuaEm(EM).find((b) => b.nhanXet !== null);
+  const conMac = loiCuaEm(EM).filter((l) => !l.daDut);
+  const bgId = bg?.id;
+
+  /* Mở màn thì lấy lại nháp cũ. Chạy trong effect chứ không trong `useState(() => …)`:
+     `localStorage` không có ở lần dựng trên máy chủ, và bản này xuất tĩnh. */
+  useEffect(() => {
+    if (!bgId) return;
+    const cu = docNhap(bgId, EM);
+    if (cu) {
+      datBai(cu);
+      datDaLuu(true);
+    }
+  }, [bgId]);
+
+  /* Lưu sau 1 giây không gõ thêm. Bản mẫu hứa "mỗi 10 giây"; 1 giây thì lời hứa đó chắc
+     hơn, và ghi một chuỗi vào localStorage là việc rẻ. */
+  useEffect(() => {
+    if (!bgId || bai === "") return;
+    const t = setTimeout(() => {
+      luuNhap(bgId, EM, bai);
+      datDaLuu(true);
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [bgId, bai]);
 
   /*
    * Màn xác nhận phải xét TRƯỚC cửa "hết bài".
@@ -83,7 +123,15 @@ export default function NopBai() {
             <h2 className="font-display text-[22px] font-semibold text-text">
               Đã nộp cho cô Thảo
             </h2>
-            <p className="mt-1 text-text-2">{vuaNop.soTu} từ · cô thấy ngay</p>
+            <p className="mt-1 text-text-2">
+              {vuaNop.soTu} từ
+              {vuaNop.giay >= 60 ? ` · viết ${dongHoDoc(vuaNop.giay)}` : ""}
+              {vuaNop.truocHan > 0
+                ? ` · trước hạn ${vuaNop.truocHan} ngày`
+                : vuaNop.truocHan === 0
+                  ? " · đúng hạn hôm nay"
+                  : ` · muộn ${-vuaNop.truocHan} ngày`}
+            </p>
           </div>
 
           <div className="mt-5">
@@ -95,7 +143,7 @@ export default function NopBai() {
                 [
                   "✓",
                   "Bài đã lưu vào hồ sơ của em",
-                  "Cô thấy ngay, kèm số từ và giờ nộp.",
+                  "Cô thấy ngay, kèm số từ, thời gian em viết và giờ nộp.",
                   "xong",
                 ],
                 [
@@ -185,6 +233,13 @@ export default function NopBai() {
         .filter((x) => x.trim()).length
     : 0;
 
+  /** Lỗi cô đã đánh dấu thuộc nhóm này — dòng phụ của ô tự kiểm. */
+  const loiKieu = (nhom: string): string | undefined => {
+    const l = conMac.find((x) => x.nhom === nhom);
+    if (!l) return undefined;
+    return `Cô đánh dấu “${l.ten}” ở ${l.soBai}/${l.tongBai} bài đã chấm`;
+  };
+
   const coMoBai =
     /\b(I (believe|think|agree|disagree)|in my (opinion|view))\b/i.test(bai);
   // Đúng lỗi cô đánh dấu của em: danh từ số nhiều mà động từ vẫn số ít.
@@ -197,7 +252,15 @@ export default function NopBai() {
         rong
         ten={bg.nhan ?? "Bài tập"}
         quayVe={{ href: "/em/hom-nay", ten: "Hôm nay" }}
-        phu={`${de?.ten ?? ""} · cô chấm theo rubric của cô, không phải máy chấm chung`}
+        phu={`${de?.ten ?? ""} · ${hanDocLa(bg.hanNop)} · cô chấm theo rubric của cô, không phải máy chấm chung`}
+        phai={
+          <span className="flex items-center gap-3">
+            <span className="hidden text-[12px] text-text-3 sm:inline">
+              {daLuu ? "Đã lưu nháp" : "Nháp lưu tự động"}
+            </span>
+            <DongHo doiGiay={(g) => (giay.current = g)} />
+          </span>
+        }
       />
       <WrapEm rong>
         {loi ? (
@@ -226,7 +289,7 @@ export default function NopBai() {
                 aria-label="Bài viết của em"
                 value={bai}
                 onChange={(e) => datBai(e.target.value)}
-                placeholder="Viết bài ở đây."
+                placeholder="Viết bài ở đây. Nháp được lưu ngay trên máy của em — tắt máy vẫn còn."
                 className="min-h-[340px] w-full resize-y bg-transparent px-5 py-[18px] text-[15px] leading-[26px] text-text outline-none placeholder:text-text-3"
               />
               <div className="flex flex-wrap items-center gap-3.5 border-t border-border-light px-4 py-2.5 text-[13px] text-text-2">
@@ -249,9 +312,16 @@ export default function NopBai() {
                   kieu="chinh"
                   disabled={soTu < 150}
                   onClick={() => {
-                    const r = nopBaiHanhVi(EM, bg.id, bai);
-                    if (r.loi) datLoi(r.loi);
-                    else datVuaNop({ soTu });
+                    const r = nopBaiHanhVi(EM, bg.id, bai, giay.current);
+                    if (r.loi) return datLoi(r.loi);
+                    boNhap(bg.id, EM);
+                    datVuaNop({
+                      soTu,
+                      giay: giay.current,
+                      truocHan: Math.floor(
+                        (new Date(bg.hanNop).getTime() - Date.now()) / 86_400_000,
+                      ),
+                    });
                   }}
                 >
                   {soTu >= TOI_THIEU ? "Nộp cho cô" : "Nộp (chưa đủ 250 từ)"}
@@ -265,15 +335,21 @@ export default function NopBai() {
               ten="Trước khi nộp"
               phu="Tự kiểm — dựa trên lỗi của chính em."
             >
-              <Tich on={coMoBai} ten="Có câu mở bài nêu rõ ý kiến của em" />
+              {/*
+                Dòng phụ của mỗi ô là LÝ DO ô đó có trên màn — bản mẫu ghi "Bài Environment
+                thiếu — cô đã nhắc", "Lỗi lặp 3 bài". Lấy từ lỗi cô đã đánh dấu trong bài
+                của chính em, nên danh sách này khác nhau giữa hai học viên; một danh sách
+                tự kiểm chung cho cả lớp thì em đọc hai lần là bỏ qua.
+              */}
+              <Tich
+                on={coMoBai}
+                ten="Có câu mở bài nêu rõ ý kiến của em"
+                phu={loiKieu("structure")}
+              />
               <Tich
                 on={bai.trim().length > 0 && !dinhLoiLap}
                 ten="Không có “people is”, “students has”"
-                phu={
-                  ho?.loiHayGap && ho.loiHayGap !== "—"
-                    ? `Cô đánh dấu: ${ho.loiHayGap}`
-                    : undefined
-                }
+                phu={loiKieu("grammar")}
               />
               <Tich on={doan >= 4} ten="Mỗi đoạn thân có một ví dụ cụ thể" />
               <Tich

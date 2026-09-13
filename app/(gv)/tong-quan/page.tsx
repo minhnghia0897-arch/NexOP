@@ -4,7 +4,7 @@ import type { Route } from 'next'
 import Link from 'next/link'
 
 import { DauMan, Ico, NutLien, Wrap } from '@/components/ung-dung/khung'
-import { ChiSo, Khoi, Nhan, ViSao } from '@/components/ung-dung/phan-tu'
+import { ChiSo, Khoi, Nhan, Nut, ViSao } from '@/components/ung-dung/phan-tu'
 import { useKho } from '@/lib/demo/dung-kho'
 import { baiCanCham, dangChay as baiDangChay, duLieu, vaiHienTai } from '@/lib/demo/kho'
 
@@ -65,6 +65,55 @@ export default function TongQuan() {
   const vai = vaiHienTai()
   const du = duLieu()
   const cho = baiCanCham(vai)
+
+  /*
+   * Việc máy đã tự chạy — ĐẾM từ dữ liệu, không cắm số.
+   *
+   * Ba dòng, ba việc máy thật sự làm trong bản này: nhắc em có tài khoản, nháp chấm, và đăng
+   * bài giao lên bảng tin. Mỗi dòng có đường đi tới chỗ kiểm chứng được.
+   */
+  const coTaiKhoan = du.hoSo.filter((h) => h.coTaiKhoan).length
+  const chuaBatTk = du.hoSo.length - coTaiKhoan
+  const mayDang = du.baiDang.filter((b) => b.loai === 'system').length
+  const deDaSoHoa = du.de.filter((d) => d.nguon && d.nguon.loai !== 'tay').length
+  const canXemLai = du.de.filter((d) => d.cauHoi.some((c) => c.canhBao)).length
+
+  const tuChay: { ten: string; phu: string; cham: string; den: Route | null; nut: string }[] = [
+    {
+      ten: `Nhắc lịch và hạn nộp cho ${coTaiKhoan} học viên có tài khoản`,
+      phu:
+        chuaBatTk > 0
+          ? `${chuaBatTk} em còn lại cô vẫn đang nhắc tay qua Zalo`
+          : 'Cả lớp đã bật tài khoản — máy nhắc hết',
+      cham: 'bg-st-green',
+      den: chuaBatTk > 0 ? '/hoc-vien' : null,
+      nut: `Mời ${chuaBatTk} em bật tài khoản`,
+    },
+    {
+      ten: `Nhận xét nháp cho ${cho.length} bài đang chờ`,
+      phu: `Viết theo cách cô đã chấm ${du.rubric.daCham} bài trước`,
+      cham: 'bg-st-purple',
+      den: cho.length > 0 ? '/cham-bai' : null,
+      nut: 'Duyệt',
+    },
+    {
+      ten: `Số hoá ${deDaSoHoa} đề từ ảnh và PDF`,
+      phu:
+        canXemLai > 0
+          ? `${canXemLai} đề còn chỗ chữ mờ chờ cô xem`
+          : 'Không đề nào còn chỗ chữ mờ',
+      cham: canXemLai > 0 ? 'bg-st-orange' : 'bg-st-green',
+      den: '/ngan-hang-de',
+      nut: 'Xem đề',
+    },
+    {
+      ten: `Đăng ${mayDang} bài giao lên bảng tin lớp`,
+      phu: 'Máy đăng thẳng — đây là chỗ máy ĐƯỢC làm, vì nó không phán xét em nào',
+      cham: 'bg-st-green',
+      den: mayDang > 0 ? '/bang-tin' : null,
+      nut: 'Xem bảng tin',
+    },
+  ]
   const ganCo = cho.filter((b) => b.ganCo.length > 0)
   const soEm = new Set(du.lop.flatMap((l) => l.hocVienIds)).size
   const dangChay = du.lop.filter((l) => l.trangThai === 'running')
@@ -230,6 +279,36 @@ export default function TongQuan() {
                 ))}
               </div>
             )}
+          </Khoi>
+        </div>
+
+        {/*
+          "Việc đã tự chạy tuần này" — khối thứ ba của `s-home`, và bản mẫu nói đúng mục đích:
+          "Không cần cô làm — chỉ để cô biết."
+
+          Mỗi dòng ĐẾM từ dữ liệu thật, không cắm số. Đây là khối trả lời câu cô hỏi sau tuần
+          đầu — "máy vừa tự làm gì sau lưng tôi" — nên một con số bịa ở đây là bịa đúng chỗ cô
+          dùng để quyết có tin nền tảng nữa hay không.
+        */}
+        <div className="mt-5">
+          <Khoi ten="Việc đã tự chạy tuần này" phu="Không cần cô làm — chỉ để cô biết.">
+            {tuChay.map((v) => (
+              <div
+                key={v.ten}
+                className="flex flex-wrap items-center gap-3.5 border-t border-border-light py-3 first:border-t-0 first:pt-0"
+              >
+                <i aria-hidden className={`h-2.5 w-2.5 flex-none rounded-full ${v.cham}`} />
+                <div className="min-w-0 flex-1">
+                  <b className="block font-display font-semibold text-text">{v.ten}</b>
+                  <small className="text-[13px] leading-[19px] text-text-2">{v.phu}</small>
+                </div>
+                {v.den ? (
+                  <Link href={v.den}>
+                    <Nut>{v.nut}</Nut>
+                  </Link>
+                ) : null}
+              </div>
+            ))}
           </Khoi>
         </div>
 

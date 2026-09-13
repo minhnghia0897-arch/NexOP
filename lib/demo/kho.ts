@@ -30,6 +30,7 @@ import { can, type Actor, type TargetObject } from '@/lib/auth/can'
 import {
   chamTracNghiem,
   duLieuBanDau,
+  gomLoiLap,
   nhapTinHocPhi,
   type DuLieuDemo,
   type LoiDanhDau,
@@ -639,7 +640,12 @@ export function dangBai(vai: VaiDemo, lopId: string, noiDung: string): void {
 }
 
 /** Em nộp bài. */
-export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): void {
+export function nopBai(
+  hocVienId: string,
+  baiGiaoId: string,
+  noiDung: string,
+  giayViet?: number,
+): void {
   const du = duLieu()
   const bg = du.baiGiao.find((g) => g.id === baiGiaoId)!
   const actor: Actor = {
@@ -653,7 +659,7 @@ export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): v
     actor,
     'submission.create',
     { type: 'submission', tenantId: du.tenant.id, classId: bg.lopId, ownerId: hocVienId },
-    { bai_giao: baiGiaoId },
+    { bai_giao: baiGiaoId, ...(giayViet === undefined ? {} : { giay_viet: giayViet }) },
     [du.vai.owner, hocVienId],
     (d) => {
       d.baiNop.push({
@@ -664,6 +670,7 @@ export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): v
         soTu: noiDung.trim().split(/\s+/).filter(Boolean).length,
         nopLuc: new Date().toISOString(),
         muon: Date.now() > new Date(bg.hanNop).getTime(),
+        ...(giayViet === undefined ? {} : { giayViet }),
       })
     },
   )
@@ -810,6 +817,7 @@ function mayDangBaiGiao(baiGiaoId: string): void {
         lopId: bg.lopId,
         tacGiaId: null,
         loai: 'system',
+        baiGiaoId: bg.id,
         noiDung: nhac
           ? `Bài mới: ${bg.nhan} — hạn ${khi}. ${coTaiKhoan} em đã bật tài khoản sẽ được nhắc trước 24 giờ và 2 giờ.`
           : `Bài mới: ${bg.nhan} — hạn ${khi}. Cô đang tắt nhắc tự động, nên các em tự nhớ hạn giúp cô.`,
@@ -907,9 +915,17 @@ export function luuGhiChu(vai: VaiDemo, hocVienId: string, ghiChu: string): void
 
   ghi(
     actorCuaVai(vai),
-    'profile.update',
+    /*
+     * `teacher_notes.update`, không phải `profile.update`.
+     *
+     * Trợ giảng có `profile: read` nên `profile.update` chặn được họ — nhưng chặn NHỜ TÌNH
+     * CỜ: hôm nào cô cấp `profile: auto` cho trợ giảng thì họ sửa được cả ghi chú riêng của
+     * cô. `teacher_notes` là trần cứng, nên hỏi đúng object thì chặn ở cửa 5, trước khi xét
+     * tới mức quyền cô cấp.
+     */
+    'teacher_notes.update',
     {
-      type: 'profile',
+      type: 'teacher_notes',
       id: hocVienId,
       tenantId: du.tenant.id,
       classId: lop?.id,
@@ -1123,6 +1139,210 @@ export function vangBuoiTruoc(lopId: string): string[] {
 }
 
 /**
+ * Số liệu cho một lộ trình — bốn ô KPI của bản mẫu.
+ *
+ * "Đề dùng được" đếm đề trong ngân hàng KHỚP CẤP của lộ trình. Bản mẫu gọi là "Đề gắn sẵn",
+ * nhưng đây là thứ đếm được thật, nên nhãn nói đúng thứ nó đếm: chưa có bảng gắn đề vào lộ
+ * trình, và đặt nhãn "gắn sẵn" cho một phép lọc theo cấp là nói quá.
+ *
+ * `datMucTieu` KHÔNG suy ra — nó là kết quả của khoá đã kết thúc, và lộ trình chưa khoá nào
+ * xong thì trả `null` để màn bỏ hẳn ô đó. Bịa một tỉ lệ cho lộ trình mới dựng là bịa đúng
+ * chỗ cô dùng để quyết có mở lớp nữa hay không.
+ */
+export function soLieuLoTrinh(
+  vai: VaiDemo,
+  loTrinhId: string,
+): {
+  soLop: number
+  soEm: number
+  datMucTieu: { pct: number; khoa: number } | null
+  changKho: { tu: number; den: number; noiDung: string } | null
+  deDungDuoc: number
+} | null {
+  const du = duLieu()
+  const lt = du.loTrinh.find((x) => x.id === loTrinhId)
+  if (!lt) return null
+
+  /* `path` là mức `none` với mọi vai ngoài cô (permissions.json §8.1) — lộ trình là tài sản
+     của cô, và RLS ở 0004 cũng theo luật này. */
+  if (!can(actorCuaVai(vai), 'path.view', { type: 'path', tenantId: du.tenant.id })) {
+    return null
+  }
+
+  const lop = du.lop.filter((l) => lt.dangDung.includes(l.id))
+  const kho = lt.chang.find((c) => c.kho)
+
+  return {
+    soLop: lop.length,
+    soEm: lop.reduce((t, l) => t + l.hocVienIds.length, 0),
+    datMucTieu: lt.ketQua ? { pct: lt.ketQua.datMucTieu, khoa: lt.ketQua.khoa } : null,
+    changKho: kho ? { tu: kho.tu, den: kho.den, noiDung: kho.noiDung } : null,
+    deDungDuoc: du.de.filter((d) => d.trinhDo && (lt.cap ?? []).includes(d.trinhDo)).length,
+  }
+}
+
+/**
+ * Cả lớp sai chung ở đâu — **bước 6** của vòng vận hành, tab `g2` của bản mẫu.
+ *
+ * Gộp lỗi đã đánh dấu của chồng bài tuần này, đếm theo SỐ EM chứ không theo số lần: một em
+ * mắc một lỗi bốn lần vẫn là một em. Bản mẫu đọc "11/14 học viên", không đọc "23 lần".
+ *
+ * Bỏ mục `kieu: 'khen'`: cộng lời khen vào "cả lớp sai chung ở đâu" thì con số vô nghĩa, và
+ * cô đi dạy lại một thứ em đang làm đúng.
+ *
+ * Đọc cả nháp (lớp 3) LẪN nhận xét đã gửi (lớp 1): lỗi không biến mất khi cô bấm gửi, và
+ * chồng bài tuần này thì có bài đã gửi có bài chưa.
+ */
+export function loiChungCuaLop(
+  vai: VaiDemo,
+  lopId: string,
+): { ten: string; nhom: string; em: string[]; tongEm: number }[] {
+  const du = duLieu()
+  const lop = du.lop.find((l) => l.id === lopId)
+  if (!lop) return []
+
+  const actor = actorCuaVai(vai)
+  /* Hỏi `draft.view`: gộp lỗi cả lớp là việc đọc nháp của nhiều em cùng lúc. Em có mức
+     `none` ở `draft` nên bị chặn — và đúng phải chặn, đây là màn so em này với em khác. */
+  if (
+    !can(actor, 'draft.view', { type: 'draft', tenantId: du.tenant.id, classId: lopId })
+  ) {
+    return []
+  }
+
+  const theoLoi = new Map<string, { nhom: string; em: Set<string> }>()
+
+  /*
+   * Mẫu số là số em có bài ĐÃ ĐƯỢC CHẤM trong lớp — không phải sĩ số, cũng không phải mọi em
+   * từng nộp gì.
+   *
+   * Lần đầu em đếm "mọi em có bài nộp trong lớp" và ra 2/18: mười tám em kia gồm cả em chỉ
+   * nộp bài TRẮC NGHIỆM, tức là trộn hai chồng bài khác nhau vào một thống kê về lỗi BÀI
+   * VIẾT. Mười một em không có bài viết nào không phải là "không mắc lỗi này".
+   *
+   * Bài chấm rồi mà sạch lỗi thì VẪN vào mẫu số — đó là một điểm dữ liệu thật ("bài của em
+   * được đọc, không thấy lỗi này"), khác hẳn với "em chưa nộp".
+   */
+  const coBai = new Set<string>()
+
+  const gom = (baiNopId: string, co: readonly import('./du-lieu').LoiDanhDau[] | undefined) => {
+    // `co` không có nghĩa là bài này không đi qua đường chấm lỗi (bài trắc nghiệm).
+    if (!co) return
+    const bn = du.baiNop.find((b) => b.id === baiNopId)
+    if (!bn) return
+    const bg = du.baiGiao.find((g) => g.id === bn.baiGiaoId)
+    if (!bg || bg.lopId !== lopId) return
+
+    coBai.add(bn.hocVienId)
+
+    for (const c of co) {
+      if (c.kieu === 'khen') continue
+      const cu = theoLoi.get(c.loai) ?? { nhom: c.nhom, em: new Set<string>() }
+      cu.em.add(bn.hocVienId)
+      theoLoi.set(c.loai, cu)
+    }
+  }
+
+  for (const n of du.nhapCham) gom(n.baiNopId, n.co)
+  for (const nx of du.nhanXet) gom(nx.baiNopId, nx.co)
+
+  return [...theoLoi.entries()]
+    .map(([ten, v]) => ({ ten, nhom: v.nhom, em: [...v.em], tongEm: coBai.size }))
+    .sort((a, b) => b.em.length - a.em.length || a.ten.localeCompare(b.ten, 'vi'))
+}
+
+/**
+ * Cô đổi trọng số một tiêu chí rubric.
+ *
+ * `rubric` là trần cứng của trợ giảng, nên `can()` chặn ở cửa 5 — trước cả khi xét mức quyền.
+ *
+ * KHÔNG sửa lại bài đã chấm. Bản mẫu ghi thẳng: "Thay đổi áp dụng cho nháp chấm từ bài tiếp
+ * theo. 214 bài đã chấm không đổi." Sửa lại thì band của em đổi sau lưng em, và nhận xét cô
+ * đã gửi nói một điều còn bảng điểm nói điều khác.
+ */
+export function datTrongSoRubric(
+  vai: VaiDemo,
+  ma: 'tr' | 'cc' | 'lr' | 'gra',
+  trongSo: number,
+): void {
+  const du = duLieu()
+  if (!Number.isFinite(trongSo) || trongSo < 0 || trongSo > 100) {
+    throw new Error('Trọng số phải từ 0 tới 100')
+  }
+
+  ghi(
+    actorCuaVai(vai),
+    'rubric.update',
+    { type: 'rubric', tenantId: du.tenant.id },
+    { tieu_chi: ma, trong_so: trongSo },
+    [du.vai.owner],
+    (d) => {
+      const t = d.rubric.tieuChi.find((x) => x.ma === ma)
+      if (t) t.trongSo = trongSo
+    },
+  )
+}
+
+/** Cô bỏ một dòng "cách cô hay nhận xét" — dòng máy rút sai thì nháp sau không dùng nữa. */
+export function boGiongCham(vai: VaiDemo, dong: string): void {
+  const du = duLieu()
+
+  ghi(
+    actorCuaVai(vai),
+    'rubric.update',
+    { type: 'rubric', tenantId: du.tenant.id },
+    { bo_giong: dong },
+    [du.vai.owner],
+    (d) => {
+      d.rubric.giongCham = d.rubric.giongCham.filter((x) => x !== dong)
+    },
+  )
+}
+
+/**
+ * Cô tạo bài luyện cho đúng những em mắc một lỗi chung — nút "Tạo bài luyện" của bản mẫu.
+ *
+ * Giao cho DANH SÁCH EM mà bước 6 vừa đếm ra, không giao cả lớp: em không mắc lỗi đó thì bài
+ * luyện là việc vô ích, và giao việc vô ích một lần là em thôi tin bài luyện lần sau.
+ */
+export function taoBaiLuyenTuLoiChung(vai: VaiDemo, lopId: string, tenLoi: string): number {
+  const du = duLieu()
+  const loi = loiChungCuaLop(vai, lopId).find((x) => x.ten === tenLoi)
+  if (!loi) throw new Error('Không có lỗi chung nào tên đó trong lớp này')
+
+  const mau = du.baiLuyen[0]
+  let dem = 0
+
+  for (const emId of loi.em) {
+    // Em đã có bài luyện cho đúng lỗi này thì không giao thêm bài thứ hai.
+    if (du.baiLuyen.some((b) => b.hocVienId === emId && b.loi === tenLoi)) continue
+
+    ghi(
+      actorCuaVai(vai),
+      'practice_set.create',
+      { type: 'practice_set', tenantId: du.tenant.id, classId: lopId, ownerId: emId },
+      { hoc_vien: emId, vi_loi: tenLoi },
+      [du.vai.owner, emId],
+      (d) => {
+        d.baiLuyen.push({
+          id: maMoi(`bl-${emId}`),
+          hocVienId: emId,
+          lopId,
+          ten: `5 câu luyện: ${tenLoi}`,
+          loi: tenLoi,
+          viLoi: `Lỗi "${tenLoi}" — cô đánh dấu trong bài em vừa nộp`,
+          giaoBoi: du.vai.owner,
+          // Dùng lại bộ câu mẫu: bản thật sinh câu theo lỗi qua `/api/ai/*`.
+          cau: mau ? structuredClone(mau.cau) : [],
+        })
+      },
+    )
+    dem += 1
+  }
+  return dem
+}
+
+/**
  * Bật/tắt một luật của cô.
  *
  * Hỏi `rubric.update`: "máy được tự làm gì" là một phần của cách cô chấm, và `rubric` là
@@ -1241,13 +1461,57 @@ export function hoSoDayDu(vai: VaiDemo, hocVienId: string) {
     ownerId: hocVienId,
   })
 
+  /*
+   * Ghi chú riêng của cô hỏi `can()`, KHÔNG hỏi `vai === 'owner'`.
+   *
+   * Trước đây chỗ này là `vai === 'owner' ? ... : null` — một component tự kiểm quyền, đúng
+   * thứ CLAUDE.md cấm. Nhưng nó ở đó vì `permissions.json` KHÔNG CÓ dòng `teacher_notes`:
+   * `teacher_notes` được liệt kê trong `assistant_hard_ceiling` mà không có dòng trong
+   * `objects`, nên `can()` trả false cho MỌI vai — kể cả cô, chủ của ghi chú. Không hỏi được
+   * thì chỗ gọi phải tự đoán, và một cái `if` là chỗ tệ nhất để đặt chính sách.
+   *
+   * Nay ma trận có dòng đó (owner `full`, còn lại `none`), nên câu hỏi về lại đúng chỗ.
+   */
+  const docGhiChu = can(actor, 'teacher_notes.view', {
+    type: 'teacher_notes',
+    tenantId: du.tenant.id,
+    classId: lop?.id,
+    ownerId: hocVienId,
+  })
+
+  /*
+   * Lỗi lặp SUY từ dấu cô đánh trong bài đã chấm của em, không lấy từ hồ sơ.
+   *
+   * Hỏi `review.view` từng bài — cùng câu hỏi màn Tiến độ của em hỏi, nên hai màn không thể
+   * ra hai con số. Trước đây ngăn này hiện ba dòng chữ viết sẵn trong hạt giống ("3 bài liên
+   * tiếp"), còn em đọc số đếm thật (4 bài); cô là người tin con số của mình, nên cô nhắc em
+   * bằng một con số sai.
+   */
+  const baiDaCham = du.baiNop
+    .filter((b) => b.hocVienId === hocVienId)
+    .map((b) => ({ bn: b, nx: du.nhanXet.find((n) => n.baiNopId === b.id) }))
+    .filter(
+      (x): x is { bn: typeof x.bn; nx: NonNullable<typeof x.nx> } =>
+        x.nx !== undefined &&
+        can(actor, 'review.view', {
+          type: 'review',
+          tenantId: du.tenant.id,
+          classId: du.baiGiao.find((g) => g.id === x.bn.baiGiaoId)?.lopId,
+          ownerId: hocVienId,
+        }),
+    )
+    .sort((a, b) => (b.bn.nopLuc ?? '').localeCompare(a.bn.nopLuc ?? ''))
+
+  const loiLap = gomLoiLap(baiDaCham.map((x) => ({ co: x.nx.co ?? [] })))
+
   const { ghiChu, ...conLai } = h
   return {
     ...conLai,
+    loiLap,
     ten: tk?.ten ?? hocVienId,
     mau: tk?.mau ?? 'off',
     baiGanDay,
-    ghiChu: vai === 'owner' ? (ghiChu ?? '') : null,
+    ghiChu: docGhiChu ? (ghiChu ?? '') : null,
     diHoc: xemDiemDanh ? diHocCuaEm(hocVienId) : null,
     vangLienTiep: xemDiemDanh ? vangLienTiep(hocVienId) : null,
     lop: lop ?? null,
@@ -1741,6 +2005,9 @@ export function baiCanCham(vai: VaiDemo): BaiCanCham[] {
         du.lop.find((l) => l.id === bg.lopId)?.ten,
         bg.nhan,
         `${bn.soTu} từ`,
+        // Thời gian viết chỉ hiện khi CÓ đo. Bài số hoá từ giấy không có, và ghi "0 phút"
+        // vào đó thì cô đọc thành "em viết vội", tức là một câu sai về học viên.
+        bn.giayViet === undefined ? null : `viết ${Math.max(1, Math.round(bn.giayViet / 60))} phút`,
         nopLucNoiSao(bn.nopLuc, bn.muon),
       ]
         .filter(Boolean)

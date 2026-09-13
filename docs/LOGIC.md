@@ -103,6 +103,10 @@ Không bao giờ ghi đè bài giao cũ.
 ```
 `writing` là bản nháp tự lưu mỗi 10 giây. **Cô không thấy `writing`** — chưa nộp là chưa tồn tại với cô.
 `late = submitted_at > assignment.due_at`. Nộp thiếu từ vẫn cho, ghi `words` thật.
+`duration_s` = số giây em ngồi viết, đo từ lúc mở màn viết tới lúc bấm nộp. Cô cần nó để đọc bài
+đúng cách: 289 từ trong 52 phút và 312 từ trong 19 phút là hai bài khác nhau, dù nháp band bằng
+nhau. Bài **số hoá từ giấy** không có `duration_s`, và chỗ hiển thị phải bỏ trống chứ không in
+"viết 0 phút" — đó là một câu sai về học viên.
 
 ### 1.4 draft — nháp chấm (lớp 3)
 ```
@@ -267,6 +271,19 @@ Chỉ đọc `reviews`. **Không bao giờ** `drafts` — dù `drafts` mới hơ
 - Đếm chạm **3** → sinh `practice_sets` (đề xuất, lớp 3), gắn kèm nhận xét cô đã duyệt.
 - **Dứt** khi 2 bài đã duyệt liên tiếp không tái phạm → chuyển sang `resolved_errors`, giữ lịch sử.
 - Nộp lại (`attempt_no > 1`) **không** tính là bài liên tiếp — tránh đếm trùng một lỗi.
+- Đếm theo **số bài**, không theo số lần gạch: một bài mắc bốn lần vẫn là một bài. Số lần gạch
+  phụ thuộc bài dài ngắn, nên "4 lần" không nói được lỗi này nặng hơn lỗi kia.
+- Mẫu số là **số bài đã duyệt**. Bài đã đọc mà sạch lỗi VẪN vào mẫu số; bài chưa nộp thì không.
+
+**Một chỗ tính, hai màn đọc.** Ngăn hồ sơ của cô và khối "Lỗi đang kéo em lại" của em cùng gọi
+`gomLoiLap()`; khác nhau chỉ ở nguồn bài (cô đọc bài của em, em đọc bài của mình, mỗi bên qua
+`can('review.view')` của mình). Trước đây hồ sơ phía cô là ba dòng chữ viết sẵn trong dữ liệu
+mẫu, còn màn của em đếm thật — hai màn nói hai con số về cùng một học viên, và cô là người tin
+con số của mình, nên cô nhắc em bằng một con số sai.
+
+**Lỗi lẻ không phải lỗi lặp.** Lỗi mới thấy ở một bài vẫn hiện trên bài đó khi cô chấm, nhưng
+không vào khối lỗi lặp — thấy một lần thì chưa kéo ai lại. Điều này giữ ngưỡng ≥2 ở trên khỏi bị
+nới ra chỉ để đủ ba dòng như bản mẫu.
 
 ### 4.3 Tin cậy hồ sơ
 | Số bài cô đã duyệt | Mức | Hệ quả |
@@ -360,6 +377,8 @@ Lớp mới chỉ mở khi đủ N người (cô đặt N). Học phí còn lạ
 | 9 | **`attendance` là "chỉ thêm" ở ARCHITECTURE §3, nhưng bảng thật không cho thêm.** Migration 0004 đặt `unique (class_id, session_no, student_id)`, nên điểm danh lại một buổi KHÔNG thể là thêm dòng — ràng buộc chặn dòng thứ hai. Hai câu đó không cùng đúng được. Em đã chọn **giữ ràng buộc, sửa tại chỗ** (0014 + bản demo), vì ràng buộc ấy đang chặn một lỗi thật: điểm danh hai lần một buổi thì mọi con số "đi học đều" đếm buổi đó hai lần. Lịch sử "cô đã đổi ý" thì `events` giữ, và giữ chắc hơn — `events` có trigger chặn cả UPDATE lẫn DELETE (0001), còn `attendance` không có gì ép. Nếu cô muốn lịch sử nằm TRONG bảng sự thật thì phải bỏ ràng buộc và thêm cột `supersedes_id`; khi đó sửa ARCHITECTURE §3 cùng lúc. | (đã chọn, chờ xác nhận) |
 | 10 | **§4.4 nói máy TỰ CHỐT trắc nghiệm, ma trận không cho — và nâng mức cũng không phải cách.** §4.4: "Trắc nghiệm `confidence ≥ 0.97` **và** công tắc bật → tự chốt, ghi `by = 'system:rule:mcq_autoclose'`". Chính dòng `review` trong permissions.json cũng ghi chú `"system": "auto for mcq confidence>=0.97 if enabled"`. Nhưng mức của nó là `propose`, mà `propose` KHÔNG cho động từ `auto:*` nào — nên `review.auto:mcq_autoclose` bị chặn ở cửa 6. Đã thử nâng lên `auto` để xem hậu quả: nó mở luôn `review.auto:essay_autoclose`, tức là máy gửi được nhận xét TỰ LUẬN mà cô chưa đọc — đúng thứ công tắc `gui-tu-luan` (mặc định TẮT) sinh ra để chặn. Một dòng `review` không phân biệt được hai quyền đó. Em đã dựng theo hướng **cô chốt cả lớp bằng một hành động** (`chotTracNghiemCaLop`), vì đó là thứ ba trong bốn nguồn nói: bản mẫu vẽ nút "Chốt 8 & mở 2", `OPERATIONS.md` bước 4 ghi "🔵 Cô", và ma trận cho `review.send` là owner-only. Chỉ §4.4 nói khác. Hai cách nếu cô muốn máy tự chốt thật: (a) thêm object riêng, ví dụ `review_mcq`, với `system: auto` — ma trận nói được đúng điều cần nói; (b) sửa §4.4 cho khớp thực tế là cô bấm một lần. Cần cô chốt. | 4 |
 | 11 | **Đề thiếu đáp án một câu thì cả lớp không chấm được, và 0007 không chừa cửa nào.** Dựng bảng chốt điểm mới thấy: `de-g1` có câu 12 máy không tìm ra đáp án, nên cả 18 bài đều "chờ cô". Cô điền đáp án vào NGÂN HÀNG ĐỀ không giải quyết được — `propagate_exam_edit` (0007) bỏ qua mọi bài giao đã có người nộp. Bỏ qua là ĐÚNG cho phần đề bài, nhưng điền một đáp án CÒN THIẾU khác về bản chất: sửa `de`/`luaChon` là đổi thứ em ĐÃ ĐỌC, còn điền `dapAn` đang rỗng là đổi thứ em CHƯA BAO GIỜ THẤY (em không nhìn đáp án; nó chỉ để chấm). Không có cửa này thì cô chấm tay 18 lần cho đúng một câu. Em đã mở đúng một cửa hẹp (`dienDapAnThieu`): chỉ khi đáp án đang rỗng, không ghi đè đáp án đã có, chỉ chạm `dapAn` và `canhBao`, và chấm lại cả lô ngay trong cùng hành động. Bản thật cần migration mở cùng cửa đó. | (đã dựng, chờ xác nhận) |
+| 12 | ~~`teacher_notes` nằm trong `assistant_hard_ceiling` mà KHÔNG có dòng trong `objects`~~ — **đã sửa** 13/9. `can()` trả false cho MỌI vai, kể cả cô (chủ của ghi chú): cửa 6 không tìm thấy mức nào nên từ chối. Hệ quả là `hoSoDayDu` phải cắt ghi chú bằng `vai === 'owner'` và `luuGhiChu` hỏi `profile.update` — một component tự đặt chính sách, đúng thứ CLAUDE.md cấm, và chặn trợ giảng chỉ NHỜ TÌNH CỜ (họ đang ở mức `profile: read`; cấp `auto` là mở). Đây là dòng THIẾU, không phải chính sách cần chốt: trần cứng đã nói trợ giảng không bao giờ đọc, và cả thiết kế nói chỉ cô đọc — nên thêm `owner: full`, còn lại `none`. Kèm bài kiểm mới: mọi object trong trần cứng đều phải có dòng trong ma trận. | (đã sửa) |
+| 13 | **Bản mẫu cho phụ huynh đọc "Nhận xét gửi học viên", ma trận thì không.** `review.parent` là `none`, và `OPERATIONS` ghi luật nhắn phụ huynh là "gửi tiến bộ và việc cụ thể, **không gửi điểm**" — mà nhận xét thì mang band. Hai nguồn thắng một, và đây là dữ liệu của một đứa trẻ nên em chọn bên kín hơn: phụ huynh thấy hồ sơ tiến bộ + học phí, không thấy nhận xét. Khối "mỗi vai thấy gì" ở màn Cấu hình nói thẳng chỗ khác này. Cô muốn phụ huynh đọc được nhận xét thì sửa `permissions.json`, không sửa màn. | (đã chọn, chờ xác nhận) |
 
 ### §8.1 Năm dòng còn thiếu — đã áp dụng 9/9/2026
 

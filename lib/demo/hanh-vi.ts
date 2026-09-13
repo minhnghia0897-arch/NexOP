@@ -13,7 +13,9 @@ import {
   KhongDuQuyen,
   dangBai,
   datDapAn,
+  boGiongCham,
   datLuat,
+  datTrongSoRubric,
   chotMotBaiTracNghiem,
   chotTracNghiemCaLop,
   dienDapAnThieu,
@@ -32,6 +34,7 @@ import {
   nopBai,
   suaNhap,
   suaTinHocPhi,
+  taoBaiLuyenTuLoiChung,
   vaiHienTai,
 } from './kho'
 
@@ -90,9 +93,10 @@ export function nopBaiHanhVi(
   hocVienId: string,
   baiGiaoId: string,
   noiDung: string,
+  giayViet?: number,
 ): { loi?: string } {
   if (noiDung.trim().length === 0) return { loi: 'Em chưa viết gì.' }
-  return thu(() => nopBai(hocVienId, baiGiaoId, noiDung))
+  return thu(() => nopBai(hocVienId, baiGiaoId, noiDung, giayViet))
 }
 
 export function lamBaiLuyenHanhVi(
@@ -212,6 +216,33 @@ export function duyetCaCumHanhVi(): { loi?: string; so?: number } {
 export function suaTinHocPhiHanhVi(hocVienId: string, noiDung: string): { loi?: string } {
   if (!noiDung.trim()) return { loi: 'Tin không được để trống.' }
   return thu(() => suaTinHocPhi(vaiHienTai(), hocVienId, noiDung.trim()))
+}
+
+/**
+ * Cô tạo bài luyện cho những em mắc một lỗi chung — bước 6 sang bước 5.
+ *
+ * Trả về SỐ EM đã giao, để màn nói đúng việc đã xảy ra thay vì "đã tạo" chung chung.
+ */
+export function taoBaiLuyenHanhVi(lopId: string, tenLoi: string): { loi?: string; so?: number } {
+  try {
+    return { so: taoBaiLuyenTuLoiChung(vaiHienTai(), lopId, tenLoi) }
+  } catch (e) {
+    return { loi: loiChoNguoiDung(e) }
+  }
+}
+
+/** Cô đổi trọng số một tiêu chí. `rubric` là trần cứng nên trợ giảng bị chặn ở cửa 5. */
+export function datTrongSoRubricHanhVi(
+  ma: 'tr' | 'cc' | 'lr' | 'gra',
+  trongSo: number,
+): { loi?: string } {
+  if (!Number.isFinite(trongSo)) return { loi: 'Trọng số phải là một con số.' }
+  return thu(() => datTrongSoRubric(vaiHienTai(), ma, trongSo))
+}
+
+/** Cô bỏ một dòng giọng chấm. */
+export function boGiongChamHanhVi(dong: string): { loi?: string } {
+  return thu(() => boGiongCham(vaiHienTai(), dong))
 }
 
 export function luuGhiChuHanhVi(hocVienId: string, ghiChu: string): { loi?: string } {
