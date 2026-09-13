@@ -144,6 +144,49 @@ await kiem('lộ trình: trợ giảng bị chặn kèm lý do', async () => {
   if (!/tài sản của cô/.test(t)) throw new Error('không nói vì sao chặn')
 })
 
+console.log('\n── bản lưu kiểu CŨ không được làm sập màn ──')
+await moPhien()
+
+await kiem('bản lưu thiếu trường mới trong dòng → về dữ liệu mẫu, KHÔNG trang trắng', async () => {
+  /*
+   * Đây là lỗi đã làm trang trắng trên bản thật, và nó lọt qua CẢ 112 bài kiểm trước đó vì
+   * mọi bài kiểm mở context MỚI — không có bản lưu cũ. Người dùng thật thì luôn có: họ vào
+   * demo hôm qua, mình thêm `Lop.troGiangIds` hôm nay, và hôm nay họ mở lại.
+   *
+   * Nên bài kiểm này phải TỰ TẠO bản lưu cũ: vào một lần cho kho ghi, rồi hạ hình dạng xuống.
+   */
+  await tr.goto(`${U}/tong-quan/`,{waitUntil:'networkidle'})
+  await doiVai('Trợ giảng')
+
+  const ha = await tr.evaluate(() => {
+    const raw = localStorage.getItem('oblue-demo-v2')
+    if (!raw) return false
+    const x = JSON.parse(raw)
+    for (const l of x.du.lop) delete l.troGiangIds
+    for (const b of x.du.baiNop) delete b.moLuc
+    localStorage.setItem('oblue-demo-v2', JSON.stringify(x))
+    return true
+  })
+  if (!ha) throw new Error('kho chưa lưu — không dựng được bản lưu cũ để thử')
+
+  loiTrang.length = 0
+  await tr.goto(`${U}/lop-hoc/`,{waitUntil:'networkidle'})
+  await tr.waitForTimeout(600)
+
+  if (loiTrang.length) throw new Error(`màn sập: ${loiTrang[0]}`)
+  const t = await tr.locator('main').innerText()
+  if (!t.includes('Lớp học')) throw new Error('màn không vẽ được — trang trắng')
+})
+
+await kiem('và mọi màn khác cũng mở được với bản lưu cũ đó', async () => {
+  for (const man of ['hoc-vien', 'cham-bai', 'hoc-phi', 'em/hom-nay', 'em/bai-cua-toi']) {
+    loiTrang.length = 0
+    await tr.goto(`${U}/${man}/`,{waitUntil:'networkidle'})
+    await tr.waitForTimeout(300)
+    if (loiTrang.length) throw new Error(`${man} sập: ${loiTrang[0]}`)
+  }
+})
+
 await kiem('không có lỗi JavaScript nào trên mọi màn đã đi qua', async () => {
   if (loiTrang.length) throw new Error(loiTrang.slice(0,3).join(' | '))
 })

@@ -53,6 +53,7 @@ import {
   luuDeSoHoa,
   luuGhiChu,
   mayChamNhap,
+  lopPhuTrach,
   napTuBoNho,
   nhatKy,
   nopBai,
@@ -678,6 +679,37 @@ describe('bản lưu cũ không được làm vỡ bản mới', () => {
 
   afterEach(() => {
     delete (globalThis as { localStorage?: Storage }).localStorage
+  })
+
+  it('bản lưu thiếu một TRƯỜNG trong DÒNG thì cũng bị bỏ — không để sập màn', () => {
+    /*
+     * Đây là lỗi đã làm trang trắng trên bản thật, và không bài kiểm nào bắt được vì mọi bài
+     * kiểm mở context MỚI — không có bản lưu cũ. Người dùng thật thì luôn có.
+     *
+     * Thêm `Lop.troGiangIds` xong, bản lưu cũ vẫn có khoá `lop` nên vẫn được nhận, rồi
+     * `l.troGiangIds.includes(...)` ném `Cannot read properties of undefined`.
+     */
+    const du = JSON.parse(JSON.stringify(duLieu())) as Record<string, { [k: string]: unknown }[]>
+    for (const l of du.lop!) delete l.troGiangIds
+    localStorage.setItem(KHOA, JSON.stringify({ du, events: [], vai: 'owner' }))
+
+    napTuBoNho()
+
+    // Về dữ liệu mẫu, và quan trọng nhất: ĐỌC ĐƯỢC mà không ném.
+    expect(duLieu().lop.every((l) => Array.isArray(l.troGiangIds))).toBe(true)
+    expect(() => lopPhuTrach(duLieu().vai.assistant)).not.toThrow()
+  })
+
+  it('thiếu trường TUỲ CHỌN thì vẫn giữ bản lưu — đừng loại oan', () => {
+    /* `Lop.ghiChu` chỉ có ở lớp sắp mở. Coi mọi khoá của dòng mẫu đầu tiên là bắt buộc thì mọi
+       bản lưu bình thường đều bị loại, và người dùng mất dữ liệu thử sau mỗi lần tải lại. */
+    const du = JSON.parse(JSON.stringify(duLieu())) as Record<string, { [k: string]: unknown }[]>
+    for (const l of du.lop!) delete l.ghiChu
+    du.lop![0]!.ten = 'Lớp đã đổi tên'
+    localStorage.setItem(KHOA, JSON.stringify({ du, events: [], vai: 'owner' }))
+
+    napTuBoNho()
+    expect(duLieu().lop[0]!.ten).toBe('Lớp đã đổi tên')
   })
 
   it('bản lưu thiếu mảng mới thì bị bỏ, demo về dữ liệu mẫu', () => {
