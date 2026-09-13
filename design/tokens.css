@@ -20,7 +20,9 @@
      nhạt chữ đậm"). Giá trị lấy nguyên từ bản mẫu, không nắn lại. */
   --st-green-soft:#e3f9ef;--st-green-line:#c9f0dd;--st-green-deep:#00925a;
   --st-orange-soft:#fff2e0;--st-orange-line:#ffe2b8;--st-orange-deep:#d87f16;
-  --st-red-soft:#fdeaed;--st-red-line:#f6cfd6;
+  --st-red-soft:#fdeaed;--st-red-line:#f6cfd6;--st-red-deep:#a82338;
+  /* --st-red-deep: bậc chữ của bộ ba đỏ. Xanh/cam/tím/vàng đã có bậc này, đỏ thì chưa:
+     --st-red là màu chấm trạng thái, đặt lên nền --st-red-soft thì chữ nhỏ đọc mờ. */
   --st-purple-soft:#f3e8fb;--st-purple-deep:#7b3fb0;
   --st-blue-soft:#f3f8ff;--st-blue-line:#b6d9ff;
   --st-yellow-soft:#fff9e6;--st-yellow-line:#ffe8a3;--st-yellow-deep:#b26a00;

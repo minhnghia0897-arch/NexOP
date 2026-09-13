@@ -14,7 +14,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { DauManEm, WrapEm } from "@/components/em/khung";
-import { DongHo, dongHoDoc } from "@/components/em/phan-tu";
+import { DongHo } from "@/components/em/phan-tu";
 import { Khoi, KhoiTrong, Nut } from "@/components/ung-dung/phan-tu";
 import { useKho } from "@/lib/demo/dung-kho";
 import { EM, baiCuaEm, baiTuLuanPhaiNop, loiCuaEm } from "@/lib/demo/em";
@@ -23,7 +23,7 @@ import {
   moBaiLamHanhVi,
   nopBaiHanhVi,
 } from "@/lib/demo/hanh-vi";
-import { cuaLamBai, duLieu, phutLamBai } from "@/lib/demo/kho";
+import { duLieu, phutLamBai } from "@/lib/demo/kho";
 
 const TOI_THIEU = 250;
 
