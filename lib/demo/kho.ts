@@ -145,11 +145,50 @@ const KHOA_LUU = 'oblue-demo-v2'
  * Bỏ bản lưu nghĩa là demo về lại dữ liệu mẫu. Mất vài thao tác người xem vừa bấm, nhưng
  * hơn hẳn một trang trắng — và trang trắng thì họ không biết là do đâu.
  */
+/**
+ * Bản lưu có dùng được với mã HÔM NAY không.
+ *
+ * Bản đầu chỉ kiểm khoá CẤP TRÊN CÙNG (`lop`, `baiNop`, … có mặt đủ chưa), và nó bỏ lọt đúng
+ * loại hỏng thường xảy ra nhất: thêm một trường vào một DÒNG. Thêm `Lop.troGiangIds` thì bản lưu
+ * cũ vẫn có khoá `lop`, vẫn được nhận — rồi `l.troGiangIds.includes(...)` ném
+ * `Cannot read properties of undefined`, và người đang dùng demo thấy TRANG TRẮNG.
+ *
+ * Không bài kiểm nào bắt được, vì mọi bài kiểm mở context MỚI — không có bản lưu cũ. Người dùng
+ * thật thì luôn có.
+ *
+ * Nên kiểm tới cấp DÒNG. Khoá "bắt buộc" của một mảng là khoá có mặt ở MỌI dòng mẫu — khoá chỉ
+ * có ở một vài dòng (như `Lop.ghiChu`) là khoá tuỳ chọn, thiếu nó không sao.
+ *
+ * Thà loại oan một bản lưu còn dùng được (demo về dữ liệu mẫu, mất vài thao tác thử) hơn là
+ * nhận một bản lưu làm sập màn: cái thứ nhất người dùng thấy dữ liệu mẫu, cái thứ hai họ thấy
+ * trang trắng và không có đường nào tự sửa.
+ */
+function khoaBatBuoc(dong: unknown[]): string[] {
+  const hang = dong.filter((d): d is Record<string, unknown> => typeof d === 'object' && d !== null)
+  if (hang.length === 0) return []
+  return Object.keys(hang[0]!).filter((k) => hang.every((h) => k in h))
+}
+
 function dungHinhDang(du: unknown): du is DuLieuDemo {
   if (typeof du !== 'object' || du === null) return false
   const mau = duLieuBanDau() as unknown as Record<string, unknown>
   const co = du as Record<string, unknown>
-  return Object.keys(mau).every((k) => k in co)
+
+  for (const k of Object.keys(mau)) {
+    if (!(k in co)) return false
+
+    const m = mau[k]
+    const c = co[k]
+    if (!Array.isArray(m) || !Array.isArray(c) || c.length === 0) continue
+
+    // Dòng đầu của bản lưu phải mang đủ khoá bắt buộc của mảng đó.
+    const dau = c[0]
+    if (typeof dau !== 'object' || dau === null) return false
+    for (const khoa of khoaBatBuoc(m)) {
+      if (!(khoa in (dau as Record<string, unknown>))) return false
+    }
+  }
+  return true
 }
 
 function luuLai(): void {
