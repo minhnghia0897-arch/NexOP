@@ -29,6 +29,7 @@ import {
   loiChungCuaLop,
   mayNhapTinHocPhi,
   mayChamTracNghiem,
+  moBaiLam,
   soLieuTracNghiem,
   suaTinHocPhi,
   taoBaiLuyenTuLoiChung,
@@ -168,6 +169,9 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
       const du = duLieu()
       const bgKhac = du.baiGiao.find((g) => g.lopId === 'lop-55')!
       const emKhac = du.lop.find((l) => l.id === 'lop-55')!.hocVienIds[0]!
+      // Nộp phải có lượt MỞ trước — máy trạng thái ở LOGIC §1.3 không có đường
+      // `(chưa có) → submitted`, và mốc mở là thứ làm cho thời gian làm bài đo được.
+      moBaiLam(emKhac, bgKhac.id)
       nopBai(emKhac, bgKhac.id, 'Bài của em lớp 5.5')
       const bnKhac = du.baiNop.find((b) => b.hocVienId === emKhac)!
       expect(() => deXuatChoCo('assistant', bnKhac.id, 'x')).toThrow(KhongDuQuyen)
@@ -233,15 +237,33 @@ describe('kho demo — luật thật, chỗ lưu giả', () => {
       expect(ev.visibility).not.toContain('hv-l55-1')
     })
 
-    it('em nộp bài thì có sự kiện, và chỉ cô với em thấy', () => {
-      nopBai('hv-08', 'bg-w1', 'Bài em viết ' + 'x '.repeat(60))
+    it('em MỞ bài thì chỉ em thấy — cô chưa thấy bài đang viết', () => {
+      /*
+       * LOGIC §1.3: "cô không thấy `writing` — chưa nộp là chưa tồn tại với cô". Nên
+       * visibility của dòng mở bài KHÔNG có cô, khác mọi sự kiện khác của lớp. Cho cô vào
+       * đây thì cô mở nhật ký ra thấy "em mở bài lúc 21:10" rồi ngồi đợi một bài em đã đóng
+       * tab từ lâu.
+       */
+      moBaiLam('hv-08', 'bg-w1')
       const ev = nhatKy()[0]!
       expect(ev.action).toBe('submission.create')
+      expect(ev.payload.trang_thai).toBe('writing')
+      expect(ev.visibility).toEqual(['hv-08'])
+    })
+
+    it('em nộp bài thì có sự kiện, và chỉ cô với em thấy', () => {
+      moBaiLam('hv-08', 'bg-w1')
+      nopBai('hv-08', 'bg-w1', 'Bài em viết ' + 'x '.repeat(60))
+      const ev = nhatKy()[0]!
+      // Nộp là ĐỔI TRẠNG THÁI của dòng đã có, nên `update` chứ không phải `create`.
+      expect(ev.action).toBe('submission.update')
+      expect(ev.payload.trang_thai).toBe('submitted')
       expect(ev.visibility.sort()).toEqual(['acc-co-thao', 'hv-08'])
     })
 
     it('nộp muộn được đánh dấu là muộn', () => {
       // bg-w1 đã quá hạn từ hôm qua.
+      moBaiLam('hv-09', 'bg-w1')
       nopBai('hv-09', 'bg-w1', 'Em nộp muộn')
       const vua = duLieu().baiNop.find((b) => b.hocVienId === 'hv-09' && b.baiGiaoId === 'bg-w1')!
       expect(vua.muon).toBe(true)

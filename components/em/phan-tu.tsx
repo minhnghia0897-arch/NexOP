@@ -194,24 +194,35 @@ export function dongHoDoc(giay: number): string {
  */
 export function DongHo({
   nhan,
+  tu,
   doiGiay,
 }: {
   nhan?: string
+  /**
+   * Mốc bắt đầu dạng ISO. Không truyền thì đếm từ lúc thành phần được dựng.
+   *
+   * Màn nộp bài truyền `moLuc` của dòng bài nộp — mốc đã ghi vào `events`. Đếm từ lúc dựng thì
+   * em tải lại trang là đồng hồ về 0, và con số trên màn nói khác con số cô đọc.
+   */
+  tu?: string | null
   doiGiay?: (giay: number) => void
 }) {
   const [giay, datGiay] = useState(0)
-  const batDau = useRef(Date.now())
+  const batDau = useRef(tu ? new Date(tu).getTime() : Date.now())
+  if (tu) batDau.current = new Date(tu).getTime()
   const bao = useRef(doiGiay)
   bao.current = doiGiay
 
   useEffect(() => {
-    const t = setInterval(() => {
-      const g = Math.floor((Date.now() - batDau.current) / 1000)
+    const dem = () => {
+      const g = Math.max(0, Math.floor((Date.now() - batDau.current) / 1000))
       datGiay(g)
       bao.current?.(g)
-    }, 1000)
+    }
+    dem()
+    const t = setInterval(dem, 1000)
     return () => clearInterval(t)
-  }, [])
+  }, [tu])
 
   return (
     <span className="flex items-center gap-2 font-display text-[12px] font-semibold text-text-2">

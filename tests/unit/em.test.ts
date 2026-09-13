@@ -16,8 +16,28 @@ import {
   loiCuaEm,
   tienBoBand,
 } from '@/lib/demo/em'
-import { gomLoiLap, xepLoiLap, type LoiDanhDau, type LoiLap } from '@/lib/demo/du-lieu'
-import { baiCanCham, datLai, duLieu, hoSoDayDu, nhatKy, nopBai } from '@/lib/demo/kho'
+import {
+  giayLamBai,
+  gomLoiLap,
+  xepLoiLap,
+  type LoiDanhDau,
+  type LoiLap,
+} from '@/lib/demo/du-lieu'
+import {
+  DaChotKhongSua,
+  baiCanCham,
+  cuaLamBai,
+  datLai,
+  giaoBai,
+  duLieu,
+  hoSoDayDu,
+  lichSuLamBai,
+  luuNhapBai,
+  moBaiLam,
+  nhatKy,
+  nopBai,
+  phutLamBai,
+} from '@/lib/demo/kho'
 
 beforeEach(() => {
   datLai()
@@ -209,31 +229,193 @@ describe('bài luyện nối với lỗi bằng khoá, không bằng chuỗi', (
   })
 })
 
-describe('thời gian viết', () => {
-  it('nộp bài có ghi số giây, và cô đọc được trên thẻ chấm', () => {
+describe('thời gian làm bài suy từ hai mốc, không tin lời khai', () => {
+  it('mở bài rồi nộp → thời gian là hiệu của hai mốc, và cô đọc được trên thẻ chấm', () => {
     const bg = duLieu().baiGiao.find((g) => g.id === 'bg-w2')!
-    nopBai(EM, bg.id, 'x '.repeat(260), 1500)
+    moBaiLam(EM, bg.id)
 
-    const bn = duLieu().baiNop.find((b) => b.baiGiaoId === bg.id && b.hocVienId === EM)!
-    expect(bn.giayViet).toBe(1500)
+    const dong = () =>
+      duLieu().baiNop.find((b) => b.baiGiaoId === bg.id && b.hocVienId === EM)!
 
-    // Sự kiện mang theo con số, không chỉ dòng dữ liệu — cô xem nhật ký cũng thấy.
-    expect(
-      nhatKy().some(
-        (e) => e.action === 'submission.create' && e.payload.giay_viet === 1500,
-      ),
-    ).toBe(true)
+    // Mở xong: có mốc mở, chưa có mốc nộp → CHƯA đo được.
+    expect(dong().moLuc).not.toBeNull()
+    expect(dong().nopLuc).toBeNull()
+    expect(giayLamBai(dong())).toBeNull()
+
+    // Lùi mốc mở 20 phút để có khoảng đo được mà không phải chờ thật.
+    dong().moLuc = new Date(Date.now() - 20 * 60_000).toISOString()
+    nopBai(EM, bg.id, 'x '.repeat(260))
+
+    expect(phutLamBai(dong())).toBe(20)
+    const the = baiCanCham('owner').find((b) => b.baiNopId === dong().id)
+    if (the) expect(the.meta).toContain('viết 20 phút')
   })
 
-  it('bài không đo được thời gian thì KHÔNG in "viết 0 phút"', () => {
-    // Bài trong hạt giống nộp trước khi có đồng hồ: không có `giayViet`.
-    const cu = duLieu().baiNop.find((b) => b.giayViet === undefined)
+  it('KHÔNG có con số thời gian nào đi từ client vào sự kiện', () => {
+    /*
+     * Bản trước màn nộp gửi kèm `giay_viet` do đồng hồ trình duyệt đếm. Một con số client gửi
+     * thì em sửa được, mà cô đọc nó như sự thật. Giờ hai mốc là hai sự kiện, và thời gian là
+     * phép trừ — nên không payload nào được mang sẵn số giây.
+     */
+    const bg = duLieu().baiGiao.find((g) => g.id === 'bg-w2')!
+    moBaiLam(EM, bg.id)
+    nopBai(EM, bg.id, 'x '.repeat(260))
+
+    for (const e of nhatKy().filter((x) => x.objectType === 'submission')) {
+      expect(Object.keys(e.payload)).not.toContain('giay_viet')
+      expect(Object.keys(e.payload)).not.toContain('duration_s')
+    }
+  })
+
+  it('bài KHÔNG làm trong app thì không đo được — và không in "viết 0 phút"', () => {
+    // Trắc nghiệm làm trên lớp: không có mốc mở.
+    const cu = duLieu().baiNop.find((b) => b.moLuc === null)
     expect(cu).toBeDefined()
+    expect(giayLamBai(cu!)).toBeNull()
 
     for (const bai of baiCanCham('owner')) {
       const bn = duLieu().baiNop.find((b) => b.id === bai.baiNopId)!
-      if (bn.giayViet === undefined) expect(bai.meta).not.toContain('viết')
+      if (phutLamBai(bn) === null) expect(bai.meta).not.toContain('viết')
       else expect(bai.meta).toContain('viết')
     }
+  })
+
+  it('mốc lệch (nộp trước cả lúc mở) thì nói KHÔNG ĐO ĐƯỢC, không nói 0', () => {
+    expect(
+      giayLamBai({ moLuc: '2026-09-13T10:00:00.000Z', nopLuc: '2026-09-13T09:00:00.000Z' }),
+    ).toBeNull()
+  })
+})
+
+describe('điều kiện em được làm bài — một chỗ trả lời', () => {
+  const BG = 'bg-w2'
+
+  it('bài cô đã giao cho lớp em, chưa nộp → làm được', () => {
+    const c = cuaLamBai(EM, BG)
+    expect(c.duoc).toBe(true)
+    expect(c.vi).toBeNull()
+    expect(c.daNop).toBe(false)
+  })
+
+  it('mở bài rồi thì đang viết, và mở LẠI không tạo lượt thứ hai', () => {
+    moBaiLam(EM, BG)
+    expect(cuaLamBai(EM, BG).dangViet).toBe(true)
+
+    const moLuc = duLieu().baiNop.find((b) => b.baiGiaoId === BG)!.moLuc
+    const soDong = duLieu().baiNop.length
+    const soSuKien = nhatKy().filter((e) => e.action === 'submission.create').length
+
+    moBaiLam(EM, BG)
+
+    expect(duLieu().baiNop.length).toBe(soDong)
+    expect(nhatKy().filter((e) => e.action === 'submission.create').length).toBe(soSuKien)
+    // Và mốc KHÔNG đặt lại: tải lại trang không được thành "em viết 2 phút".
+    expect(duLieu().baiNop.find((b) => b.baiGiaoId === BG)!.moLuc).toBe(moLuc)
+  })
+
+  it('bài của lớp khác thì không làm được', () => {
+    const cuaLopKhac = duLieu().baiGiao.find(
+      (g) => g.lopId !== duLieu().lop.find((l) => l.hocVienIds.includes(EM))?.id,
+    )
+    expect(cuaLopKhac).toBeDefined()
+    const c = cuaLamBai(EM, cuaLopKhac!.id)
+    expect(c.duoc).toBe(false)
+    expect(c.vi).toBe('khong-trong-lop')
+  })
+
+  it('bài trợ giảng mới ĐỀ XUẤT thì chưa tồn tại với em', () => {
+    const lop = duLieu().lop.find((l) => l.hocVienIds.includes(EM))!
+    const lt = duLieu().loTrinh.find((x) => x.buoi.some((b) => b.deId))!
+    const buoi = lt.buoi.find((b) => b.deId)!
+    const id = giaoBai('assistant', {
+      loTrinhId: lt.id,
+      buoiNo: buoi.no,
+      lopId: lop.id,
+      hanNop: new Date(Date.now() + 86_400_000).toISOString(),
+      trongSo: 10,
+    })
+    // Trợ giảng chỉ ĐỀ XUẤT được, nên bài nằm ở trạng thái chờ cô.
+    expect(duLieu().baiGiao.find((g) => g.id === id)!.trangThai).toBe('de_xuat')
+
+    const c = cuaLamBai(EM, id)
+    expect(c.duoc).toBe(false)
+    expect(c.vi).toBe('chua-giao')
+  })
+})
+
+describe('nộp rồi là CHỐT — không ai sửa được, kể cả em', () => {
+  const BG = 'bg-w2'
+
+  beforeEach(() => {
+    moBaiLam(EM, BG)
+    nopBai(EM, BG, 'bài của em '.repeat(30))
+  })
+
+  it('cửa nói đã nộp, và nói rõ là không sửa được', () => {
+    const c = cuaLamBai(EM, BG)
+    expect(c.duoc).toBe(false)
+    expect(c.vi).toBe('da-nop')
+    expect(c.noi).toContain('không sửa được')
+  })
+
+  it('lưu nháp sau khi nộp bị TỪ CHỐI, và nội dung không đổi', () => {
+    const truoc = duLieu().baiNop.find((b) => b.baiGiaoId === BG)!.noiDung
+    expect(() => luuNhapBai(EM, BG, 'em viết lại hết')).toThrow(DaChotKhongSua)
+    expect(duLieu().baiNop.find((b) => b.baiGiaoId === BG)!.noiDung).toBe(truoc)
+  })
+
+  it('nộp lần thứ hai bị TỪ CHỐI, và mốc nộp đầu tiên giữ nguyên', () => {
+    const lan1 = duLieu().baiNop.find((b) => b.baiGiaoId === BG)!.nopLuc
+    expect(() => nopBai(EM, BG, 'bài khác hẳn')).toThrow(DaChotKhongSua)
+    expect(duLieu().baiNop.find((b) => b.baiGiaoId === BG)!.nopLuc).toBe(lan1)
+    // Và không sinh dòng thứ hai cho cùng một bài giao.
+    expect(duLieu().baiNop.filter((b) => b.baiGiaoId === BG && b.hocVienId === EM)).toHaveLength(1)
+  })
+
+  it('mở lại bài đã nộp cũng bị từ chối — không có đường nào về trạng thái đang viết', () => {
+    expect(() => moBaiLam(EM, BG)).toThrow(DaChotKhongSua)
+    expect(duLieu().baiNop.find((b) => b.baiGiaoId === BG)!.nopLuc).not.toBeNull()
+  })
+})
+
+describe('lịch sử làm bài đọc từ events, theo đúng visibility', () => {
+  const BG = 'bg-w2'
+
+  it('em thấy cả hai mốc của lượt: mở bài và nộp bài', () => {
+    moBaiLam(EM, BG)
+    nopBai(EM, BG, 'x '.repeat(260))
+
+    const ls = lichSuLamBai('student', EM)
+    expect(ls.some((x) => x.viec === 'Mở bài ra làm')).toBe(true)
+    expect(ls.some((x) => x.viec.startsWith('Nộp bài'))).toBe(true)
+    // Mới nhất trước.
+    expect(ls[0]!.viec.startsWith('Nộp bài')).toBe(true)
+  })
+
+  it('cô KHÔNG thấy dòng "mở bài" của một bài em chưa nộp — LOGIC §1.3', () => {
+    moBaiLam(EM, BG)
+
+    const cua = lichSuLamBai('owner', EM)
+    const ten = duLieu().baiGiao.find((g) => g.id === BG)!.nhan!
+    expect(cua.some((x) => x.viec === 'Mở bài ra làm' && x.y.includes(ten))).toBe(false)
+    // Còn em thì thấy bài của mình.
+    expect(lichSuLamBai('student', EM).some((x) => x.viec === 'Mở bài ra làm')).toBe(true)
+  })
+
+  it('nộp rồi thì cô thấy — và thấy cả số từ', () => {
+    moBaiLam(EM, BG)
+    nopBai(EM, BG, 'x '.repeat(260))
+
+    const nop = lichSuLamBai('owner', EM).find((x) => x.viec.startsWith('Nộp bài'))
+    expect(nop).toBeDefined()
+    expect(nop!.y).toMatch(/\d+ từ/)
+  })
+
+  it('em KHÔNG đọc được lịch sử của bạn cùng lớp', () => {
+    moBaiLam(EM, BG)
+    nopBai(EM, BG, 'x '.repeat(260))
+    // `lichSuLamBai` lọc theo visibility với actor của người đang xem, nên một em khác
+    // không nằm trong visibility của dòng nào của Minh Anh.
+    expect(lichSuLamBai('student', 'hv-02')).toHaveLength(0)
   })
 })

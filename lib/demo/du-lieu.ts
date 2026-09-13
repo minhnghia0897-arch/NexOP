@@ -109,6 +109,16 @@ export interface BaiNop {
   hocVienId: string
   noiDung: string
   soTu: number
+  /**
+   * Lúc em MỞ bài ra làm — mốc đầu của một lượt làm bài.
+   *
+   * `null` nghĩa là bài không làm trong app: số hoá từ giấy, hoặc nhập tay. Không có mốc mở
+   * thì không có thời gian làm bài, và chỗ hiển thị phải bỏ trống.
+   *
+   * Dòng bài nộp sinh ra ở đây, TRƯỚC khi em viết chữ nào — đúng máy trạng thái ở LOGIC §1.3
+   * (`writing` → `submitted`). Cô không thấy dòng `writing`: chưa nộp là chưa tồn tại với cô.
+   */
+  moLuc: string | null
   nopLuc: string | null
   muon: boolean
   /**
@@ -119,20 +129,24 @@ export interface BaiNop {
    * Bài tự luận không có trường này; bài trắc nghiệm thì `noiDung` rỗng.
    */
   traLoi?: Record<number, string>
-  /**
-   * Em ngồi viết bao lâu, tính bằng giây — đo từ lúc mở màn nộp tới lúc bấm nộp.
-   *
-   * Cô cần con số này để đọc bài đúng cách: 250 từ viết trong 6 phút và 250 từ viết trong
-   * 40 phút là hai bài khác nhau, dù band máy nháp ra có thể bằng nhau. Bản mẫu cũng nói
-   * đúng thế ở bước 1 sau khi nộp: "cô thấy ngay, kèm thời gian viết và số từ".
-   *
-   * Không bắt buộc: bài số hoá từ giấy thì không có thời gian nào để đo.
-   *
-   * Ứng với cột `submissions.duration_s` đã có từ migration 0007 — không thêm bảng, không
-   * thêm cột. Cột đó đứng đó từ đầu mà chưa màn nào ghi vào: đúng loại chỗ để lâu thành
-   * "schema có mà sản phẩm không có".
-   */
-  giayViet?: number
+}
+
+/**
+ * Thời gian làm một bài, tính bằng giây — `null` khi không đo được.
+ *
+ * SUY từ hai mốc thật (`moLuc` → `nopLuc`), không phải một con số máy em gửi lên. Khác nhau ở
+ * chỗ ai nói: một con số client gửi thì em sửa được, còn hai mốc là hai dòng trong lịch sử,
+ * mỗi dòng có một sự kiện đỡ bên dưới. Cô đọc "viết 34 phút" thì đó là 34 phút thật.
+ *
+ * Cũng vì thế mà bỏ hẳn trường `giayViet` cũ: hai chỗ cùng nói một thứ thì sớm muộn lệch nhau.
+ */
+export function giayLamBai(bn: Pick<BaiNop, 'moLuc' | 'nopLuc'>): number | null {
+  if (!bn.moLuc || !bn.nopLuc) return null
+  const giay = Math.round(
+    (new Date(bn.nopLuc).getTime() - new Date(bn.moLuc).getTime()) / 1000,
+  )
+  // Mốc lệch (đồng hồ máy chạy lùi, dữ liệu mẫu đặt sai) thì nói KHÔNG ĐO ĐƯỢC, không nói 0.
+  return giay > 0 ? giay : null
 }
 
 /**
@@ -1265,13 +1279,16 @@ export function duLieuBanDau(): DuLieuDemo {
     soTu: [268, 301, 254, 289, 312, 243, 276][i]!,
     nopLuc: luc(-1, [20, 21, 22, 20, 23, 21, 22][i]!),
     /*
-     * Số phút em ngồi viết — bảy em viết bằng app nên đều đo được.
+     * Mốc MỞ bài — bảy em làm bằng app nên lượt nào cũng có hai mốc.
      *
-     * Cô cần nó để đọc bài đúng cách: 289 từ trong 52 phút và 312 từ trong 19 phút là hai
-     * bài khác nhau, dù nháp band có thể bằng nhau. Chỗ duy nhất chồng bài "tối chủ nhật"
-     * nói được điều đó là dòng meta trên thẻ chấm.
+     * Đặt lùi so với lúc nộp đúng số phút em ngồi viết: 289 từ trong 52 phút và 312 từ trong
+     * 19 phút là hai bài khác nhau, dù nháp band có thể bằng nhau. Chỗ duy nhất chồng bài
+     * "tối chủ nhật" nói được điều đó là dòng meta trên thẻ chấm.
      */
-    giayViet: [34, 41, 28, 52, 19, 25, 36][i]! * 60,
+    moLuc: new Date(
+      new Date(luc(-1, [20, 21, 22, 20, 23, 21, 22][i]!)).getTime() -
+        [34, 41, 28, 52, 19, 25, 36][i]! * 60_000,
+    ).toISOString(),
     muon: i === 4,
     noiDung: BAI_MAU[i]!,
   }))
@@ -1504,6 +1521,8 @@ export function duLieuBanDau(): DuLieuDemo {
    * thì cột "Sai ở đâu" không gom thành chủ đề nào.
    */
   const CAU_G1 = CAU_HOI_NGU_PHAP()
+  /* Trắc nghiệm làm TRÊN LỚP, không qua app — nên `moLuc` là null và cô không thấy thời gian
+     làm bài ở đâu cả. Đặt một mốc mở giả cho đủ kiểu là bịa ra một con số cô sẽ đọc thật. */
   const baiNopTracNghiem: BaiNop[] = HOC_VIEN.map((h, i) => {
     const band = hoSo.find((x) => x.id === h.id)?.bandTb ?? 6
     /*
@@ -1558,7 +1577,7 @@ export function duLieuBanDau(): DuLieuDemo {
       baiGiaoId: 'bg-g1',
       hocVienId: h.id,
       soTu: 0,
-      nopLuc: luc(-2, 19 + (i % 4)),
+      moLuc: null, nopLuc: luc(-2, 19 + (i % 4)),
       muon: i === 9 || i === 14,
       noiDung: '',
       traLoi,
@@ -1777,9 +1796,14 @@ export function duLieuBanDau(): DuLieuDemo {
     // nhất thật — không phải bốn dòng cùng một giờ rồi sắp theo thứ tự khai báo.
     const han = baiGiao.find((g) => g.id === bgId)!.hanNop
     const ngayHan = Math.round((new Date(han).getTime() - Date.now()) / (24 * 3600_000))
+    const nopLuc = luc(ngayHan, 21)
     baiNop.push({
       id: bnId, baiGiaoId: bgId, hocVienId: 'hv-01',
-      noiDung: BAI_MAU[0]!, soTu: 250 + band * 10, nopLuc: luc(ngayHan, 21), muon: false,
+      noiDung: BAI_MAU[0]!, soTu: 250 + band * 10,
+      /* Bài càng về sau em viết càng nhanh — 46 phút xuống 31. Đó là một tiến bộ khác với
+         tiến bộ band, và là thứ chỉ hai mốc thời gian nói được. */
+      moLuc: new Date(new Date(nopLuc).getTime() - (46 - band * 2) * 60_000).toISOString(),
+      nopLuc, muon: false,
     })
     nhanXet.push({
       id: `nx-${bgId}-hv-01`, baiNopId: bnId, band, noiDung,
@@ -1806,7 +1830,9 @@ export function duLieuBanDau(): DuLieuDemo {
     const bnId = `bn-${hvId}-${bgId}`
     baiNop.push({
       id: bnId, baiGiaoId: bgId, hocVienId: hvId,
-      noiDung: BAI_MAU[2]!, soTu: 261, nopLuc: luc(-2), muon: false,
+      noiDung: BAI_MAU[2]!, soTu: 261,
+      moLuc: new Date(new Date(luc(-2)).getTime() - 38 * 60_000).toISOString(),
+      nopLuc: luc(-2), muon: false,
     })
     nhanXet.push({
       id: `nx-${bgId}-${hvId}`, baiNopId: bnId, band, noiDung,
