@@ -103,10 +103,60 @@ Không bao giờ ghi đè bài giao cũ.
 ```
 `writing` là bản nháp tự lưu mỗi 10 giây. **Cô không thấy `writing`** — chưa nộp là chưa tồn tại với cô.
 `late = submitted_at > assignment.due_at`. Nộp thiếu từ vẫn cho, ghi `words` thật.
-`duration_s` = số giây em ngồi viết, đo từ lúc mở màn viết tới lúc bấm nộp. Cô cần nó để đọc bài
-đúng cách: 289 từ trong 52 phút và 312 từ trong 19 phút là hai bài khác nhau, dù nháp band bằng
-nhau. Bài **số hoá từ giấy** không có `duration_s`, và chỗ hiển thị phải bỏ trống chứ không in
-"viết 0 phút" — đó là một câu sai về học viên.
+
+**Không có đường `(chưa có) → submitted`.** Nộp phải có lượt MỞ trước; dòng `submissions` sinh ra
+lúc em mở bài với `submitted_at is null`. Chặn cả ở RLS (0015: `insert` chỉ nhận
+`submitted_at is null`), vì nếu một lần gọi API là nộp xong thì mốc mở — thứ duy nhất đo được
+thời gian làm bài — không bao giờ tồn tại.
+
+**Điều kiện em làm được bài, theo đúng thứ tự** (một hàm trả lời, giao diện và đường ghi cùng hỏi):
+1. quyền — `can(em, 'submission.create', …)`;
+2. lớp — bài của lớp em không ở trong thì không;
+3. hiệu lực — bài trợ giảng mới `de_xuat` thì chưa tồn tại với em;
+4. đã nộp — nộp là chốt.
+
+**Quá hạn KHÔNG phải cửa chặn.** Nộp muộn vẫn nhận, ghi `late = true`. Chặn lúc quá hạn thì em nào
+chậm một hôm sẽ không bao giờ nộp nữa, còn cô thì mất luôn bài để đọc.
+
+**`duration_s` là cột TÍNH** = `submitted_at − created_at`, không ai ghi vào được (0015). Cô cần nó
+để đọc bài đúng cách: 289 từ trong 52 phút và 312 từ trong 19 phút là hai bài khác nhau, dù nháp
+band bằng nhau. Một con số client gửi thì em sửa được mà cô đọc như sự thật — nên nó phải suy từ
+hai mốc, mỗi mốc có một sự kiện đỡ bên dưới. Bài **số hoá từ giấy** không có mốc mở, nên không đo
+được, và chỗ hiển thị phải bỏ trống chứ không in "viết 0 phút" — đó là một câu sai về học viên.
+
+### Đã nộp là CHỐT
+Không ai sửa được dòng đã nộp — **kể cả cô, kể cả một câu UPDATE chạy tay**. Ép bằng trigger
+(`app.submission_frozen_after_submit`, 0015), không chỉ bằng RLS: RLS chặn em, còn chủ bảng đi vòng
+qua RLS. Xoá cũng chặn — bài nộp là lớp 1, chỉ thêm.
+
+Vì sao chặt thế: band của em tính từ bài này, và nhận xét cô gửi **trích chính chữ trong này**. Sửa
+được nội dung sau khi nộp thì một trích dẫn cô đã gửi có thể không còn trong bài, và cả hồ sơ năng
+lực thành thứ không kiểm lại được.
+
+Với em thì cửa này **không ném lỗi**: `using` của chính sách có `submitted_at is null`, nên câu
+UPDATE sửa 0 dòng và trả về êm ru. "Không có lỗi" ở đây không có nghĩa là "sửa được" — test phải
+chốt nội dung, không chốt lời từ chối.
+
+### Lịch sử làm bài
+`events` ĐÃ là lịch sử: chỉ thêm, có `visibility` tính lúc ghi, có actor và giờ. Không dựng bảng
+"lịch sử làm bài" riêng — đó là bản sao thứ hai của cùng sự thật.
+
+Một lượt có **hai** sự kiện, hai đầu:
+| Hành vi | action | payload | visibility |
+|---|---|---|---|
+| Em mở bài | `submission.create` | `trang_thai: 'writing'` | **chỉ em** |
+| Em nộp | `submission.update` | `trang_thai: 'submitted'`, `so_tu`, `muon` | cô + em |
+
+Dòng mở bài KHÔNG có cô trong `visibility` — "cô không thấy `writing`" ở trên là thế. Cho cô vào
+thì cô mở nhật ký thấy "em mở bài lúc 21:10" rồi ngồi đợi một bài em đã đóng tab từ lâu.
+
+**Lưu nháp KHÔNG sinh sự kiện** — ngoại lệ duy nhất của luật "mọi hành vi ghi `events` trước". Gõ
+thêm một chữ rồi máy tự lưu không phải một *hành vi*: không tới ai, không đổi trạng thái, cô không
+thấy. Ghi mỗi giây một dòng thì nhật ký của lớp đầy hàng nghìn dòng "em gõ tiếp" và dòng thật chìm
+trong đó — nhật ký hết dùng được, mà nhật ký là chỗ cô tra khi có chuyện.
+
+Mở LẠI (đóng tab rồi vào tiếp) **không** tạo lượt mới và **không** đặt lại mốc mở: đó vẫn là một
+lượt. Đặt lại thì em chỉ cần tải lại trang là "viết 2 phút", và con số mất nghĩa.
 
 ### 1.4 draft — nháp chấm (lớp 3)
 ```

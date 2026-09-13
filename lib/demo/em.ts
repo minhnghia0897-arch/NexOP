@@ -12,7 +12,7 @@
 import { can, type Actor } from '@/lib/auth/can'
 
 import { gomLoiLap, type BaiGiao, type BaiLuyen, type LoiDanhDau, type LoiLap, type NhanXet } from './du-lieu'
-import { dangChay, diHocTrongLop, duLieu } from './kho'
+import { dangChay, diHocTrongLop, duLieu, phutLamBai } from './kho'
 
 /**
  * Em đang đăng nhập trong bản demo.
@@ -84,6 +84,10 @@ export interface BaiTrongHoSo {
   band: number | null
   nhanXet: NhanXet | null
   co: LoiDanhDau[]
+  /** Lúc em nộp — `null` là chưa nộp. */
+  nopLuc: string | null
+  /** Số phút em ngồi làm, suy từ hai mốc. `null` khi không đo được. */
+  phutLam: number | null
 }
 
 /**
@@ -125,11 +129,15 @@ export function baiCuaEm(hocVienId: string): BaiTrongHoSo[] {
       baiGiaoId: bg.id,
       nhan: bg.nhan ?? du.de.find((d) => d.id === bg.deId)?.ten ?? 'Bài tập',
       hanNop: bg.hanNop,
-      daNop: Boolean(bn),
+      // Dòng `writing` KHÔNG phải đã nộp. Trước đây chỉ cần có dòng là "đã nộp", và từ lúc
+      // dòng sinh ra ngay khi em mở bài thì em vừa mở ra đã thấy bài mình "đã nộp".
+      daNop: Boolean(bn?.nopLuc),
       muon: Boolean(bn?.muon),
       band: doc ? (nx?.band ?? null) : null,
       nhanXet: doc ? nx : null,
       co: doc ? (nx?.co ?? []) : [],
+      nopLuc: bn?.nopLuc ?? null,
+      phutLam: bn ? phutLamBai(bn) : null,
     })
   }
 

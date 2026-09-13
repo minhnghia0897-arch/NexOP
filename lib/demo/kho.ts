@@ -30,6 +30,7 @@ import { can, type Actor, type TargetObject } from '@/lib/auth/can'
 import {
   chamTracNghiem,
   duLieuBanDau,
+  giayLamBai,
   gomLoiLap,
   nhapTinHocPhi,
   type DuLieuDemo,
@@ -77,6 +78,8 @@ function trangThai(): TrangThai {
 
 /** Về lại dữ liệu mẫu. Có nút gọi nó, để người demo thử lại từ đầu. */
 export function datLai(): void {
+  // Đặt cờ: không có nó thì lần GHI đầu tiên sau khi đặt lại sẽ nạp lại đúng bản vừa xoá.
+  daNapTuBoNho = true
   const g = globalThis as CoKho
   g[KHOA] = { du: duLieuBanDau(), events: [] }
   vaiDangXem = 'owner'
@@ -183,6 +186,27 @@ function doTuBoNho(): TrangThai | null {
  * thì hai bên lệch nhau và React kêu hydrat hoá sai. Nạp trong effect thì lần vẽ đầu khớp,
  * rồi mới đổi sang bản của người xem.
  */
+/**
+ * Bảo đảm kho đã nạp bản lưu TRƯỚC KHI GHI.
+ *
+ * `napTuBoNho()` được gọi trong effect của layout, nhưng React chạy effect của trang con
+ * TRƯỚC effect của layout cha. Nên một trang ghi ngay khi mở (màn nộp bài gọi `moBaiLam`) sẽ
+ * ghi vào kho chưa nạp — kho đang là dữ liệu mẫu — rồi `luuLai()` đè bản lưu thật. Hậu quả:
+ * em gõ bài, tải lại trang, bài biến mất. Đúng loại lỗi chỉ lộ khi bấm thật.
+ *
+ * Nạp ở đây chứ không nạp trong `trangThai()`: `trangThai()` cũng bị gọi lúc VẼ, mà đọc
+ * localStorage ở lần vẽ đầu thì lệch với HTML dựng sẵn và React kêu hydrat hoá sai. Còn ghi
+ * thì chỉ xảy ra sau khi trang đã gắn xong, nên chỗ này an toàn.
+ */
+let daNapTuBoNho = false
+
+function baoDamDaNap(): void {
+  if (daNapTuBoNho) return
+  daNapTuBoNho = true
+  const cu = doTuBoNho()
+  if (cu) (globalThis as CoKho)[KHOA] = cu
+}
+
 export function napTuBoNho(): void {
   // Dọn bản lưu của khoá cũ: nó không còn ai đọc, và để lại thì chiếm chỗ của người dùng.
   try {
@@ -190,6 +214,18 @@ export function napTuBoNho(): void {
   } catch {
     // Không đọc được localStorage thì cũng chẳng có gì để dọn.
   }
+
+  /*
+   * Lời gọi TƯỜNG MINH thì luôn nạp, không nhìn cờ.
+   *
+   * Bản đầu em cho cờ chặn cả ở đây, và test cũ đỏ ngay: `napTuBoNho()` gọi xong mà không có
+   * gì xảy ra là một hàm nói dối tên của nó. Cờ chỉ để đường GHI không phải nạp hai lần —
+   * `baoDamDaNap` là chỗ của nó.
+   *
+   * Gọi sau khi một trang con đã ghi thì đọc lại localStorage ra ĐÚNG thứ vừa ghi (vì `ghi()`
+   * luôn `luuLai()` ngay), nên không đè mất gì.
+   */
+  daNapTuBoNho = true
 
   const cu = doTuBoNho()
   if (!cu) return
@@ -283,6 +319,7 @@ function ghi<T>(
 ): T {
   if (!can(actor, action, object)) throw new KhongDuQuyen(action)
 
+  baoDamDaNap()
   const st = trangThai()
   st.events.push({
     id: maMoi('ev'),
@@ -639,41 +676,275 @@ export function dangBai(vai: VaiDemo, lopId: string, noiDung: string): void {
   )
 }
 
-/** Em nộp bài. */
-export function nopBai(
-  hocVienId: string,
-  baiGiaoId: string,
-  noiDung: string,
-  giayViet?: number,
-): void {
+/**
+ * Vì sao em KHÔNG làm được bài này. `null` nghĩa là làm được.
+ *
+ * Một mã lý do, không phải một câu tiếng Việt: câu chữ đổi theo màn, còn lý do thì đường ghi
+ * và giao diện phải hiểu giống nhau.
+ */
+export type ViSaoKhongLam =
+  | 'khong-du-quyen'
+  | 'khong-trong-lop'
+  | 'chua-giao'
+  | 'da-nop'
+
+export interface CuaLamBai {
+  duoc: boolean
+  vi: ViSaoKhongLam | null
+  /** Câu nói cho em đọc. Ở đây chứ không ở component: hai màn không được nói hai lý do khác. */
+  noi: string
+  /** Đã mở nhưng chưa nộp — em đang viết dở. */
+  dangViet: boolean
+  /** Nộp rồi. Từ đây bài đóng băng, không ai sửa được, kể cả em. */
+  daNop: boolean
+}
+
+/**
+ * MỘT chỗ trả lời "em được làm gì với bài này, và vì sao không".
+ *
+ * Cả giao diện và đường ghi đều hỏi hàm này. Để giao diện tự đoán ("chưa nộp thì cho bấm") thì
+ * hai bên lệch nhau ở đúng ca biên: nút bật mà hàm ghi từ chối, hoặc tệ hơn — nút tắt mà hàm
+ * ghi vẫn nhận, và em nộp được bài của bạn bằng cách gọi thẳng.
+ *
+ * Thứ tự các cửa có lý, và không đổi được:
+ *   1. quyền  — `can()`, câu hỏi duy nhất về vai;
+ *   2. lớp    — bài của lớp em không ở trong;
+ *   3. hiệu lực — bài trợ giảng mới đề xuất thì chưa tồn tại với em;
+ *   4. đã nộp — nộp là chốt.
+ *
+ * QUÁ HẠN KHÔNG phải cửa chặn: LOGIC §1.3 nói nộp muộn vẫn nhận, và ghi `muon = true`. Chặn
+ * lúc quá hạn thì em nào chậm một hôm sẽ không bao giờ nộp nữa, còn cô thì mất luôn bài để đọc.
+ */
+export function cuaLamBai(hocVienId: string, baiGiaoId: string): CuaLamBai {
   const du = duLieu()
-  const bg = du.baiGiao.find((g) => g.id === baiGiaoId)!
-  const actor: Actor = {
-    accountId: hocVienId,
-    tenantId: du.tenant.id,
-    role: 'student',
-    classIds: [bg.lopId],
+  const bg = du.baiGiao.find((g) => g.id === baiGiaoId)
+  const bn = du.baiNop.find((b) => b.baiGiaoId === baiGiaoId && b.hocVienId === hocVienId)
+  const daNop = Boolean(bn?.nopLuc)
+  const dangViet = Boolean(bn) && !daNop
+
+  const khong = (vi: ViSaoKhongLam, noi: string): CuaLamBai => ({
+    duoc: false,
+    vi,
+    noi,
+    dangViet,
+    daNop,
+  })
+
+  if (!bg) return khong('chua-giao', 'Không có bài tập này.')
+
+  const actor = actorEm(hocVienId, bg.lopId)
+  if (
+    !can(actor, 'submission.create', {
+      type: 'submission',
+      tenantId: du.tenant.id,
+      classId: bg.lopId,
+      ownerId: hocVienId,
+    })
+  ) {
+    return khong('khong-du-quyen', 'Em không làm được bài này.')
   }
 
+  const lop = du.lop.find((l) => l.id === bg.lopId)
+  if (!lop?.hocVienIds.includes(hocVienId)) {
+    return khong('khong-trong-lop', 'Bài này của lớp khác.')
+  }
+
+  if (!dangChay(bg)) {
+    return khong('chua-giao', 'Cô chưa giao bài này — trợ giảng mới đề xuất, còn chờ cô.')
+  }
+
+  if (daNop) {
+    return khong(
+      'da-nop',
+      'Em đã nộp bài này rồi. Bài đã nộp thì không sửa được nữa — kể cả em, kể cả cô.',
+    )
+  }
+
+  return { duoc: true, vi: null, noi: 'Em làm được bài này.', dangViet, daNop }
+}
+
+/** Actor của em, dựng tại chỗ — cùng hình dạng với `actorEm` của `em.ts`. */
+function actorEm(hocVienId: string, lopId: string): Actor {
+  return {
+    accountId: hocVienId,
+    tenantId: duLieu().tenant.id,
+    role: 'student',
+    classIds: [lopId],
+  }
+}
+
+/** Bài đã nộp thì đóng băng. Ném ra chứ không trả false: gọi sai là lỗi lập trình, không phải ca biên. */
+export class DaChotKhongSua extends Error {
+  constructor(noi: string) {
+    super(noi)
+    this.name = 'DaChotKhongSua'
+  }
+}
+
+/**
+ * Em MỞ bài ra làm — mốc đầu của một lượt, và dòng bài nộp sinh ra ở đây.
+ *
+ * Đây là chỗ làm cho "thời gian làm bài" thành một sự thật chứ không phải một lời khai: mốc mở
+ * nằm trong `events`, nên con số cô đọc có hai dòng đỡ bên dưới. Bản trước em đo bằng đồng hồ
+ * trong trình duyệt rồi gửi số phút kèm lúc nộp — và một con số client gửi thì em sửa được.
+ *
+ * Mở LẠI (đóng tab rồi vào tiếp) KHÔNG tạo lượt mới và KHÔNG đặt lại mốc: đó vẫn là một lượt
+ * làm bài. Đặt lại mốc thì em chỉ cần tải lại trang là "viết 2 phút", và con số mất nghĩa.
+ */
+export function moBaiLam(hocVienId: string, baiGiaoId: string): void {
+  const du = duLieu()
+  const cua = cuaLamBai(hocVienId, baiGiaoId)
+
+  // Đã mở rồi thì không ghi gì thêm — mở lại không phải một hành vi mới.
+  if (cua.dangViet) return
+  if (!cua.duoc) throw new DaChotKhongSua(cua.noi)
+
+  const bg = du.baiGiao.find((g) => g.id === baiGiaoId)!
+
   ghi(
-    actor,
+    actorEm(hocVienId, bg.lopId),
     'submission.create',
     { type: 'submission', tenantId: du.tenant.id, classId: bg.lopId, ownerId: hocVienId },
-    { bai_giao: baiGiaoId, ...(giayViet === undefined ? {} : { giay_viet: giayViet }) },
-    [du.vai.owner, hocVienId],
+    { bai_giao: baiGiaoId, trang_thai: 'writing' },
+    // Chỉ EM thấy dòng này. LOGIC §1.3: "cô không thấy `writing` — chưa nộp là chưa tồn tại
+    // với cô". Nên visibility ở đây KHÔNG có cô, khác mọi sự kiện khác của lớp.
+    [hocVienId],
     (d) => {
       d.baiNop.push({
         id: `bn-${hocVienId}-${baiGiaoId}`,
         baiGiaoId,
         hocVienId,
-        noiDung,
-        soTu: noiDung.trim().split(/\s+/).filter(Boolean).length,
-        nopLuc: new Date().toISOString(),
-        muon: Date.now() > new Date(bg.hanNop).getTime(),
-        ...(giayViet === undefined ? {} : { giayViet }),
+        noiDung: '',
+        soTu: 0,
+        moLuc: new Date().toISOString(),
+        nopLuc: null,
+        muon: false,
       })
     },
   )
+}
+
+/**
+ * Em lưu nháp. KHÔNG ghi sự kiện — và đây là ngoại lệ duy nhất, nên nói rõ vì sao.
+ *
+ * CLAUDE.md: "mọi hành vi ghi vào `events` trước khi có hiệu lực". Gõ thêm một chữ rồi máy tự
+ * lưu không phải một *hành vi*: nó không tới ai, không đổi trạng thái, và cô không thấy. Ghi
+ * sự kiện mỗi giây thì nhật ký của lớp đầy hàng nghìn dòng "em gõ tiếp", và dòng thật chìm
+ * trong đó — nhật ký hết dùng được, mà nhật ký là chỗ cô tra khi có chuyện.
+ *
+ * Hai ĐẦU của lượt thì vẫn là hành vi và vẫn có sự kiện: mở bài, và nộp.
+ */
+export function luuNhapBai(hocVienId: string, baiGiaoId: string, noiDung: string): void {
+  // Hàm này KHÔNG đi qua `ghi()` (lưu nháp không sinh sự kiện), nên phải tự bảo đảm đã nạp.
+  baoDamDaNap()
+  const cua = cuaLamBai(hocVienId, baiGiaoId)
+  if (cua.daNop) throw new DaChotKhongSua(cua.noi)
+  if (!cua.duoc && !cua.dangViet) throw new DaChotKhongSua(cua.noi)
+
+  const st = trangThai()
+  const bn = st.du.baiNop.find((b) => b.baiGiaoId === baiGiaoId && b.hocVienId === hocVienId)
+  if (!bn) throw new DaChotKhongSua('Em chưa mở bài này.')
+
+  bn.noiDung = noiDung
+  bn.soTu = demTu(noiDung)
+  luuLai()
+  bao()
+}
+
+function demTu(noiDung: string): number {
+  return noiDung.trim().split(/\s+/).filter(Boolean).length
+}
+
+/**
+ * Em nộp bài — mốc cuối của lượt, và là chỗ bài đóng băng.
+ *
+ * `submission.update` chứ không phải `create`: dòng đã có từ lúc mở, nộp là đổi trạng thái của
+ * nó. Mức `own` cho em cả hai động từ, nên cửa chặn "không sửa" KHÔNG nằm ở `can()` — `can()`
+ * trả lời về VAI, còn "đã nộp rồi" là trạng thái của một dòng cụ thể. Đặt câu hỏi trạng thái
+ * vào ma trận quyền thì ma trận phải biết về từng dòng dữ liệu, và nó sẽ biết sai.
+ */
+export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): void {
+  const du = duLieu()
+  const cua = cuaLamBai(hocVienId, baiGiaoId)
+  if (!cua.duoc) throw new DaChotKhongSua(cua.noi)
+  if (!cua.dangViet) throw new DaChotKhongSua('Em chưa mở bài này.')
+
+  const bg = du.baiGiao.find((g) => g.id === baiGiaoId)!
+  const muon = Date.now() > new Date(bg.hanNop).getTime()
+
+  ghi(
+    actorEm(hocVienId, bg.lopId),
+    'submission.update',
+    { type: 'submission', tenantId: du.tenant.id, classId: bg.lopId, ownerId: hocVienId },
+    { bai_giao: baiGiaoId, trang_thai: 'submitted', so_tu: demTu(noiDung), muon },
+    // Từ đây cô thấy: nộp rồi là bài tồn tại với cô.
+    [du.vai.owner, hocVienId],
+    (d) => {
+      const bn = d.baiNop.find((b) => b.baiGiaoId === baiGiaoId && b.hocVienId === hocVienId)!
+      bn.noiDung = noiDung
+      bn.soTu = demTu(noiDung)
+      bn.nopLuc = new Date().toISOString()
+      bn.muon = muon
+    },
+  )
+}
+
+/**
+ * Lịch sử làm bài — đọc từ `events`, không từ một bảng lịch sử riêng.
+ *
+ * `events` ĐÃ là lịch sử: chỉ thêm, có `visibility` tính lúc ghi, có actor và giờ. Dựng thêm
+ * một bảng "lịch sử làm bài" là dựng bản sao thứ hai của cùng sự thật, và bản sao thì lệch.
+ *
+ * Lọc theo `visibility` y như RLS của bảng thật (`auth.uid() = any(visibility)`), nên dòng
+ * `writing` của em không hiện cho cô — không phải vì hàm này giấu, mà vì lúc ghi đã không cho
+ * cô vào danh sách.
+ */
+export function lichSuLamBai(
+  vai: VaiDemo,
+  hocVienId: string,
+): { luc: string; viec: string; y: string }[] {
+  const du = duLieu()
+  const actor = actorCuaVai(vai)
+  const cuaEm = new Set(
+    du.baiNop.filter((b) => b.hocVienId === hocVienId).map((b) => b.baiGiaoId),
+  )
+
+  const ten = (baiGiaoId: unknown): string => {
+    const bg = du.baiGiao.find((g) => g.id === baiGiaoId)
+    return bg?.nhan ?? du.de.find((d) => d.id === bg?.deId)?.ten ?? 'bài tập'
+  }
+
+  /*
+   * Mới nhất trước bằng cách ĐẢO mảng, không bằng cách sắp theo `luc`.
+   *
+   * `events` chỉ thêm, nên thứ tự thêm CHÍNH LÀ thứ tự xảy ra. Sắp theo mốc thời gian thì hai
+   * sự kiện trong cùng một milli-giây so ra bằng nhau và thứ tự thành ngẫu nhiên — mà "mở bài
+   * rồi nộp ngay" là đúng ca đó: lịch sử hiện ra nộp trước, mở sau.
+   */
+  return trangThai()
+    .events.filter((e) => {
+      if (e.objectType !== 'submission' && e.objectType !== 'practice_set') return false
+      if (!e.visibility.includes(actor.accountId)) return false
+      const bg = e.payload.bai_giao
+      // Sự kiện bài luyện mang `hoc_vien`; sự kiện bài nộp mang `bai_giao`.
+      if (e.payload.hoc_vien !== undefined) return e.payload.hoc_vien === hocVienId
+      return typeof bg === 'string' && cuaEm.has(bg)
+    })
+    .map((e) => {
+      if (e.action === 'submission.create') {
+        return { luc: e.luc, viec: 'Mở bài ra làm', y: ten(e.payload.bai_giao) }
+      }
+      if (e.action === 'submission.update') {
+        const muon = e.payload.muon === true
+        return {
+          luc: e.luc,
+          viec: muon ? 'Nộp bài (muộn)' : 'Nộp bài',
+          y: `${ten(e.payload.bai_giao)} · ${e.payload.so_tu} từ`,
+        }
+      }
+      return { luc: e.luc, viec: 'Bài luyện', y: String(e.payload.vi_loi ?? '') }
+    })
+    .reverse()
 }
 
 /** Bài giao đã có hiệu lực. Đề xuất của trợ giảng chưa tính — em không thấy, hạn chưa chạy. */
@@ -1936,6 +2207,12 @@ export function soLieuLop(vai: VaiDemo): {
  * Cô cần biết bài này CŨ tới đâu, không cần biết đúng phút nào. Nộp muộn thì nói thẳng là
  * muộn — đó là thứ đổi cách cô viết nhận xét.
  */
+/** Số PHÚT làm bài, làm tròn lên tối thiểu 1 — `null` khi không đo được. */
+export function phutLamBai(bn: Pick<import('./du-lieu').BaiNop, 'moLuc' | 'nopLuc'>): number | null {
+  const giay = giayLamBai(bn)
+  return giay === null ? null : Math.max(1, Math.round(giay / 60))
+}
+
 function nopLucNoiSao(iso: string | null, muon: boolean): string {
   if (!iso) return 'chưa nộp'
   const ngay = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
@@ -2005,9 +2282,10 @@ export function baiCanCham(vai: VaiDemo): BaiCanCham[] {
         du.lop.find((l) => l.id === bg.lopId)?.ten,
         bg.nhan,
         `${bn.soTu} từ`,
-        // Thời gian viết chỉ hiện khi CÓ đo. Bài số hoá từ giấy không có, và ghi "0 phút"
-        // vào đó thì cô đọc thành "em viết vội", tức là một câu sai về học viên.
-        bn.giayViet === undefined ? null : `viết ${Math.max(1, Math.round(bn.giayViet / 60))} phút`,
+        // Thời gian làm bài chỉ hiện khi ĐO ĐƯỢC — tức là có cả mốc mở và mốc nộp. Bài số hoá
+        // từ giấy không có mốc mở, và ghi "0 phút" vào đó thì cô đọc thành "em viết vội", tức
+        // là một câu sai về học viên.
+        phutLamBai(bn) === null ? null : `viết ${phutLamBai(bn)} phút`,
         nopLucNoiSao(bn.nopLuc, bn.muon),
       ]
         .filter(Boolean)

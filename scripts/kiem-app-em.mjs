@@ -144,6 +144,25 @@ await kiem('ô tự kiểm nêu LÝ DO từ lỗi cô đánh dấu trong bài c�
   if (!/Cô đánh dấu “.*” ở \d+\/\d+ bài đã chấm/.test(t)) throw new Error('ô tự kiểm không nêu nguồn')
 })
 
+await kiem('đồng hồ đếm từ mốc MỞ BÀI — tải lại trang không làm nó về 0', async () => {
+  /* Bản trước đồng hồ đếm từ lúc thành phần được dựng, nên tải lại trang là "viết 0 phút".
+     Giờ nó đếm từ `moLuc` đã ghi vào sự kiện, nên con số sống qua một lần tải lại. */
+  /* Nhắm THẲNG vào đồng hồ, không dò chuỗi m:ss trong cả trang. Lần đầu em viết bài kiểm này
+     nó bắt được "hạn 19:00" ở đầu màn và tính ra 1140 giây — xanh/đỏ đều vì lý do sai. Đây là
+     lần thứ tư cùng một họ lỗi (khớp chữ thay vì khớp đúng thứ cần khớp). */
+  const doc = async () => {
+    const nhan = await tr.locator('[aria-label^="Đã "]').first().getAttribute('aria-label')
+    const m = nhan?.match(/(\d+):(\d\d)/)
+    if (!m) throw new Error(`không đọc được đồng hồ: ${nhan}`)
+    return Number(m[1]) * 60 + Number(m[2])
+  }
+  const a = await doc()
+  await tr.waitForTimeout(2500)
+  await tr.reload({ waitUntil: 'networkidle' })
+  const b = await doc()
+  if (b < a + 2) throw new Error(`tải lại xong đồng hồ về ${b}s, trước đó đã ${a}s`)
+})
+
 await kiem('gõ bài rồi TẢI LẠI TRANG — nháp vẫn còn', async () => {
   const bai = 'Nháp thử của em — dòng này phải sống qua một lần tải lại trang.'
   await tr.locator('textarea').first().fill(bai)
@@ -165,14 +184,35 @@ await kiem('nộp bài → xác nhận có số từ, thời gian viết và kho
   if (!/(trước hạn \d+ ngày|đúng hạn hôm nay|muộn \d+ ngày)/.test(t)) throw new Error('thiếu khoảng cách tới hạn')
 })
 
-await kiem('nộp rồi thì nháp bị bỏ — mở lại màn không thấy bài cũ', async () => {
+await kiem('nộp rồi là CHỐT — mở lại màn nộp không còn ô viết nào cho bài đó', async () => {
   await tr.goto(`${U}/em/nop-bai/`,{waitUntil:'networkidle'})
   const t = await tr.locator('body').innerText()
   const o = tr.locator('textarea')
   if ((await o.count()) > 0 && (await o.first().inputValue()).includes('word')) {
-    throw new Error('nháp cũ còn nguyên sau khi đã nộp')
+    throw new Error('bài đã nộp vẫn mở ra sửa được')
   }
-  if (!/Đã nộp|Em đã nộp hết bài|hạn/.test(t)) throw new Error('màn sau khi nộp trống trơn')
+  if (!/không sửa được/.test(t)) throw new Error('không nói với em là bài đã chốt')
+})
+
+await kiem('Bài của tôi: bài đã nộp nói rõ nộp lúc nào, viết bao lâu, và đã chốt', async () => {
+  await tr.goto(`${U}/em/bai-cua-toi/`,{waitUntil:'networkidle'})
+  await tr.locator('button',{hasText:'Tất cả'}).first().click()
+  const t = await tr.locator('body').innerText()
+  if (!/nộp \d\d:\d\d ngày \d+\/\d+/.test(t)) throw new Error('không nói nộp lúc nào')
+  if (!/viết \d+ phút/.test(t)) throw new Error('không nói viết bao lâu')
+  if (!/đã chốt/.test(t)) throw new Error('không nói bài đã chốt')
+})
+
+await kiem('hồ sơ phía cô có LỊCH SỬ LÀM BÀI, và không có dòng bài em chưa nộp', async () => {
+  await tr.goto(`${U}/hoc-vien/`,{waitUntil:'networkidle'})
+  await tr.getByText('Nguyễn Minh Anh', { exact: true }).first().click()
+  const t = await tr.locator('body').innerText()
+  const khoi = t.split('Lịch sử làm bài')[1]?.split('Bài gần đây')[0] ?? ''
+  if (khoi.length === 0) throw new Error('không có khối Lịch sử làm bài')
+  if (!/Nộp bài/.test(khoi)) throw new Error('lịch sử không có dòng nộp bài nào')
+  /* Em vừa mở một bài khác ở phần trên rồi bỏ đó. Cô KHÔNG được thấy dòng "mở bài" đó —
+     LOGIC §1.3: chưa nộp là chưa tồn tại với cô. */
+  if (/Mở bài ra làm/.test(khoi)) throw new Error('cô thấy dòng mở bài của bài em chưa nộp')
 })
 
 console.log('\n── Cô đọc được thời gian viết ──')

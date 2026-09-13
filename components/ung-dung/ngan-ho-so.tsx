@@ -14,7 +14,7 @@
 import { useEffect, useState } from 'react'
 
 import { luuGhiChuHanhVi } from '@/lib/demo/hanh-vi'
-import { hoSoDayDu } from '@/lib/demo/kho'
+import { hoSoDayDu, lichSuLamBai } from '@/lib/demo/kho'
 import type { LoiLap, VaiDemo } from '@/lib/demo/du-lieu'
 
 import { Avatar, KhoiTrong, Nut } from './phan-tu'
@@ -26,6 +26,16 @@ import { Avatar, KhoiTrong, Nut } from './phan-tu'
  * chữ cắm trong hạt giống ('do' | 'cam' | 'xanh') nên nó không đổi khi cô chấm thêm bài:
  * một lỗi em đã dứt hai tháng vẫn đỏ trong hồ sơ.
  */
+/** "hôm nay 21:10", "3 ngày trước" — cô đọc lịch sử theo khoảng cách, không theo mốc tuyệt đối. */
+function khiNao(iso: string): string {
+  const d = new Date(iso)
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  const ngay = Math.floor((Date.now() - d.getTime()) / 86_400_000)
+  if (ngay <= 0) return `hôm nay ${hm}`
+  if (ngay === 1) return `hôm qua ${hm}`
+  return `${ngay} ngày trước`
+}
+
 function sacLoi(l: LoiLap): string {
   if (l.daDut) return 'bg-st-green'
   return l.lienTiep > 0 ? 'bg-st-red' : 'bg-st-orange'
@@ -65,6 +75,7 @@ export function NganHoSo({
 
   const em = ho
   const tenEm = em.ten ?? hocVienId
+  const lichSu = lichSuLamBai(vai, hocVienId)
 
   return (
     <>
@@ -160,6 +171,39 @@ export function NganHoSo({
                     <b className="block font-display font-semibold text-text">{l.ten}</b>
                     <small className="text-[13px] leading-[19px] text-text-2">{yLoi(l)}</small>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/*
+            Lịch sử làm bài — đọc từ `events`, lọc theo `visibility` y như RLS.
+
+            Cô KHÔNG thấy dòng "mở bài" của một bài em chưa nộp: lúc ghi sự kiện đó, cô không
+            nằm trong `visibility`. Nên chỗ này không cần một cái `if` nào để giấu — nó không có
+            gì để giấu, vì dữ liệu chưa từng tới đây. LOGIC §1.3.
+          */}
+          <h5 className="mb-2 font-display text-[12px] font-semibold text-text-2">
+            Lịch sử làm bài
+          </h5>
+          {lichSu.length === 0 ? (
+            <p className="mb-4 text-[13px] text-text-2">
+              Chưa có lượt làm bài nào của em trong nhật ký.
+            </p>
+          ) : (
+            <div className="mb-4">
+              {lichSu.slice(0, 6).map((x) => (
+                <div
+                  key={`${x.luc}-${x.viec}`}
+                  className="flex gap-3 border-t border-border-light py-2 text-[13px] first:border-t-0 first:pt-0"
+                >
+                  <span className="w-[104px] flex-none tabular-nums text-text-3">
+                    {khiNao(x.luc)}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <b className="font-display font-semibold text-text">{x.viec}</b>
+                    {x.y ? <span className="text-text-2"> — {x.y}</span> : null}
+                  </span>
                 </div>
               ))}
             </div>

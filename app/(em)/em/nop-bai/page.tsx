@@ -18,9 +18,12 @@ import { DongHo, dongHoDoc } from "@/components/em/phan-tu";
 import { Khoi, KhoiTrong, Nut } from "@/components/ung-dung/phan-tu";
 import { useKho } from "@/lib/demo/dung-kho";
 import { EM, baiCuaEm, baiTuLuanPhaiNop, loiCuaEm } from "@/lib/demo/em";
-import { nopBaiHanhVi } from "@/lib/demo/hanh-vi";
-import { duLieu } from "@/lib/demo/kho";
-import { boNhap, docNhap, luuNhap } from "@/lib/demo/nhap-bai";
+import {
+  luuNhapBaiHanhVi,
+  moBaiLamHanhVi,
+  nopBaiHanhVi,
+} from "@/lib/demo/hanh-vi";
+import { cuaLamBai, duLieu, phutLamBai } from "@/lib/demo/kho";
 
 const TOI_THIEU = 250;
 
@@ -58,13 +61,10 @@ export default function NopBai() {
   const [loi, datLoi] = useState<string | null>(null);
   const [vuaNop, datVuaNop] = useState<{
     soTu: number;
-    giay: number;
+    phut: number | null;
     truocHan: number;
   } | null>(null);
   const [daLuu, datDaLuu] = useState(false);
-  // Đồng hồ ghi vào ref, không vào state: mỗi giây một lần vẽ lại cả màn thì ô viết bị
-  // dựng lại và con trỏ nhảy về đầu — lỗi chỉ lộ khi gõ thật.
-  const giay = useRef(0);
 
   const du = duLieu();
   const bg = baiTuLuanPhaiNop(EM)[0];
@@ -72,27 +72,48 @@ export default function NopBai() {
   const conMac = loiCuaEm(EM).filter((l) => !l.daDut);
   const bgId = bg?.id;
 
-  /* Mở màn thì lấy lại nháp cũ. Chạy trong effect chứ không trong `useState(() => …)`:
-     `localStorage` không có ở lần dựng trên máy chủ, và bản này xuất tĩnh. */
+  /*
+   * Mở màn là MỞ BÀI — một hành vi, có sự kiện, và là mốc đầu của lượt làm bài.
+   *
+   * Bản trước em đếm bằng đồng hồ trong trình duyệt rồi gửi số phút kèm lúc nộp. Một con số
+   * client gửi thì em sửa được, mà cô lại đọc nó như sự thật ("em viết 6 phút" → cô nghĩ em
+   * làm vội). Giờ mốc mở nằm trong `events`, và thời gian là hiệu của hai mốc.
+   *
+   * Gọi trong effect vì nó GHI: chạy ngay trong thân hàm dựng thì React gọi hai lần ở chế độ
+   * nghiêm ngặt, và mỗi lần dựng lại màn là một lần ghi.
+   */
   useEffect(() => {
     if (!bgId) return;
-    const cu = docNhap(bgId, EM);
-    if (cu) {
-      datBai(cu);
-      datDaLuu(true);
-    }
+    const r = moBaiLamHanhVi(EM, bgId);
+    if (r.loi) datLoi(r.loi);
   }, [bgId]);
 
-  /* Lưu sau 1 giây không gõ thêm. Bản mẫu hứa "mỗi 10 giây"; 1 giây thì lời hứa đó chắc
-     hơn, và ghi một chuỗi vào localStorage là việc rẻ. */
+  // Nháp đã lưu nằm trong dòng bài nộp, không phải trong một chỗ riêng của trình duyệt.
+  const dong = du.baiNop.find(
+    (b) => b.baiGiaoId === bgId && b.hocVienId === EM,
+  );
+  const nhapDaLuu = dong?.noiDung ?? "";
+
+  /* Lấy lại nháp cũ khi mở màn. Chỉ đặt một lần: đặt theo mỗi lần `nhapDaLuu` đổi thì mỗi
+     lần tự lưu lại đẩy chữ vào ô đang gõ, và con trỏ nhảy. */
+  const daNap = useRef(false);
   useEffect(() => {
-    if (!bgId || bai === "") return;
+    if (daNap.current || !nhapDaLuu) return;
+    daNap.current = true;
+    datBai(nhapDaLuu);
+    datDaLuu(true);
+  }, [nhapDaLuu]);
+
+  /* Lưu sau 1 giây không gõ thêm. Bản mẫu hứa "mỗi 10 giây"; 1 giây thì lời hứa đó chắc hơn. */
+  useEffect(() => {
+    if (!bgId || bai === "" || bai === nhapDaLuu) return;
     const t = setTimeout(() => {
-      luuNhap(bgId, EM, bai);
-      datDaLuu(true);
+      const r = luuNhapBaiHanhVi(EM, bgId, bai);
+      if (r.loi) datLoi(r.loi);
+      else datDaLuu(true);
     }, 1000);
     return () => clearTimeout(t);
-  }, [bgId, bai]);
+  }, [bgId, bai, nhapDaLuu]);
 
   /*
    * Màn xác nhận phải xét TRƯỚC cửa "hết bài".
@@ -125,7 +146,7 @@ export default function NopBai() {
             </h2>
             <p className="mt-1 text-text-2">
               {vuaNop.soTu} từ
-              {vuaNop.giay >= 60 ? ` · viết ${dongHoDoc(vuaNop.giay)}` : ""}
+              {vuaNop.phut === null ? "" : ` · viết ${vuaNop.phut} phút`}
               {vuaNop.truocHan > 0
                 ? ` · trước hạn ${vuaNop.truocHan} ngày`
                 : vuaNop.truocHan === 0
@@ -216,8 +237,9 @@ export default function NopBai() {
         />
         <WrapEm>
           <KhoiTrong>
-            Em đã nộp hết bài cô giao. Bài mới sẽ hiện ở đây và trên bảng tin
-            lớp.
+            Em đã nộp hết bài cô giao. Bài đã nộp là đã chốt — em không sửa được nữa, và cô
+            cũng không sửa bài của em; cô chỉ viết nhận xét. Bài mới sẽ hiện ở đây và trên
+            bảng tin lớp.
           </KhoiTrong>
         </WrapEm>
       </>
@@ -258,7 +280,7 @@ export default function NopBai() {
             <span className="hidden text-[12px] text-text-3 sm:inline">
               {daLuu ? "Đã lưu nháp" : "Nháp lưu tự động"}
             </span>
-            <DongHo doiGiay={(g) => (giay.current = g)} />
+            <DongHo tu={dong?.moLuc ?? null} />
           </span>
         }
       />
@@ -312,12 +334,16 @@ export default function NopBai() {
                   kieu="chinh"
                   disabled={soTu < 150}
                   onClick={() => {
-                    const r = nopBaiHanhVi(EM, bg.id, bai, giay.current);
+                    const r = nopBaiHanhVi(EM, bg.id, bai);
                     if (r.loi) return datLoi(r.loi);
-                    boNhap(bg.id, EM);
+                    // Thời gian đọc từ DÒNG sau khi nộp, không từ đồng hồ trên màn: con số cô
+                    // thấy và con số em thấy phải là cùng một phép tính trên cùng hai mốc.
+                    const daNop = duLieu().baiNop.find(
+                      (b) => b.baiGiaoId === bg.id && b.hocVienId === EM,
+                    );
                     datVuaNop({
                       soTu,
-                      giay: giay.current,
+                      phut: daNop ? phutLamBai(daNop) : null,
                       truocHan: Math.floor(
                         (new Date(bg.hanNop).getTime() - Date.now()) / 86_400_000,
                       ),

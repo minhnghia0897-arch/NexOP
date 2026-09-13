@@ -17,6 +17,13 @@ import { DaiTab } from '@/components/ung-dung/tab-man'
 import { useKho } from '@/lib/demo/dung-kho'
 import { EM, baiCuaEm, baiLuyenCuaEm } from '@/lib/demo/em'
 
+/** "22:41 ngày 12/9" — em cần biết mình nộp lúc nào, vì từ lúc đó bài không sửa được nữa. */
+function gio(iso: string): string {
+  const d = new Date(iso)
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  return `${hm} ngày ${d.getDate()}/${d.getMonth() + 1}`
+}
+
 function ngay(iso: string): string {
   const d = new Date(iso)
   return `${d.getDate()}/${d.getMonth() + 1}`
@@ -114,7 +121,10 @@ export default function BaiCuaToi() {
             </div>
           )
         ) : (
-          <Khoi ten="Tất cả bài" phu="Mới nhất trước. Ô trống là bài em chưa nộp.">
+          <Khoi
+            ten="Tất cả bài"
+            phu="Mới nhất trước. Ô trống là bài em chưa nộp. Bài đã nộp là đã chốt — em không sửa được nữa, và cô cũng không sửa bài của em."
+          >
             <div className="overflow-x-auto">
               {/* Cột phải rộng cố định: không khoá thì dòng "cô nhắc" dài đẩy nhãn trạng
                   thái ra ngoài và hai cột chồng lên nhau. */}
@@ -140,7 +150,15 @@ export default function BaiCuaToi() {
                 <tbody>
                   {ds.map((b) => (
                     <tr key={b.baiGiaoId} className="border-b border-border-light last:border-0">
-                      <td className="py-2.5 pr-3 font-medium text-text">{b.nhan}</td>
+                      <td className="py-2.5 pr-3 font-medium text-text">
+                        {b.nhan}
+                        {b.nopLuc ? (
+                          <small className="block text-[12px] font-normal text-text-3">
+                            nộp {gio(b.nopLuc)}
+                            {b.phutLam === null ? '' : ` · viết ${b.phutLam} phút`} · đã chốt
+                          </small>
+                        ) : null}
+                      </td>
                       <td className="py-2.5 pr-3 font-display font-semibold tabular-nums text-text">
                         {b.band === null ? (
                           '—'

@@ -31,6 +31,8 @@ import {
   lamBaiLuyen,
   luuDeSoHoa,
   luuGhiChu,
+  luuNhapBai,
+  moBaiLam,
   nopBai,
   suaNhap,
   suaTinHocPhi,
@@ -93,10 +95,23 @@ export function nopBaiHanhVi(
   hocVienId: string,
   baiGiaoId: string,
   noiDung: string,
-  giayViet?: number,
 ): { loi?: string } {
   if (noiDung.trim().length === 0) return { loi: 'Em chưa viết gì.' }
-  return thu(() => nopBai(hocVienId, baiGiaoId, noiDung, giayViet))
+  return thu(() => nopBai(hocVienId, baiGiaoId, noiDung))
+}
+
+/** Em mở bài ra làm — gọi khi màn viết mở, để mốc đầu của lượt là sự thật có sự kiện đỡ. */
+export function moBaiLamHanhVi(hocVienId: string, baiGiaoId: string): { loi?: string } {
+  return thu(() => moBaiLam(hocVienId, baiGiaoId))
+}
+
+/** Em lưu nháp. Nộp rồi thì hàm này từ chối — bài đã chốt. */
+export function luuNhapBaiHanhVi(
+  hocVienId: string,
+  baiGiaoId: string,
+  noiDung: string,
+): { loi?: string } {
+  return thu(() => luuNhapBai(hocVienId, baiGiaoId, noiDung))
 }
 
 export function lamBaiLuyenHanhVi(
