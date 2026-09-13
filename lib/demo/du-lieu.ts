@@ -128,10 +128,27 @@ export interface BaiNop {
  * lỗi khác nhau về bản chất, và cô sửa chúng theo ba cách khác nhau.
  */
 export interface LoiDanhDau {
+  /**
+   * Đoạn được gạch chân, **nguyên văn trong bài của em**.
+   *
+   * Bất biến: `trich` phải xuất hiện trong `baiNop.noiDung`. Không thì cô nhìn thấy một câu
+   * được gạch chân mà câu đó không nằm trong bài — và cô sẽ tin là em đã viết thế. Hai chỗ
+   * từng vi phạm: một trích dẫn bịa hẳn ("important … significant … important" không có
+   * trong bài), và một trích dẫn gộp ba câu mở đoạn rời nhau thành một chuỗi. Giờ có test.
+   */
   trich: string
   sua: string
   loai: string
   nhom: 'grammar' | 'vocab' | 'structure'
+  /**
+   * Đây là LỖI hay là ĐIỂM MẠNH.
+   *
+   * Trước đây chỉ có lỗi, nên một lời khen ("câu này mở đoạn tốt — giữ cách viết này") được
+   * nhồi vào mảng `co` với `loai: 'điểm mạnh, không phải lỗi'`. Màn chấm vẽ mảng đó dưới
+   * tiêu đề **"Lỗi cần sửa"**, nên điểm mạnh của em hiện ra như một lỗi cần sửa. Và mọi câu
+   * đếm "cả lớp sai chung ở đâu" cộng luôn lời khen vào số lỗi.
+   */
+  kieu?: 'loi' | 'khen'
   /** Dòng nhỏ dưới cùng, ví dụ "Lỗi này lặp 3 bài liên tiếp". Đây là thứ cô cần nhất. */
   themY?: string
 }
@@ -306,6 +323,24 @@ export interface HoSoHocVien {
   loiLap?: { ten: string; y: string; nang: 'do' | 'cam' | 'xanh' }[]
 }
 
+/**
+ * Một CHẶNG của lộ trình — bản mẫu hiện lộ trình theo chặng, không theo 48 dòng buổi.
+ *
+ * Lộ trình 48 buổi mà liệt kê 48 dòng thì cô cuộn hết màn mới thấy hết; và cô không lên kế
+ * hoạch theo từng buổi, cô lên theo chặng ("buổi 21–28: luận điểm & phản biện"). `buoi` bên
+ * dưới là chi tiết của chặng đang dạy — chỗ cô bấm Giao.
+ */
+export interface ChangLoTrinh {
+  tu: number
+  den: number
+  noiDung: string
+  baiVeNha: string | null
+  /** Mốc kiểm tra cuối chặng, nếu có. */
+  kiemTra?: string
+  /** Chặng học viên tụt nhiều nhất — "Chặng khó nhất" của bản mẫu. */
+  kho?: boolean
+}
+
 /** Một buổi trong lộ trình — kế hoạch, chưa phải bài đã giao. */
 export interface BuoiLoTrinh {
   no: number
@@ -321,6 +356,17 @@ export interface LoTrinh {
   moTa: string
   soBuoi: number
   dangDung: string[]
+  /** Khung chặng — thứ cô nhìn để biết lộ trình đi qua đâu. */
+  chang: ChangLoTrinh[]
+  /** Cấp đích, để đếm đề dùng được từ ngân hàng. Khớp `De.trinhDo`. */
+  cap?: string[]
+  /**
+   * Khoá đã kết thúc theo lộ trình này. Nền cho ô "Học viên đạt mục tiêu".
+   *
+   * Lộ trình chưa có khoá nào kết thúc thì KHÔNG có ô đó — bịa một tỉ lệ cho lộ trình mới
+   * dựng là bịa đúng chỗ cô dùng để quyết có mở lớp nữa hay không.
+   */
+  ketQua?: { khoa: number; datMucTieu: number }
   buoi: BuoiLoTrinh[]
 }
 
@@ -436,6 +482,22 @@ export interface DeXuat {
 }
 
 /**
+ * Rubric của cô — cách cô chấm, không phải cách nền tảng chấm.
+ *
+ * `rubric` nằm trong `assistant_hard_ceiling`: trợ giảng không đọc được, cô cấp cũng không
+ * cấp được. Lý do ở bản mẫu: "Rubric này không mang sang được nơi khác — vì nó là cô."
+ *
+ * `giongCham` là những câu bản mẫu gọi là "Cách cô hay nhận xét", rút từ bài cô đã chấm. Cô
+ * bỏ được từng dòng — dòng nào máy rút sai thì cô xoá, và nháp sau không dùng cách đó nữa.
+ */
+export interface Rubric {
+  tieuChi: { ma: 'tr' | 'cc' | 'lr' | 'gra'; ten: string; trongSo: number }[]
+  giongCham: string[]
+  /** Số bài cô đã chấm — nền của "học từ 214 bài". Đổi trọng số KHÔNG sửa lại số này. */
+  daCham: number
+}
+
+/**
  * Một công tắc trong "Luật của cô".
  *
  * `khoa: true` = không có công tắc, đây là luật của nền tảng. Hiện chung một chỗ với các
@@ -500,6 +562,7 @@ export interface DuLieuDemo {
   baiLuyen: BaiLuyen[]
   diemDanh: DiemDanh[]
   deXuat: DeXuat[]
+  rubric: Rubric
   luat: LuatMay[]
   /** Ai đang đăng nhập ở mỗi vai — cho công tắc đổi vai của bản demo. */
   vai: Record<VaiDemo, string>
@@ -1065,21 +1128,36 @@ export function duLieuBanDau(): DuLieuDemo {
     nhapChoBai('bn-hv-01', { tr: 6.5, cc: 6.0, lr: 6.5, gra: 6.0 }, 0.91,
       [{ trich: 'the goverment', sua: 'the government', loai: 'chính tả', nhom: 'vocab' },
        { trich: 'people is', sua: 'people are', loai: 'hoà hợp chủ–vị', nhom: 'grammar',
-         themY: 'Lỗi này lặp 3 bài liên tiếp' }],
+         themY: 'Lỗi này lặp 3 bài liên tiếp' },
+       /* Bài này thật sự mở đoạn bằng "First," rồi "Second," — cùng một lỗi với Quang Huy.
+          Nhãn phải TRÙNG NHAU thì bước 6 mới gộp được; hai tên gần nghĩa cho hai bài cùng
+          lỗi thì "cả lớp sai chung ở đâu" đếm ra hai lỗi lẻ, mỗi lỗi một em. */
+       { trich: 'First, unpaid work exposes teenagers', sua: 'mở đoạn bằng chính luận điểm',
+         loai: 'liên kết máy móc', nhom: 'structure' }],
       'Bài của em có bố cục rõ, hai thân bài đều có ví dụ. Chỗ cần sửa vẫn là hoà hợp chủ–vị — "people is" lặp lại lần thứ ba trong bốn bài gần đây. Em thử đọc to câu trước khi nộp, lỗi này nghe ra ngay.',
       []),
     nhapChoBai('bn-hv-02', { tr: 7.0, cc: 7.0, lr: 6.5, gra: 6.5 }, 0.88,
       [{ trich: 'In conclusion, I think that', sua: 'To conclude,', loai: 'lặp mở đầu',
          nhom: 'structure' },
-       { trich: 'important … significant … important', sua: 'pivotal, far-reaching',
-         loai: 'lặp nhóm từ', nhom: 'vocab', themY: 'Ba lần trong một bài' },
+       /* Chỗ này trước là `trich: 'important … significant … important'` — BỊA. Bài của
+          Thu Hà không có ba từ đó. Thay bằng một câu có thật, và đánh dấu là ĐIỂM MẠNH
+          chứ không phải lỗi: bài 6.9 band thì cô cần biết chỗ nào nên giữ. */
+       { trich: 'Adolescence is precisely when such habits form.',
+         sua: 'câu chốt đoạn gọn và đúng — giữ cách viết này',
+         loai: 'câu chốt đoạn chắc', nhom: 'structure', kieu: 'khen' },
        { trich: 'the same could be said of mathematics', sua: 'thêm một câu nối trước ý này',
          loai: 'ý chuyển gấp', nhom: 'structure' }],
-      'Lập luận của em chặt, phần phản biện ở đoạn 3 là điểm mạnh. Từ vựng còn lặp ở nhóm "important/significant" — thử thay bằng "pivotal", "far-reaching" cho đúng sắc thái.',
+      'Lập luận của em chặt, phần phản biện ở đoạn 3 là điểm mạnh. Chỗ cần để mắt là câu kết: "In conclusion, I think that" là công thức, em thử vào thẳng kết luận.',
       []),
     nhapChoBai('bn-hv-03', { tr: 5.5, cc: 5.0, lr: 5.5, gra: 5.0 }, 0.74,
-      [{ trich: 'Firstly, secondly, finally', sua: 'dùng liên kết đa dạng hơn',
-         loai: 'liên kết máy móc', nhom: 'structure', themY: 'Cả lớp sai chỗ này — 6/10 em' },
+      /* `trich` phải là NGUYÊN VĂN. Trước đây là 'Firstly, secondly, finally' — một bản tóm
+         ba câu mở đoạn rời nhau, không phải đoạn nào trong bài. Nay trích câu đầu, còn việc
+         "ba đoạn liền nhau" thì nói ở `themY`.
+         Và `themY` trước đây ghi "Cả lớp sai chỗ này — 6/10 em": một con số cắm sẵn trong
+         tooltip cô đọc, trong khi dữ liệu thật có 2 em. Bước 6 giờ tự đếm. */
+      [{ trich: 'Firstly, students can learn many things', sua: 'dùng liên kết đa dạng hơn',
+         loai: 'liên kết máy móc', nhom: 'structure',
+         themY: 'Firstly / Secondly / Finally — ba đoạn liền nhau cùng một công thức' },
        { trich: 'I strongly believe strongly', sua: 'I strongly believe', loai: 'lặp từ',
          nhom: 'vocab' }],
       'Em trả lời đúng đề nhưng đoạn 2 mới có một ý, chưa có ví dụ đỡ. Liên kết đang dùng theo công thức "Firstly/Secondly" — giám khảo trừ chỗ này. Em viết lại đoạn 2 với một ví dụ thật từ trường mình.',
@@ -1098,8 +1176,12 @@ export function duLieuBanDau(): DuLieuDemo {
     nhapChoBai('bn-hv-06', { tr: 6.0, cc: 6.0, lr: 6.0, gra: 5.5 }, 0.9,
       [{ trich: 'student which', sua: 'students who', loai: 'đại từ quan hệ', nhom: 'grammar' },
        { trich: 'This is true but a few hours each month is not too much',
-         sua: 'This is true, but a few hours each month is not excessive',
-         loai: 'thiếu dấu phẩy + từ đời thường', nhom: 'vocab' },
+         sua: 'This is true, but a few hours each month are not excessive',
+         /* "a few hours … is" là hoà hợp chủ–vị, cùng lỗi với Minh Anh — nên cùng nhãn.
+            Trước đây gọi là "thiếu dấu phẩy + từ đời thường", gộp ba nhận xét vào một nhãn
+            nên không gộp được với ai. */
+         loai: 'hoà hợp chủ–vị', nhom: 'grammar',
+         themY: 'Còn thiếu dấu phẩy trước "but" và "not too much" là văn nói' },
        { trich: 'In conclusion I agree', sua: 'In conclusion, I agree',
          loai: 'thiếu dấu phẩy sau liên từ', nhom: 'grammar',
          themY: 'Lỗi này lặp 2 bài liên tiếp' }],
@@ -1108,7 +1190,7 @@ export function duLieuBanDau(): DuLieuDemo {
     nhapChoBai('bn-hv-07', { tr: 7.0, cc: 6.5, lr: 7.0, gra: 7.0 }, 0.95,
       [{ trich: 'Consider first what service actually teaches.',
          sua: 'câu này mở đoạn tốt — giữ cách viết này',
-         loai: 'điểm mạnh, không phải lỗi', nhom: 'vocab' }],
+         loai: 'mở đoạn bằng câu hỏi ngầm', nhom: 'structure', kieu: 'khen' }],
       'Bài chắc tay. Lập luận có chiều sâu, ví dụ cụ thể, ngữ pháp gần như sạch. Em giữ nhịp này. Nếu muốn lên nữa thì để ý nhịp câu — vài câu dài liền nhau làm đoạn 2 hơi nặng.',
       []),
   ]
@@ -1354,6 +1436,23 @@ export function duLieuBanDau(): DuLieuDemo {
       moTa: 'Từ 5.0 lên 6.5. Writing và Speaking mỗi tuần, Reading xen kẽ.',
       soBuoi: 48,
       dangDung: ['lop-65'],
+      cap: ['IELTS 6.5', 'B2', 'B2–C1'],
+      /* Ba khoá đã kết thúc theo lộ trình này — nền cho ô "Học viên đạt mục tiêu". */
+      ketQua: { khoa: 3, datMucTieu: 71 },
+      chang: [
+        { tu: 1, den: 8, noiDung: 'Task 1 — mô tả biểu đồ, 4 dạng cơ bản, overview bắt buộc',
+          baiVeNha: '2 bài Task 1 / tuần' },
+        { tu: 8, den: 8, noiDung: 'Mock Writing lần 1', baiVeNha: null, kiemTra: 'Đề số 3' },
+        { tu: 9, den: 20, noiDung: 'Task 2 — dàn ý, câu chủ đề, 4 dạng đề',
+          baiVeNha: '1 Task 2 / tuần' },
+        { tu: 21, den: 28, noiDung: 'Task 2 — luận điểm & ví dụ, phản biện',
+          baiVeNha: '1 Task 2 / tuần + sửa lại bài cũ', kho: true },
+        { tu: 28, den: 28, noiDung: 'Mock Writing lần 2', baiVeNha: null, kiemTra: 'Đề số 7' },
+        { tu: 29, den: 44, noiDung: 'Luyện đề tổng hợp, cá nhân hoá theo lỗi lặp của từng em',
+          baiVeNha: 'Theo lỗ hổng riêng' },
+        { tu: 45, den: 48, noiDung: 'Mock cuối + chiến thuật phòng thi',
+          baiVeNha: null, kiemTra: 'Mock 3' },
+      ],
       buoi: [
         { no: 28, noiDung: 'Task 2 — Đọc đề và lập dàn ý trong 5 phút',
           baiVeNha: 'Mock 2', deId: 'de-w1', trongSo: 20 },
@@ -1370,6 +1469,18 @@ export function duLieuBanDau(): DuLieuDemo {
       moTa: 'Từ mất gốc lên 5.5. Nặng ngữ pháp nền và vốn từ theo chủ đề.',
       soBuoi: 48,
       dangDung: ['lop-55'],
+      cap: ['IELTS 5.5', 'B1'],
+      ketQua: { khoa: 2, datMucTieu: 64 },
+      chang: [
+        { tu: 1, den: 12, noiDung: 'Ngữ pháp nền — thì, mạo từ, giới từ hay sai',
+          baiVeNha: '1 bài ngữ pháp / tuần' },
+        { tu: 13, den: 24, noiDung: 'Vốn từ theo 8 chủ đề thi, đọc hiểu câu dài',
+          baiVeNha: '1 Reading / tuần', kho: true },
+        { tu: 24, den: 24, noiDung: 'Kiểm tra giữa khoá', baiVeNha: null, kiemTra: 'Đề số 2' },
+        { tu: 25, den: 40, noiDung: 'Task 1 và Task 2 mức 5.5 — đủ ý, đúng ngữ pháp',
+          baiVeNha: '1 Task / tuần' },
+        { tu: 41, den: 48, noiDung: 'Luyện đề và bấm giờ', baiVeNha: null, kiemTra: 'Mock 2' },
+      ],
       buoi: [
         { no: 20, noiDung: 'Thì quá khứ đơn — dạng bất quy tắc hay gặp' },
         { no: 21, noiDung: 'Task 1 — đọc biểu đồ cột và viết câu so sánh',
@@ -1382,6 +1493,16 @@ export function duLieuBanDau(): DuLieuDemo {
       moTa: 'Khoá ngắn, một kèm bốn. Mỗi buổi chữa tay một bài của từng em.',
       soBuoi: 16,
       dangDung: ['lop-cap-toc'],
+      cap: ['B2', 'B2–C1'],
+      ketQua: { khoa: 1, datMucTieu: 75 },
+      chang: [
+        { tu: 1, den: 6, noiDung: 'Đọc đề, lập dàn ý, viết mở và kết',
+          baiVeNha: '2 bài / tuần, chữa tay từng em' },
+        { tu: 7, den: 12, noiDung: 'Thân bài — luận điểm có ví dụ đỡ',
+          baiVeNha: '2 bài / tuần', kho: true },
+        { tu: 13, den: 16, noiDung: 'Viết lại bài cũ theo nhận xét, chốt lỗi lặp',
+          baiVeNha: 'Viết lại 3 bài', kiemTra: 'Mock kết khoá' },
+      ],
       buoi: [
         { no: 14, noiDung: 'Task 2 — viết lại phần thân theo nhận xét của cô',
           baiVeNha: 'Task 2 — Education', deId: 'de-w3', trongSo: 15 },
@@ -1394,6 +1515,15 @@ export function duLieuBanDau(): DuLieuDemo {
       moTa: 'Câu lạc bộ nói, không chấm điểm. Mỗi buổi một chủ đề Part 2.',
       soBuoi: 20,
       dangDung: ['lop-speak'],
+      cap: ['B1', 'B2'],
+      /* Câu lạc bộ nói, không chấm điểm — nên KHÔNG có ô "đạt mục tiêu". Bịa một tỉ lệ cho
+         lớp không có mục tiêu band là bịa đúng chỗ cô dùng để quyết. */
+      chang: [
+        { tu: 1, den: 10, noiDung: 'Part 1 và Part 2 — nói đủ 2 phút không ngắt',
+          baiVeNha: null },
+        { tu: 11, den: 20, noiDung: 'Part 3 — giữ quan điểm khi bị hỏi ngược',
+          baiVeNha: null },
+      ],
       buoi: [{ no: 6, noiDung: 'Part 2 — tả một nơi em muốn quay lại' }],
     },
     {
@@ -1402,6 +1532,18 @@ export function duLieuBanDau(): DuLieuDemo {
       moTa: 'Cho em đã vững 6.5. Nặng về lập luận và độ chính xác từ vựng.',
       soBuoi: 36,
       dangDung: ['lop-moi'],
+      cap: ['IELTS 7.0+', 'B2–C1'],
+      /* Lộ trình nháp, chưa khoá nào kết thúc. Không có `ketQua`. */
+      chang: [
+        { tu: 1, den: 8, noiDung: 'Lập luận — nhượng bộ, phản biện, giữ lập trường',
+          baiVeNha: '1 Task 2 / tuần' },
+        { tu: 9, den: 20, noiDung: 'Độ chính xác từ vựng và collocation học thuật',
+          baiVeNha: '1 Task 2 + 1 bài từ vựng', kho: true },
+        { tu: 21, den: 30, noiDung: 'Task 1 mức 7.0 — chọn số liệu đáng nói',
+          baiVeNha: '1 Task 1 / tuần' },
+        { tu: 31, den: 36, noiDung: 'Mock đủ 4 kỹ năng, bấm giờ thật',
+          baiVeNha: null, kiemTra: 'Mock 7.0' },
+      ],
       buoi: [
         { no: 1, noiDung: 'Câu nhượng bộ — cách viết phản biện không mất lập trường' },
         { no: 2, noiDung: 'Collocation học thuật theo chủ đề Education' },
@@ -1597,6 +1739,28 @@ export function duLieuBanDau(): DuLieuDemo {
     return ket
   })()
 
+  /*
+   * Bốn tiêu chí IELTS Writing, mỗi cái 25% — đúng bản mẫu.
+   *
+   * `daCham: 214` là số bài cô đã chấm, và nó là NỀN của câu "nháp viết theo cách cô đã chấm
+   * 214 bài". Đổi trọng số không đổi con số này: 214 bài kia đã chấm xong rồi.
+   */
+  const rubric: Rubric = {
+    daCham: 214,
+    tieuChi: [
+      { ma: 'tr', ten: 'Task Response', trongSo: 25 },
+      { ma: 'cc', ten: 'Coherence & Cohesion', trongSo: 25 },
+      { ma: 'lr', ten: 'Lexical Resource', trongSo: 25 },
+      { ma: 'gra', ten: 'Grammatical Range', trongSo: 25 },
+    ],
+    giongCham: [
+      'Khen một điểm cụ thể trước, rồi mới sửa',
+      'Nêu số lần lỗi lặp',
+      'Kết bằng một việc cụ thể + hạn',
+      'Xưng cô–em, không dùng thuật ngữ tiếng Anh khi có thể',
+    ],
+  }
+
   const luat: LuatMay[] = [
     { id: 'nhac-nop', bat: true, ten: 'Nhắc nộp bài, nhắc lịch',
       phu: 'Chỉ với học viên đã bật tài khoản · 9:00–21:30' },
@@ -1647,6 +1811,7 @@ export function duLieuBanDau(): DuLieuDemo {
     baiLuyen,
     diemDanh,
     deXuat,
+    rubric,
     luat,
     vai: { owner: CO_THAO, assistant: TRO_GIANG, student: 'hv-01' },
   })

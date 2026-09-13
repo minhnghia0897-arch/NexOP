@@ -14,20 +14,24 @@ import {
   actorCuaVai,
   baiCanCham,
   baiTracNghiemCanChot,
+  boGiongCham,
   buoiKeTiep,
   chotMotBaiTracNghiem,
   chotTracNghiemCaLop,
   dienDapAnThieu,
   duyetCaCumTinHocPhi,
+  datTrongSoRubric,
   duyetTinHocPhi,
   diHocCuaEm,
   diHocTrongLop,
   ghiDiemDanh,
   mayChamCaLoTracNghiem,
+  loiChungCuaLop,
   mayNhapTinHocPhi,
   mayChamTracNghiem,
   soLieuTracNghiem,
   suaTinHocPhi,
+  taoBaiLuyenTuLoiChung,
   tinHocPhiChoDuyet,
   vangLienTiep,
   dangBai,
@@ -555,10 +559,42 @@ describe('ghi chú riêng của cô — cắt ở lớp đọc, không ở giao 
     expect(hoSoDayDu('student', 'hv-02')).toBeNull()
   })
 
+  it('cô cấp `profile: auto` cho trợ giảng thì ghi chú VẪN kín', () => {
+    /*
+     * Đây là chỗ hỏi đúng object mới cứu được. Trước đây `hoSoDayDu` cắt ghi chú bằng
+     * `vai === 'owner'` và `luuGhiChu` hỏi `profile.update`; cả hai chặn trợ giảng, nhưng
+     * chặn vì trợ giảng đang ở mức `read`. Cấp `auto` là mở cả hai.
+     */
+    const troGiang: Actor = {
+      accountId: duLieu().vai.assistant,
+      tenantId: duLieu().tenant.id,
+      role: 'assistant',
+      classIds: ['lop-65'],
+      permissions: { 'lop-65': { profile: 'auto', teacher_notes: 'full' } },
+    }
+
+    const o = {
+      type: 'teacher_notes',
+      tenantId: duLieu().tenant.id,
+      classId: 'lop-65',
+      ownerId: 'hv-01',
+    }
+    // Trần cứng chặn ở cửa 5 — trước khi xét tới quyền cô vừa cấp.
+    expect(can(troGiang, 'teacher_notes.view', o)).toBe(false)
+    expect(can(troGiang, 'teacher_notes.update', o)).toBe(false)
+  })
+
   it('nhật ký ghi là cô có sửa, nhưng không ghi nội dung', () => {
     luuGhiChu('owner', 'hv-01', 'Bí mật không được lọt ra nhật ký')
     const ev = nhatKy()[0]!
-    expect(ev.action).toBe('profile.update')
+    /*
+     * `teacher_notes.update`, không phải `profile.update`.
+     *
+     * Hỏi `profile.update` thì trợ giảng bị chặn NHỜ TÌNH CỜ — họ có `profile: read`. Hôm nào
+     * cô cấp `profile: auto` cho trợ giảng thì họ sửa được cả ghi chú riêng của cô. Hỏi đúng
+     * object thì chặn ở cửa 5 (trần cứng), trước khi xét tới mức quyền cô cấp.
+     */
+    expect(ev.action).toBe('teacher_notes.update')
     expect(ev.visibility).toEqual(['acc-co-thao'])
     expect(JSON.stringify(ev.payload)).not.toContain('Bí mật')
   })
@@ -1184,5 +1220,145 @@ describe('bước 7: tin học phí — máy nháp, cô gửi', () => {
     for (const t of duLieu().deXuat) {
       expect(new Date(t.hetHan).getTime()).toBeGreaterThan(Date.now())
     }
+  })
+})
+
+/**
+ * Bước 6 — "Cả lớp sai chung ở đâu" — và Rubric của cô.
+ *
+ * Bước 6 là bước cô đọc 5 phút trước giờ dạy, nên cái phải đúng là CON SỐ: mẫu số nào, đếm
+ * theo gì, và lời khen có bị cộng vào số lỗi không.
+ */
+describe('bước 6: cả lớp sai chung ở đâu', () => {
+  beforeEach(() => {
+    datLai()
+  })
+
+  it('mọi trích dẫn lỗi là NGUYÊN VĂN trong bài của em', () => {
+    /*
+     * Bất biến này từng bị vi phạm hai chỗ: một trích dẫn bịa hẳn, và một trích dẫn gộp ba
+     * câu mở đoạn rời nhau. Cô nhìn thấy câu được gạch chân và tin là em đã viết thế.
+     */
+    for (const n of duLieu().nhapCham) {
+      const bn = duLieu().baiNop.find((b) => b.id === n.baiNopId)!
+      for (const c of n.co) {
+        expect(bn.noiDung).toContain(c.trich)
+      }
+    }
+  })
+
+  it('đếm theo SỐ EM, không theo số lần', () => {
+    const loi = loiChungCuaLop('owner', 'lop-65')
+    for (const l of loi) {
+      // Không em nào bị đếm hai lần trong cùng một lỗi.
+      expect(new Set(l.em).size).toBe(l.em.length)
+      expect(l.em.length).toBeLessThanOrEqual(l.tongEm)
+    }
+  })
+
+  it('mẫu số là bài ĐÃ CHẤM, không phải sĩ số lớp', () => {
+    const loi = loiChungCuaLop('owner', 'lop-65')
+    const siSo = duLieu().lop.find((l) => l.id === 'lop-65')!.hocVienIds.length
+    expect(siSo).toBe(18)
+    // 7 bài viết đã chấm — không phải 18.
+    expect(loi[0]!.tongEm).toBe(7)
+  })
+
+  it('chốt điểm trắc nghiệm KHÔNG làm phình mẫu số của lỗi bài viết', () => {
+    const truoc = loiChungCuaLop('owner', 'lop-65')[0]!.tongEm
+
+    dienDapAnThieu('owner', 'bg-g1', 12, 'will have finished')
+    chotTracNghiemCaLop('owner', 'bg-g1')
+
+    // 17 em vừa nhận nhận xét trắc nghiệm; không em nào trong đó có bài VIẾT được chấm thêm.
+    expect(loiChungCuaLop('owner', 'lop-65')[0]!.tongEm).toBe(truoc)
+  })
+
+  it('lời KHEN không bị cộng vào số lỗi', () => {
+    const khen = duLieu()
+      .nhapCham.flatMap((n) => n.co)
+      .filter((c) => c.kieu === 'khen')
+    expect(khen.length).toBeGreaterThan(0)
+
+    const tenLoi = loiChungCuaLop('owner', 'lop-65').map((l) => l.ten)
+    for (const c of khen) expect(tenLoi).not.toContain(c.loai)
+  })
+
+  it('em KHÔNG thấy bảng lỗi cả lớp — đây là màn so em này với em khác', () => {
+    expect(loiChungCuaLop('student', 'lop-65')).toHaveLength(0)
+  })
+
+  it('"Tạo bài luyện" giao cho ĐÚNG những em mắc lỗi, không giao cả lớp', () => {
+    const l = loiChungCuaLop('owner', 'lop-65').find((x) => x.em.length >= 2)!
+    const truoc = duLieu().baiLuyen.length
+
+    expect(taoBaiLuyenTuLoiChung('owner', 'lop-65', l.ten)).toBe(l.em.length)
+    expect(duLieu().baiLuyen).toHaveLength(truoc + l.em.length)
+
+    // Và chỉ những em đó, không ai khác.
+    const moi = duLieu().baiLuyen.slice(truoc)
+    expect(new Set(moi.map((b) => b.hocVienId))).toEqual(new Set(l.em))
+  })
+
+  it('giao lại cùng lỗi thì KHÔNG giao bài thứ hai', () => {
+    const l = loiChungCuaLop('owner', 'lop-65').find((x) => x.em.length >= 2)!
+    taoBaiLuyenTuLoiChung('owner', 'lop-65', l.ten)
+    expect(taoBaiLuyenTuLoiChung('owner', 'lop-65', l.ten)).toBe(0)
+  })
+
+  it('bài luyện chỉ em đó thấy — visibility từng dòng', () => {
+    const l = loiChungCuaLop('owner', 'lop-65').find((x) => x.em.length >= 2)!
+    taoBaiLuyenTuLoiChung('owner', 'lop-65', l.ten)
+
+    for (const e of nhatKy().filter((x) => x.action === 'practice_set.create')) {
+      expect(e.visibility).toHaveLength(2)
+      expect(e.visibility).toContain(duLieu().vai.owner)
+    }
+  })
+})
+
+describe('rubric của cô', () => {
+  beforeEach(() => {
+    datLai()
+  })
+
+  it('bốn tiêu chí, tổng 100%', () => {
+    const r = duLieu().rubric
+    expect(r.tieuChi).toHaveLength(4)
+    expect(r.tieuChi.reduce((t, x) => t + x.trongSo, 0)).toBe(100)
+  })
+
+  it('cô đổi được trọng số; trợ giảng bị chặn ở TRẦN CỨNG', () => {
+    datTrongSoRubric('owner', 'tr', 40)
+    expect(duLieu().rubric.tieuChi.find((x) => x.ma === 'tr')!.trongSo).toBe(40)
+
+    expect(() => datTrongSoRubric('assistant', 'tr', 10)).toThrow(KhongDuQuyen)
+    expect(() => datTrongSoRubric('student', 'tr', 10)).toThrow(KhongDuQuyen)
+  })
+
+  it('trọng số ngoài 0–100 bị chặn', () => {
+    expect(() => datTrongSoRubric('owner', 'tr', 101)).toThrow(/0 tới 100/)
+    expect(() => datTrongSoRubric('owner', 'tr', -1)).toThrow(/0 tới 100/)
+  })
+
+  it('đổi trọng số KHÔNG sửa lại bài đã chấm', () => {
+    const truoc = duLieu().nhanXet.map((n) => ({ id: n.id, band: n.band }))
+    const nhapTruoc = duLieu().nhapCham.map((n) => ({ id: n.id, band: { ...n.band } }))
+
+    datTrongSoRubric('owner', 'tr', 70)
+
+    // Band của em không được đổi sau lưng em.
+    expect(duLieu().nhanXet.map((n) => ({ id: n.id, band: n.band }))).toEqual(truoc)
+    expect(duLieu().nhapCham.map((n) => ({ id: n.id, band: { ...n.band } }))).toEqual(nhapTruoc)
+    // Và số bài đã chấm không bị sửa theo.
+    expect(duLieu().rubric.daCham).toBe(214)
+  })
+
+  it('cô bỏ được một dòng giọng chấm; trợ giảng không', () => {
+    const dong = duLieu().rubric.giongCham[0]!
+    boGiongCham('owner', dong)
+    expect(duLieu().rubric.giongCham).not.toContain(dong)
+
+    expect(() => boGiongCham('assistant', duLieu().rubric.giongCham[0]!)).toThrow(KhongDuQuyen)
   })
 })

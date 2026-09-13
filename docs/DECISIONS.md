@@ -545,3 +545,64 @@ Nhật ký ghi ĐỘ DÀI tin, không ghi nội dung — cùng lý do với ghi 
 band và tiền của một em cụ thể, và một payload đầy đủ là một đường rò. Mỗi tin một sự kiện
 `fee.message.send` riêng với `visibility` đúng hai người, không gộp cả cụm vào một dòng: gộp
 thì em thấy tin của bạn.
+
+### 2026-09-13 · Soi lại bản mẫu: sáu chỗ còn thiếu, và chỗ thứ sáu tài liệu nói ngược
+Cô gửi lại link bản mẫu và bảo làm cho giống chi tiết. Nên lần này em không đọc bằng mắt —
+em bóc cấu trúc cả 11 màn của `oblue-platform-demo.html` ra rồi đối chiếu từng tab, từng khối
+với bản đang chạy. Sáu chỗ thiếu, và cái đáng giá nhất không phải giao diện.
+
+**Thiếu hẳn một BƯỚC của vòng vận hành.** Màn Chấm bài của bản mẫu có ba tab (`g1/g2/g3`), bản
+đang chạy có một. Tab `g2` là "Cả lớp sai chung ở đâu" — **bước 6**, thứ cô đọc 5 phút trước
+giờ dạy — và tab `g3` là "Rubric của cô". Cả hai chưa bao giờ được dựng, nên cả hai ô "Rubric
+của cô" và giọng chấm cũng chưa có trong kho.
+
+Bước 6 phải **suy ra**, và suy ra mới lộ ba lỗi trong dữ liệu:
+- **Hai trích dẫn không có thật trong bài của em.** `'important … significant … important'` —
+  bài của Thu Hà không có ba từ đó; và `'Firstly, secondly, finally'` là bản tóm ba câu mở đoạn
+  rời nhau, không phải đoạn nào trong bài. Cô nhìn thấy câu bị gạch chân và tin là em đã viết
+  thế. Nay có bài kiểm: mọi `trich` phải xuất hiện nguyên văn trong `baiNop.noiDung`.
+- **Một lời KHEN nằm trong mảng lỗi.** `loai: 'điểm mạnh, không phải lỗi'` được nhồi vào `co`,
+  và màn chấm vẽ mảng đó dưới tiêu đề "Lỗi cần sửa" — nên câu viết TỐT của Nhật Nam hiện ra
+  **bị gạch ngang màu đỏ**, như một lỗi cần sửa. Thêm `kieu: 'loi' | 'khen'`, tách tiêu đề
+  riêng, và bỏ khen khỏi mọi phép đếm lỗi.
+- **Một con số cắm sẵn trong tooltip cô đọc:** `themY: 'Cả lớp sai chỗ này — 6/10 em'`, trong
+  khi dữ liệu thật có 2. Bước 6 giờ tự đếm.
+Và mẫu số cũng sai lần đầu: em đếm "mọi em có bài nộp trong lớp" ra **2/18**, tức là trộn 18
+em nộp bài TRẮC NGHIỆM vào một thống kê về lỗi BÀI VIẾT. Mười một em không có bài viết nào
+không phải "không mắc lỗi này". Mẫu số đúng là em có bài ĐÃ CHẤM: 2/7.
+
+**Chỗ thứ sáu tài liệu tự nói ngược — và chỗ này không cần cô chốt.** `teacher_notes` nằm
+trong `assistant_hard_ceiling` mà KHÔNG có dòng nào trong `objects`, nên `can()` trả false cho
+mọi vai, kể cả cô. Đó là lý do `hoSoDayDu` phải cắt ghi chú bằng `vai === 'owner'` — một
+component tự đặt chính sách. Tệ hơn: `luuGhiChu` hỏi `profile.update`, nên trợ giảng bị chặn
+chỉ vì họ đang ở mức `profile: read`; cô cấp `profile: auto` là họ sửa được ghi chú riêng của
+cô. Đây là dòng THIẾU chứ không phải chính sách cần chốt — trần cứng đã nói trợ giảng không bao
+giờ đọc. Thêm dòng, đổi hai câu hỏi sang `teacher_notes.*`, và thêm bài kiểm: **mọi object
+trong trần cứng đều phải có dòng trong ma trận.** Bỏ lại dòng đó ra thì 5 bài kiểm đỏ.
+
+**Khối "mỗi vai thấy gì" HỎI `can()`, không mang danh sách ẩn.** Bản mẫu cắm sẵn
+`RV = {ta:{hide:[...]}}` — với bản vẽ thì đủ, nhưng ở bản chạy thật một danh sách cắm sẵn là
+bản sao THỨ HAI của chính sách: ma trận đổi thì khối "kiểm tra quyền" vẫn vẽ theo bản cũ, và
+cái khối đáng tin nhất trên màn thành cái khối sai. Nay mỗi dòng hiện luôn câu hỏi nó vừa hỏi
+(`teacher_notes.view`, `gradebook.view`…). Kết quả khớp bản mẫu ở bốn vai và **cố ý khác ở vai
+phụ huynh** — xem §8 câu 13.
+
+**Lộ trình: bản mẫu hiện theo CHẶNG, không theo buổi.** Lộ trình 48 buổi mà liệt kê 48 dòng thì
+cô cuộn hết màn; và cô lên kế hoạch theo chặng ("buổi 21–28: luận điểm & phản biện"), không
+theo từng buổi. Thêm `chang`, một tab một lộ trình, bốn ô KPI. Ba trong bốn ô suy ra được;
+ô "Học viên đạt mục tiêu" thì KHÔNG suy — nó là kết quả của khoá đã kết thúc, nên lộ trình chưa
+khoá nào xong (Speaking club, IELTS 7.0 nháp) hiện "—" kèm lý do. Bịa một tỉ lệ cho lộ trình
+mới dựng là bịa đúng chỗ cô dùng để quyết có mở lớp nữa hay không. Ô "Đề gắn sẵn" của bản mẫu
+em đổi tên thành **"Đề dùng được"**: thứ đếm được là đề khớp cấp của lộ trình, chưa có bảng gắn
+đề vào lộ trình, và đặt nhãn "gắn sẵn" cho một phép lọc theo cấp là nói quá.
+
+**Phễu học viên cũng vậy.** Bản mẫu ghi "+7 hỏi thử · 71% học thử" — kho không có bảng nào lưu
+hai bước đó, nên hai ô đầu hiện "—" kèm lý do, ba ô sau đếm thật.
+
+**Một lỗi em tự gây ra trong lượt này, và bài kiểm bắt được:** em đổi câu màn trống của nhật ký
+thành "Không có dòng nào khớp bộ lọc này" cho cả hai tình huống — nhưng mở màn lần đầu thì nhật
+ký RỖNG, không phải bộ lọc không khớp, và cô sẽ đi bấm thử năm bộ lọc để tìm dòng không tồn
+tại. Hai tình huống, hai câu.
+Hai bài kiểm khác đỏ vì chính bài kiểm sai: một cái bỏ chữ "của" khi khớp chuỗi, một cái bắt
+chuỗi "cả lớp" trong đúng câu nói "KHÔNG giao cả lớp". Cùng họ với lỗi `getByText` khớp chuỗi
+con — lần thứ ba, nên lần này kiểm bằng SỐ (số em đã giao < sĩ số) thay vì bằng chữ.

@@ -32,12 +32,29 @@ function actor(overrides: Partial<Actor> = {}): Actor {
 }
 
 describe('ma trận quyền', () => {
-  it('permissions.json phủ đủ 18 object × 5 vai', () => {
-    expect(OBJECT_TYPES).toHaveLength(18)
+  it('permissions.json phủ đủ 19 object × 5 vai', () => {
+    /*
+     * 19, không phải 18: `teacher_notes` từng nằm trong `assistant_hard_ceiling` mà KHÔNG có
+     * dòng nào trong `objects`, nên `can()` từ chối nó với mọi vai — kể cả cô, chủ của ghi
+     * chú. Chỗ gọi phải tự đoán bằng `vai === 'owner'`, đúng thứ CLAUDE.md cấm.
+     */
+    expect(OBJECT_TYPES).toHaveLength(19)
     for (const type of OBJECT_TYPES) {
       for (const role of ROLES) {
         expect(DEFAULTS[type]?.[role], `${type}.${role}`).toBeDefined()
       }
+    }
+  })
+
+  it('mọi object trong trần cứng đều CÓ dòng trong ma trận', () => {
+    /*
+     * Bất biến này từng bị vi phạm bởi `teacher_notes`, và vi phạm im lặng: cửa 5 chặn trợ
+     * giảng đúng, nhưng cửa 6 rồi chặn luôn CÔ vì không tìm thấy mức nào. "Mặc định đóng" là
+     * đúng, nhưng nó biến một dòng thiếu thành một tính năng cô không dùng được, và không
+     * chỗ nào báo.
+     */
+    for (const type of HARD_CEILING) {
+      expect(DEFAULTS[type], `trần cứng "${type}" không có dòng trong objects`).toBeDefined()
     }
   })
 

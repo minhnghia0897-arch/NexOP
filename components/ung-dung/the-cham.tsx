@@ -29,11 +29,26 @@ const VACH: Record<LoiDanhDau['nhom'], string> = {
   structure: 'var(--st-purple)',
 }
 
+/**
+ * Một đoạn máy gạch chân. LỖI thì gạch ngang, ĐIỂM MẠNH thì không.
+ *
+ * Trước đây hàm này vẽ mọi mục trong `co` y như nhau, kể cả mục là lời khen — nên câu viết
+ * TỐT của em hiện ra bị gạch ngang màu đỏ, dưới tiêu đề "Lỗi cần sửa". Cô đọc màn đó sẽ đi
+ * sửa đúng chỗ em đang làm đúng.
+ */
 function Loi({ loi }: { loi: LoiDanhDau }) {
+  const khen = loi.kieu === 'khen'
   return (
-    <div className="mb-3.5 border-l-[3px] pl-3" style={{ borderColor: VACH[loi.nhom] }}>
+    <div
+      className="mb-3.5 border-l-[3px] pl-3"
+      style={{ borderColor: khen ? 'var(--st-green)' : VACH[loi.nhom] }}
+    >
       <div className="text-[13px] leading-5 text-text-2">
-        <s className="decoration-st-red decoration-2">{loi.trich}</s>
+        {khen ? (
+          <q className="text-text">{loi.trich}</q>
+        ) : (
+          <s className="decoration-st-red decoration-2">{loi.trich}</s>
+        )}
       </div>
       <div className="mt-[3px] text-[13px] leading-5 text-text">
         <b className="font-display font-semibold text-st-green-deep">{loi.sua}</b>
@@ -65,6 +80,10 @@ function TieuChi({ ten, diem }: { ten: string; diem: number }) {
 export function TheCham({ bai, laTroGiang }: { bai: BaiCanCham; laTroGiang: boolean }) {
   const [nhanXet, datNhanXet] = useState(bai.nhanXet)
   const [loi, datLoi] = useState<string | null>(null)
+
+  /* Tách LỖI khỏi KHEN ngay ở đây, để hai tiêu đề dưới kia nói đúng thứ nó chứa. */
+  const loiThat = bai.co.filter((c) => c.kieu !== 'khen')
+  const khen = bai.co.filter((c) => c.kieu === 'khen')
 
   const daSua = nhanXet !== bai.nhanXet
   const tinCay = Math.round(bai.tinCay * 100)
@@ -145,13 +164,26 @@ export function TheCham({ bai, laTroGiang }: { bai: BaiCanCham; laTroGiang: bool
           <h5 className="mb-2.5 font-display text-[12px] font-bold text-text-2">
             Lỗi cần sửa
           </h5>
-          {bai.co.length > 0 ? (
-            bai.co.map((c) => <Loi key={c.trich} loi={c} />)
+          {loiThat.length > 0 ? (
+            loiThat.map((c) => <Loi key={c.trich} loi={c} />)
           ) : (
             <p className="text-[13px] text-text-3">
               Máy không tìm thấy lỗi nào đáng gạch — bài này sạch.
             </p>
           )}
+
+          {/* Điểm mạnh có tiêu đề RIÊNG. Bản mẫu ghi "Khen một điểm cụ thể trước, rồi mới
+              sửa" trong giọng chấm của cô — nên chỗ khen phải đọc ra là khen. */}
+          {khen.length > 0 ? (
+            <>
+              <h5 className="mb-2.5 mt-4 font-display text-[12px] font-bold text-st-green-deep">
+                Điểm mạnh — giữ cách viết này
+              </h5>
+              {khen.map((c) => (
+                <Loi key={c.trich} loi={c} />
+              ))}
+            </>
+          ) : null}
 
           <details className="mt-4">
             <summary className="cursor-pointer text-[13px] text-text-2 hover:text-text">

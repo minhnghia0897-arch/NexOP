@@ -12,7 +12,8 @@ import { useState } from 'react'
 
 import { DauMan, Wrap } from '@/components/ung-dung/khung'
 import { BangQuyen } from '@/components/ung-dung/bang-quyen'
-import { Khoi, KhoiTrong, Nhan, Nut } from '@/components/ung-dung/phan-tu'
+import { MotBaiNop } from '@/components/ung-dung/mot-bai-nop'
+import { Khoi, KhoiTrong, Nhan, Nut, Pill } from '@/components/ung-dung/phan-tu'
 import { DaiTab } from '@/components/ung-dung/tab-man'
 import { useKho } from '@/lib/demo/dung-kho'
 import { datLuatHanhVi } from '@/lib/demo/hanh-vi'
@@ -120,12 +121,32 @@ const TEN_VAI = {
 export default function CauHinh() {
   useKho()
   const [tab, datTab] = useState('vong')
+  const [locVai, datLocVai] = useState('tat-ca')
   const [loi, datLoi] = useState<string | null>(null)
   const vai = vaiHienTai()
   const du = duLieu()
 
   const toi = du.vai[vai]
-  const dong = nhatKy().filter((e) => e.visibility.includes(toi))
+  const thayDuoc = nhatKy().filter((e) => e.visibility.includes(toi))
+
+  /*
+   * Lọc theo AI LÀM — routes của bản mẫu (`Tất cả | Cô | Học viên | Máy | Dính tới tiền`).
+   *
+   * Lọc theo `actorRole` chứ không theo chữ trong dòng: bản mẫu lọc bằng
+   * `w.includes('Cô')` trên text đã render, nên một em tên "Cô Tú" sẽ đếm thành cô. Vai thì
+   * nằm sẵn trong sự kiện.
+   *
+   * "Dính tới tiền" lọc theo OBJECT `fee`, không theo từ khoá: một dòng `proposal.propose`
+   * nháp tin học phí cũng dính tiền, mà chữ "học phí" thì không nằm trong tên hành vi.
+   */
+  const LOC: Record<string, (e: (typeof thayDuoc)[number]) => boolean> = {
+    'tat-ca': () => true,
+    co: (e) => e.actorRole === 'owner',
+    em: (e) => e.actorRole === 'student' || e.actorRole === 'parent',
+    may: (e) => e.actorRole === 'system',
+    tien: (e) => e.objectType === 'fee' || e.objectType === 'proposal',
+  }
+  const dong = thayDuoc.filter(LOC[locVai] ?? (() => true))
 
   const TABS = [
     { id: 'vong', ten: 'Vòng vận hành tuần' },
@@ -196,6 +217,9 @@ export default function CauHinh() {
               phu="Ba nguyên tắc: quyền đi theo lớp (ra khỏi lớp là hết quyền) · em chỉ thấy của mình · máy chỉ đề xuất, trừ việc cô đã bật cho tự làm. Bảng này sinh thẳng từ chính sách đang chạy, không phải ảnh chụp."
             >
               <BangQuyen />
+            <div className="mt-5">
+              <MotBaiNop tenantId={du.tenant.id} />
+            </div>
             </Khoi>
             <div className="mt-5">
               <Khoi
@@ -253,13 +277,39 @@ export default function CauHinh() {
             </Khoi>
             <div className="mt-5">
               <Khoi
-                ten={`Nhật ký · ${dong.length} dòng ${vai === 'student' ? 'em' : vai === 'assistant' ? 'trợ giảng' : 'cô'} thấy được`}
+                ten={`Nhật ký · ${dong.length}/${thayDuoc.length} dòng ${vai === 'student' ? 'em' : vai === 'assistant' ? 'trợ giảng' : 'cô'} thấy được`}
                 phu="Lọc theo người được nhìn thấy, tính đúng lúc ghi. Đổi vai ở góc trên là danh sách ngắn lại ngay — đó là cửa chặn thật, không phải bộ lọc trang trí."
               >
+                <div className="mb-3.5 flex flex-wrap gap-2">
+                  {[
+                    ['tat-ca', 'Tất cả'],
+                    ['co', 'Cô'],
+                    ['em', 'Học viên'],
+                    ['may', 'Máy'],
+                    ['tien', 'Dính tới tiền'],
+                  ].map(([id, ten]) => (
+                    <Pill
+                      key={id}
+                      on={locVai === id}
+                      dem={thayDuoc.filter(LOC[id!] ?? (() => true)).length}
+                      onClick={() => datLocVai(id!)}
+                    >
+                      {ten}
+                    </Pill>
+                  ))}
+                </div>
                 {dong.length === 0 ? (
+                  /*
+                   * Hai câu khác nhau cho hai tình huống khác nhau.
+                   *
+                   * Em vừa đổi câu này thành "không khớp bộ lọc" cho cả hai, và nó nói sai ở
+                   * ca thường gặp nhất: mở màn lần đầu thì nhật ký RỖNG, không phải "bộ lọc
+                   * không khớp". Cô sẽ đi bấm thử năm bộ lọc để tìm dòng không tồn tại.
+                   */
                   <KhoiTrong>
-                    Chưa có dòng nào. Thử gửi một nhận xét ở màn Chấm bài, hoặc bật/tắt một luật
-                    ở tab bên cạnh.
+                    {thayDuoc.length === 0
+                      ? 'Chưa có dòng nào. Thử gửi một nhận xét ở màn Chấm bài, hoặc bật/tắt một luật ở tab bên cạnh.'
+                      : `Không dòng nào trong ${thayDuoc.length} dòng khớp bộ lọc này. Bấm "Tất cả" để xem hết.`}
                   </KhoiTrong>
                 ) : (
                   <ol>
@@ -367,6 +417,30 @@ export default function CauHinh() {
                 </div>
               ))}
             </Khoi>
+            <div className="mt-5">
+              <Khoi
+                ten="Chia sẻ doanh thu từ luyện thêm"
+                phu="Em mua gói luyện hoặc mock chấm tay trong app của lớp cô. Nền tảng không bán gì cho em ngoài lớp của cô."
+              >
+                {[
+                  ['Cô nhận', '30% gói luyện · 80% mock chấm tay'],
+                  ['Tháng 9 đến nay', '2,1tr'],
+                  ['Chuyển vào', 'Tài khoản cô · ngày 5 hằng tháng'],
+                ].map(([nhan, gia]) => (
+                  <div
+                    key={nhan}
+                    className="flex flex-wrap justify-between gap-3 border-t border-border-light py-2.5 text-[13px] first:border-t-0 first:pt-0"
+                  >
+                    <span className="text-text-2">{nhan}</span>
+                    <b className="font-display font-semibold text-text">{gia}</b>
+                  </div>
+                ))}
+                <p className="mt-3 text-[13px] leading-[21px] text-text-2">
+                  Mock chấm tay là cô chấm, nên cô nhận phần lớn. Gói luyện là máy sinh từ lỗi
+                  lặp của em, nên chia thấp hơn.
+                </p>
+              </Khoi>
+            </div>
             <div className="mt-5">
               <Khoi
                 ten="Học viên thuộc về cô"

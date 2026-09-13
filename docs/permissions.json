@@ -33,6 +33,17 @@
         "parent": "progress+tasks only, no scores"
       }
     },
+    "teacher_notes": {
+      "owner": "full",
+      "assistant": "none",
+      "student": "none",
+      "parent": "none",
+      "system": "none",
+      "notes": {
+        "assistant": "trần cứng — cô muốn cấp cũng không cấp được",
+        "system": "máy không đọc: đây là chỗ cô viết cho riêng mình"
+      }
+    },
     "exam": {
       "owner": "full",
       "assistant": "read",
