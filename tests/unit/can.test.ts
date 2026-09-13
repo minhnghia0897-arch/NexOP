@@ -32,13 +32,19 @@ function actor(overrides: Partial<Actor> = {}): Actor {
 }
 
 describe('ma trận quyền', () => {
-  it('permissions.json phủ đủ 19 object × 5 vai', () => {
+  it('permissions.json phủ đủ 20 object × 5 vai', () => {
     /*
-     * 19, không phải 18: `teacher_notes` từng nằm trong `assistant_hard_ceiling` mà KHÔNG có
-     * dòng nào trong `objects`, nên `can()` từ chối nó với mọi vai — kể cả cô, chủ của ghi
-     * chú. Chỗ gọi phải tự đoán bằng `vai === 'owner'`, đúng thứ CLAUDE.md cấm.
+     * Con số này là một cái chốt, không phải một con số trang trí. Hai lần nó bắt được lỗi
+     * thật, cả hai lần là một object THIẾU HẲN dòng trong ma trận:
+     *
+     *   · `teacher_notes` nằm trong `assistant_hard_ceiling` mà không có dòng trong `objects`
+     *     → `can()` từ chối với MỌI vai, kể cả cô, chủ của ghi chú. Chỗ gọi phải tự đoán bằng
+     *     `vai === 'owner'`, đúng thứ CLAUDE.md cấm.
+     *   · `account` (hồ sơ tài khoản: tên, số điện thoại) không có dòng nào, nên không ai sửa
+     *     nổi tên của chính mình. Trợ giảng ở mức `profile: read` bị chặn, mà `profile` lại là
+     *     hồ sơ NĂNG LỰC — hai thứ khác nhau bị gộp làm một chữ.
      */
-    expect(OBJECT_TYPES).toHaveLength(19)
+    expect(OBJECT_TYPES).toHaveLength(20)
     for (const type of OBJECT_TYPES) {
       for (const role of ROLES) {
         expect(DEFAULTS[type]?.[role], `${type}.${role}`).toBeDefined()
@@ -173,17 +179,45 @@ describe('các cửa chặn, theo đúng thứ tự', () => {
 })
 
 describe('học viên không thấy dữ liệu của học viên khác', () => {
-  // CLAUDE.md, luật cứng. Quét mọi object: không object nào cho student đọc đồ người khác.
-  it('không object nào lọt', () => {
+  /*
+   * Hai mức cho em đọc đồ của người khác, và cả hai đều CÓ CHỦ Ý — nên phải liệt kê tên từng
+   * object, không chỉ tên mức.
+   *
+   * `class`/`assignment` ở mức `read`: đề bài và lịch lớp là của cả lớp, không của em nào.
+   * `account` ở mức `read_own`: tên bạn cùng lớp, hiện đúng một chỗ — bảng tin lớp. Em sửa
+   * thì chỉ sửa hồ sơ của chính mình.
+   *
+   * Danh sách trắng này là chỗ đắt nhất trong file: thêm một object vào đây là mở một đường
+   * cho em đọc đồ của bạn, nên nó phải là một dòng người ta thấy khi đọc diff.
+   */
+  const DOC_DUOC_CUA_NGUOI_KHAC = new Set(['class', 'assignment', 'account'])
+
+  it('không object nào lọt ngoài danh sách trắng', () => {
     const em = actor({ role: 'student', accountId: EM, classIds: [CLASS] })
     for (const type of OBJECT_TYPES) {
       const cuaEmKhac = { type, tenantId: TENANT, classId: CLASS, ownerId: 'em-khac' }
       const level = DEFAULTS[type]!.student
-      // Chỉ `read` mới cho đọc đồ chung; ngoài ra phải là đồ của chính em.
-      if (level !== 'read') {
+      if (!DOC_DUOC_CUA_NGUOI_KHAC.has(type)) {
         expect(can(em, `${type}.view`, cuaEmKhac), `${type} (mức ${level})`).toBe(false)
       }
     }
+  })
+
+  it('danh sách trắng không có object nào mang DỮ LIỆU của một em cụ thể', () => {
+    /* Tên thì được; band, bài nộp, học phí, nháp của máy thì không. Chốt bằng tên object để
+       một lần nới danh sách trắng sang `submission` là đỏ ngay ở đây. */
+    for (const nhay of ['submission', 'review', 'draft', 'fee', 'gradebook', 'profile']) {
+      expect(DOC_DUOC_CUA_NGUOI_KHAC.has(nhay), nhay).toBe(false)
+    }
+  })
+
+  it('em sửa được hồ sơ tài khoản của mình, không sửa của bạn', () => {
+    const em = actor({ role: 'student', accountId: EM, classIds: [CLASS] })
+    const hs = (ownerId: string) => ({ type: 'account', tenantId: TENANT, classId: CLASS, ownerId })
+    expect(can(em, 'account.update', hs(EM))).toBe(true)
+    expect(can(em, 'account.update', hs('em-khac'))).toBe(false)
+    // `read_own` KHÔNG cho tạo: em không tự mở hồ sơ thứ hai.
+    expect(can(em, 'account.create', hs(EM))).toBe(false)
   })
 
   it('em không bao giờ thấy nháp của máy', () => {

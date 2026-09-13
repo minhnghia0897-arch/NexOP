@@ -7,10 +7,18 @@ import { Suspense, useState } from 'react'
 import { DauMan, Wrap } from '@/components/ung-dung/khung'
 import { LuoiLop } from '@/components/ung-dung/luoi-lop'
 import { NganDiemDanh } from '@/components/ung-dung/ngan-diem-danh'
-import { KhoiTrong, Nut } from '@/components/ung-dung/phan-tu'
+import { ChuaPhanLop, KhoiTrong, Nut } from '@/components/ung-dung/phan-tu'
 import { TrangLop } from '@/components/ung-dung/trang-lop'
 import { useKho } from '@/lib/demo/dung-kho'
-import { baiCanCham, duLieu, duocDiemDanh, soLieuLop, vaiHienTai } from '@/lib/demo/kho'
+import {
+  baiCanCham,
+  duLieu,
+  duocDiemDanh,
+  lamDuoc,
+  lopTrongTam,
+  soLieuLop,
+  vaiHienTai,
+} from '@/lib/demo/kho'
 
 function LopHocNoi() {
   useKho()
@@ -19,13 +27,9 @@ function LopHocNoi() {
   const vai = vaiHienTai()
   const du = duLieu()
 
-  // Vai nào thấy lớp nào: cô thấy hết, trợ giảng thấy lớp được giao, em thấy lớp mình học.
-  const cua =
-    vai === 'owner'
-      ? du.lop
-      : vai === 'assistant'
-        ? du.lop.filter((l) => l.id === 'lop-65')
-        : du.lop.filter((l) => l.hocVienIds.includes(du.vai.student))
+  /* Vai nào thấy lớp nào — hỏi `class.view` cho từng lớp, không tự lọc theo vai. Trước đây
+     chỗ này cắm `l.id === 'lop-65'` cho trợ giảng: bản sao thứ ba của quan hệ phân công. */
+  const cua = lopTrongTam(vai)
 
   /*
    * Không có `?lop=` thì đây là màn LỚP HỌC — lưới thẻ, như `s-cls` của bản mẫu.
@@ -51,7 +55,7 @@ function LopHocNoi() {
           ten="Lớp học"
           phu={`${dangChayN} lớp đang chạy · ${sapMoN} lớp sắp mở · mở lớp mới không cần soạn lại`}
           hanhDong={
-            vai === 'owner' ? (
+            lamDuoc(vai, 'class.create') ? (
               <Link href="/lo-trinh">
                 <Nut kieu="chinh">Mở lớp mới từ lộ trình</Nut>
               </Link>
@@ -60,7 +64,14 @@ function LopHocNoi() {
         />
         <Wrap>
           {the.length === 0 ? (
-            <KhoiTrong>Chưa có lớp nào.</KhoiTrong>
+            /* Hai câu cho hai tình huống khác nhau: cô chưa mở lớp nào, và trợ giảng chưa
+               được phân lớp. Một câu dùng chung thì một trong hai người đọc xong không biết
+               phải làm gì. */
+            vai === 'assistant' ? (
+              <ChuaPhanLop viec="danh sách lớp" />
+            ) : (
+              <KhoiTrong>Chưa có lớp nào. Cô mở lớp đầu tiên từ một lộ trình.</KhoiTrong>
+            )
           ) : (
             <LuoiLop
               the={the}
@@ -126,11 +137,18 @@ function LopHocNoi() {
             {duocDiemDanh(vai, dangXem.id) ? (
               <Nut onClick={() => datDiemDanh(dangXem.id)}>Điểm danh</Nut>
             ) : null}
-            {vai === 'owner' ? (
-              <>
-                <Nut>Thêm học viên</Nut>
-                <Nut kieu="chinh">Giao bài</Nut>
-              </>
+            {/*
+              Hai nút, HAI câu hỏi khác nhau — không gộp vào một `vai === 'owner'`.
+
+              "Thêm học viên" là `membership.create`; "Giao bài" là `assignment.create`. Gộp lại
+              thì hôm nào cô cho trợ giảng giao bài, nút Giao bài vẫn ẩn, và cô sẽ đi tìm lỗi ở
+              chỗ khác.
+            */}
+            {lamDuoc(vai, 'membership.create', { lopId: dangXem.id }) ? (
+              <Nut>Thêm học viên</Nut>
+            ) : null}
+            {lamDuoc(vai, 'assignment.create', { lopId: dangXem.id }) ? (
+              <Nut kieu="chinh">Giao bài</Nut>
             ) : null}
           </span>
         }

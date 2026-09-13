@@ -7,7 +7,7 @@ import { DauMan, Wrap } from '@/components/ung-dung/khung'
 import { ChiSo, Khoi, KhoiTrong, Nhan, Nut } from '@/components/ung-dung/phan-tu'
 import { DaiTab } from '@/components/ung-dung/tab-man'
 import { useKho } from '@/lib/demo/dung-kho'
-import { duLieu, soLieuLoTrinh, vaiHienTai } from '@/lib/demo/kho'
+import { duLieu, lamDuoc, soLieuLoTrinh, vaiHienTai } from '@/lib/demo/kho'
 
 /**
  * Lộ trình — `s-path` của bản mẫu. Kế hoạch buổi, không phải khoá học đóng gói.
@@ -29,7 +29,9 @@ export default function LoTrinhMan() {
   const du = duLieu()
   const [dang, datDang] = useState(du.loTrinh[0]?.id ?? '')
 
-  if (vai !== 'owner') {
+  // Hỏi `path.view` thay vì so vai: lộ trình là `none` với mọi vai ngoài cô, và câu trả lời
+  // phải tới từ ma trận — không từ một chữ `owner` gõ ở đây.
+  if (!lamDuoc(vai, 'path.view')) {
     return (
       <>
         <DauMan ten="Lộ trình" />

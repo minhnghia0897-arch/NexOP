@@ -25,6 +25,18 @@ export interface Lop {
   lich: string
   trangThai: 'running' | 'closed' | 'opening'
   hocVienIds: string[]
+  /**
+   * Trợ giảng được cô PHÂN CÔNG vào lớp này — ứng với bảng `class_teachers` của đặc tả.
+   *
+   * Đây là trái tim của mô hình trợ giảng: quyền của cô đi theo VAI ("cứ là chủ tên miền thì
+   * làm được"), còn quyền của trợ giảng đi theo QUAN HỆ — phải có tên trong lớp nào thì mới
+   * chạm được lớp đó. Không có quan hệ thì không có quyền, và đó là hành vi ĐÚNG.
+   *
+   * Trước đây quan hệ này là chuỗi `'lop-65'` cắm trong `actorCuaVai`, rồi cắm lần thứ hai ở
+   * màn Học viên. Hai bản sao của một quan hệ thì không thể nào là một quan hệ: cô phân trợ
+   * giảng sang lớp khác là màn Học viên vẫn lọc theo lớp cũ, và không có gì báo.
+   */
+  troGiangIds: string[]
   /** Chấm màu ở panel. Bản mẫu phân biệt lớp bằng màu, không bằng số thứ tự. */
   mau: 'blue' | 'purple' | 'orange' | 'green' | 'indigo'
   /** Với lớp sắp mở: dòng phụ thay cho sĩ số. */
@@ -1194,13 +1206,16 @@ export function duLieuBanDau(): DuLieuDemo {
      * cho các em đó bài viết nữa là làm chồng bài chấm phình ra mà không kể thêm gì.
      */
     { id: 'lop-65', ten: 'IELTS 6.5 · Tối T3/T5', lich: 'T3, T5 · 19:30', trangThai: 'running',
-      mau: 'blue', hocVienIds: HOC_VIEN.map((h) => h.id) },
+      mau: 'blue', hocVienIds: HOC_VIEN.map((h) => h.id),
+      // Cô phân trợ giảng Phạm Lan vào ĐÚNG lớp này. Đổi dòng này là mọi màn của trợ giảng
+      // đổi theo — đó là điều kiện để gọi nó là một quan hệ.
+      troGiangIds: [TRO_GIANG] },
     { id: 'lop-55', ten: 'IELTS 5.5 · Sáng T7/CN', lich: 'T7, CN · 8:30', trangThai: 'running',
-      mau: 'purple', hocVienIds: THEM(16, 'l55') },
+      mau: 'purple', hocVienIds: THEM(16, 'l55'), troGiangIds: [] },
     { id: 'lop-cap-toc', ten: 'Writing cấp tốc · 1 kèm 4', lich: 'T2 · 20:00', trangThai: 'running',
-      mau: 'orange', hocVienIds: THEM(4, 'lct') },
+      mau: 'orange', hocVienIds: THEM(4, 'lct'), troGiangIds: [] },
     { id: 'lop-speak', ten: 'Speaking club · T4', lich: 'T4 · 19:00', trangThai: 'running',
-      mau: 'green', hocVienIds: THEM(20, 'lsp') },
+      mau: 'green', hocVienIds: THEM(20, 'lsp'), troGiangIds: [] },
     /*
      * Lớp sắp mở: HAI em đã đăng ký, đúng bằng con số trong ghi chú.
      *
@@ -1209,7 +1224,7 @@ export function duLieuBanDau(): DuLieuDemo {
      * cùng người, lớp mới, đó chính là "mở lớp thứ 3 không kiệt sức".
      */
     { id: 'lop-moi', ten: 'IELTS 7.0+ · nhóm 6', lich: '22/9 · T2, T5 · 19:30',
-      trangThai: 'opening', mau: 'indigo', hocVienIds: ['hv-02', 'hv-07'],
+      trangThai: 'opening', mau: 'indigo', hocVienIds: ['hv-02', 'hv-07'], troGiangIds: [],
       ghiChu: '2/6 đăng ký · khai giảng 22/9' },
   ]
 

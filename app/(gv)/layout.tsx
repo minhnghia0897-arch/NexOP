@@ -5,7 +5,7 @@ import { Suspense, useEffect } from 'react'
 import { Rail, TabDay } from '@/components/ung-dung/dieu-huong'
 import { Canvas, DaiVai, PanelLop, Topbar } from '@/components/ung-dung/khung'
 import { useKho } from '@/lib/demo/dung-kho'
-import { baiCanCham, duLieu, napTuBoNho, vaiHienTai } from '@/lib/demo/kho'
+import { baiCanCham, duLieu, lopTrongTam, napTuBoNho, vaiHienTai } from '@/lib/demo/kho'
 
 export default function KhungLamViec({ children }: { children: React.ReactNode }) {
   useKho()
@@ -29,12 +29,8 @@ export default function KhungLamViec({ children }: { children: React.ReactNode }
   const dem: Record<string, number> = {}
   for (const b of cho) dem[b.lopId] = (dem[b.lopId] ?? 0) + 1
 
-  const lopThay =
-    vai === 'student'
-      ? du.lop.filter((l) => l.hocVienIds.includes(du.vai.student))
-      : vai === 'assistant'
-        ? du.lop.filter((l) => l.id === 'lop-65')
-        : du.lop
+  /* Bản sao thứ SÁU của quan hệ phân công — panel lớp bên trái. Hỏi `class.view` một chỗ. */
+  const lopThay = lopTrongTam(vai)
 
   const soEm = new Set(du.lop.flatMap((l) => l.hocVienIds)).size
   // Đếm từ hồ sơ, không từ "có số điện thoại": mọi em đều có số, nhưng chưa em nào cũng

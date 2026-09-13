@@ -21,7 +21,7 @@ import { ThuatSiDe } from '@/components/ung-dung/thuat-si-de'
 import { useKho } from '@/lib/demo/dung-kho'
 import type { De } from '@/lib/demo/du-lieu'
 import { duyetNhanDeHanhVi } from '@/lib/demo/hanh-vi'
-import { duLieu, vaiHienTai } from '@/lib/demo/kho'
+import { duLieu, lamDuoc, vaiHienTai } from '@/lib/demo/kho'
 
 const TEN_KY_NANG: Record<De['kyNang'], string> = {
   reading: 'Đọc',
@@ -73,7 +73,9 @@ export default function NganHangDe() {
     )
   }
 
-  const laCo = vai === 'owner'
+  /* "Là cô" ở màn này nghĩa là ĐƯỢC SỐ HOÁ — §C1: chỉ giáo viên chính dùng AI số hoá tài
+     liệu. Hỏi `exam.create`, vì đó đúng là hành vi nút này dẫn tới. */
+  const laCo = lamDuoc(vai, 'exam.create')
   /*
    * Chồng việc của tab một: đề vừa số hoá mà CHƯA GIAO cho lớp nào.
    *

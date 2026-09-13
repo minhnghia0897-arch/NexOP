@@ -20,6 +20,7 @@ const TEN_VAI: Record<string, { ten: string; phu: string }> = {
 const TEN_MUC: Record<Level, string> = {
   full: 'Toàn quyền',
   own: 'Của mình',
+  read_own: 'Xem · sửa của mình',
   read: 'Chỉ xem',
   none: 'Không',
   propose: 'Đề xuất',
@@ -29,6 +30,7 @@ const TEN_MUC: Record<Level, string> = {
 const SAC_MUC: Record<Level, string> = {
   full: 'bg-st-green-soft text-st-green-deep',
   own: 'bg-st-blue-soft text-primary',
+  read_own: 'bg-st-blue-soft text-primary',
   read: 'bg-field text-text-2',
   none: 'bg-surface text-text-3 ring-1 ring-inset ring-border-light',
   propose: 'bg-st-orange-soft text-st-orange-deep',
@@ -36,6 +38,7 @@ const SAC_MUC: Record<Level, string> = {
 }
 
 const TEN_OBJECT: Record<string, { ten: string; phu: string }> = {
+  account: { ten: 'Hồ sơ tài khoản', phu: 'tên, số điện thoại của chính mình' },
   class: { ten: 'Lớp học', phu: 'tạo, sửa lịch, đóng lớp' },
   membership: { ten: 'Thành viên lớp', phu: 'thêm/bỏ học viên, mời trợ giảng' },
   profile: { ten: 'Hồ sơ học viên', phu: 'band, lỗi lặp, ghi chú của cô' },

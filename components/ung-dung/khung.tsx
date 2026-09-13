@@ -17,6 +17,7 @@ import type { ReactNode } from 'react'
 
 import type { VaiDemo } from '@/lib/demo/du-lieu'
 import { doiVaiXem } from '@/lib/demo/hanh-vi'
+import { duLieu } from '@/lib/demo/kho'
 
 /*
  * Mười một mục của bản mẫu, chia ba nhóm bằng gạch ngang.
@@ -200,13 +201,27 @@ export function Topbar({
  * Nói rõ vai đó KHÔNG làm được gì — đó mới là câu người dùng cần, không phải "bạn là ai".
  */
 export function DaiVai({ vai }: { vai: VaiDemo }) {
+  const du = duLieu()
+  const lopCuaTroGiang = du.lop
+    .filter((l) => l.troGiangIds.includes(du.vai.assistant))
+    .map((l) => l.ten.split('·')[0]!.trim())
+
   if (vai === 'owner') return null
   return (
     <div className="flex-none border-b border-st-orange-line bg-st-orange-soft px-5 py-2 text-[13px] leading-[19px] text-ta-text">
       {vai === 'assistant' ? (
         <>
-          <b className="font-display font-semibold">Đang xem như trợ giảng Lan</b> — chỉ lớp IELTS
-          6.5 · soạn nhận xét, không gửi · không thấy học phí, rubric, ghi chú của cô
+          <b className="font-display font-semibold">Đang xem như trợ giảng Lan</b> —{' '}
+          {/*
+            Tên lớp SUY từ quan hệ phân công, không cắm "IELTS 6.5" vào câu chữ.
+            Đây là bản sao thứ TƯ của quan hệ đó, và là bản sao tệ nhất: ba bản kia lọc dữ
+            liệu sai, còn bản này nói thẳng vào mặt người dùng một câu sai — cô phân Lan sang
+            lớp 5.5 thì dải này vẫn khẳng định "chỉ lớp IELTS 6.5".
+          */}
+          {lopCuaTroGiang.length === 0
+            ? 'chưa được phân lớp nào — xem ghi chú ở từng màn'
+            : `chỉ lớp ${lopCuaTroGiang.join(', ')}`}{' '}
+          · soạn nhận xét, không gửi · không thấy học phí, rubric, ghi chú của cô
         </>
       ) : (
         <>

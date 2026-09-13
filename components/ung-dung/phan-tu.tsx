@@ -178,6 +178,26 @@ export function Nut({
   )
 }
 
+/**
+ * Trợ giảng chưa được cô phân lớp nào — §H luật 8.
+ *
+ * "Trống rỗng không có lý do là chỗ người dùng nghĩ phần mềm hỏng." Danh sách lớp rỗng là hành
+ * vi ĐÚNG (quyền trợ giảng đi theo quan hệ với lớp, không có quan hệ thì không có quyền), nhưng
+ * đúng mà im lặng thì người ngồi trước màn hình không phân biệt được với hỏng.
+ *
+ * Nói ba điều: cô chưa phân lớp · đó không phải lỗi · ai mở được và mở ở đâu.
+ */
+export function ChuaPhanLop({ viec }: { viec: string }) {
+  return (
+    <div className="rounded-l border border-st-orange-line bg-callout-orange px-5 py-4 text-[13px] leading-[21px] text-ta-text">
+      <b className="mb-1 block font-display font-semibold">Cô chưa phân lớp nào cho anh/chị.</b>
+      Quyền của trợ giảng đi theo <b>lớp được phân</b>, nên chưa có lớp thì {viec} cũng chưa có
+      gì. Đây không phải lỗi phần mềm. Cô mở màn <b>Cấu hình → Trợ giảng</b> rồi phân lớp là
+      mọi thứ hiện ra ngay.
+    </div>
+  )
+}
+
 export function KhoiTrong({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-l border border-dashed border-border bg-surface px-5 py-10 text-center text-[13px] leading-[19px] text-text-2">
