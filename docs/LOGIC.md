@@ -103,6 +103,10 @@ Không bao giờ ghi đè bài giao cũ.
 ```
 `writing` là bản nháp tự lưu mỗi 10 giây. **Cô không thấy `writing`** — chưa nộp là chưa tồn tại với cô.
 `late = submitted_at > assignment.due_at`. Nộp thiếu từ vẫn cho, ghi `words` thật.
+`duration_s` = số giây em ngồi viết, đo từ lúc mở màn viết tới lúc bấm nộp. Cô cần nó để đọc bài
+đúng cách: 289 từ trong 52 phút và 312 từ trong 19 phút là hai bài khác nhau, dù nháp band bằng
+nhau. Bài **số hoá từ giấy** không có `duration_s`, và chỗ hiển thị phải bỏ trống chứ không in
+"viết 0 phút" — đó là một câu sai về học viên.
 
 ### 1.4 draft — nháp chấm (lớp 3)
 ```
@@ -267,6 +271,19 @@ Chỉ đọc `reviews`. **Không bao giờ** `drafts` — dù `drafts` mới hơ
 - Đếm chạm **3** → sinh `practice_sets` (đề xuất, lớp 3), gắn kèm nhận xét cô đã duyệt.
 - **Dứt** khi 2 bài đã duyệt liên tiếp không tái phạm → chuyển sang `resolved_errors`, giữ lịch sử.
 - Nộp lại (`attempt_no > 1`) **không** tính là bài liên tiếp — tránh đếm trùng một lỗi.
+- Đếm theo **số bài**, không theo số lần gạch: một bài mắc bốn lần vẫn là một bài. Số lần gạch
+  phụ thuộc bài dài ngắn, nên "4 lần" không nói được lỗi này nặng hơn lỗi kia.
+- Mẫu số là **số bài đã duyệt**. Bài đã đọc mà sạch lỗi VẪN vào mẫu số; bài chưa nộp thì không.
+
+**Một chỗ tính, hai màn đọc.** Ngăn hồ sơ của cô và khối "Lỗi đang kéo em lại" của em cùng gọi
+`gomLoiLap()`; khác nhau chỉ ở nguồn bài (cô đọc bài của em, em đọc bài của mình, mỗi bên qua
+`can('review.view')` của mình). Trước đây hồ sơ phía cô là ba dòng chữ viết sẵn trong dữ liệu
+mẫu, còn màn của em đếm thật — hai màn nói hai con số về cùng một học viên, và cô là người tin
+con số của mình, nên cô nhắc em bằng một con số sai.
+
+**Lỗi lẻ không phải lỗi lặp.** Lỗi mới thấy ở một bài vẫn hiện trên bài đó khi cô chấm, nhưng
+không vào khối lỗi lặp — thấy một lần thì chưa kéo ai lại. Điều này giữ ngưỡng ≥2 ở trên khỏi bị
+nới ra chỉ để đủ ba dòng như bản mẫu.
 
 ### 4.3 Tin cậy hồ sơ
 | Số bài cô đã duyệt | Mức | Hệ quả |

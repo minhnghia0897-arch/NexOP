@@ -12,9 +12,14 @@ import { DauManEm, WrapEm } from '@/components/em/khung'
 import { Avatar, KhoiTrong, Nhan } from '@/components/ung-dung/phan-tu'
 import { OSteer } from '@/components/ung-dung/tab-man'
 import { useKho } from '@/lib/demo/dung-kho'
-import { EM, bangTinCuaEm, lopCuaEm } from '@/lib/demo/em'
+import { EM, baiCuaEm, bangTinCuaEm, lopCuaEm } from '@/lib/demo/em'
 import { dangBai } from '@/lib/demo/kho'
 import { duLieu } from '@/lib/demo/kho'
+
+/** Bài giao của một bài đăng — tra qua kho, không dò tên bài trong câu chữ. */
+function bg(baiGiaoId: string) {
+  return duLieu().baiGiao.find((g) => g.id === baiGiaoId)
+}
 
 function khiNao(iso: string): string {
   const phut = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000)
@@ -32,6 +37,8 @@ export default function BangTinLop() {
   const du = duLieu()
   const lop = lopCuaEm(EM)
   const ds = bangTinCuaEm(EM)
+  // Trạng thái nộp của CHÍNH EM, tra theo bài giao. `baiCuaEm` đã lọc quyền từng bài.
+  const cuaEm = new Map(baiCuaEm(EM).map((b) => [b.baiGiaoId, b]))
 
   function gui() {
     if (!nhap.trim() || !lop) return
@@ -87,6 +94,36 @@ export default function BangTinLop() {
                     {b.tacGiaId === du.vai.owner ? <Nhan mau="blue">Cô</Nhan> : null}
                   </div>
                   <p className="text-[13px] leading-[21px] text-text">{b.noiDung}</p>
+
+                  {/*
+                    Chip đề + trạng thái nộp — `att` và `re` của bản mẫu.
+
+                    CỐ Ý KHÁC BẢN MẪU: bản mẫu còn một ô "14 đã nộp" cạnh "Em chưa nộp".
+                    Con số đó đọc được bằng cách đếm bài nộp của 14 bạn khác, mà
+                    `submission` của vai học viên là mức `own` — `can()` từ chối. Nên ở đây
+                    chỉ có trạng thái của em. Bỏ cũng không mất gì: "em chưa nộp" là thứ
+                    thúc em nộp, còn "14 bạn đã nộp" chỉ thêm áp lực so sánh.
+                  */}
+                  {(() => {
+                    if (!b.baiGiaoId) return null
+                    const bai = cuaEm.get(b.baiGiaoId)
+                    if (!bai) return null
+                    const de = du.de.find((d) => d.id === bg(b.baiGiaoId!)?.deId)
+                    return (
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                        {de ? (
+                          <span className="rounded-s border border-border-light bg-surface-2 px-2 py-0.5 font-display text-[11px] font-semibold leading-[18px] text-text-2">
+                            {de.ten}
+                          </span>
+                        ) : null}
+                        {bai.daNop ? (
+                          <Nhan mau="green">Em đã nộp</Nhan>
+                        ) : (
+                          <Nhan mau="red">Em chưa nộp</Nhan>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             )

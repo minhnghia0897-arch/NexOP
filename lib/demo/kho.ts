@@ -30,6 +30,7 @@ import { can, type Actor, type TargetObject } from '@/lib/auth/can'
 import {
   chamTracNghiem,
   duLieuBanDau,
+  gomLoiLap,
   nhapTinHocPhi,
   type DuLieuDemo,
   type LoiDanhDau,
@@ -639,7 +640,12 @@ export function dangBai(vai: VaiDemo, lopId: string, noiDung: string): void {
 }
 
 /** Em nộp bài. */
-export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): void {
+export function nopBai(
+  hocVienId: string,
+  baiGiaoId: string,
+  noiDung: string,
+  giayViet?: number,
+): void {
   const du = duLieu()
   const bg = du.baiGiao.find((g) => g.id === baiGiaoId)!
   const actor: Actor = {
@@ -653,7 +659,7 @@ export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): v
     actor,
     'submission.create',
     { type: 'submission', tenantId: du.tenant.id, classId: bg.lopId, ownerId: hocVienId },
-    { bai_giao: baiGiaoId },
+    { bai_giao: baiGiaoId, ...(giayViet === undefined ? {} : { giay_viet: giayViet }) },
     [du.vai.owner, hocVienId],
     (d) => {
       d.baiNop.push({
@@ -664,6 +670,7 @@ export function nopBai(hocVienId: string, baiGiaoId: string, noiDung: string): v
         soTu: noiDung.trim().split(/\s+/).filter(Boolean).length,
         nopLuc: new Date().toISOString(),
         muon: Date.now() > new Date(bg.hanNop).getTime(),
+        ...(giayViet === undefined ? {} : { giayViet }),
       })
     },
   )
@@ -810,6 +817,7 @@ function mayDangBaiGiao(baiGiaoId: string): void {
         lopId: bg.lopId,
         tacGiaId: null,
         loai: 'system',
+        baiGiaoId: bg.id,
         noiDung: nhac
           ? `Bài mới: ${bg.nhan} — hạn ${khi}. ${coTaiKhoan} em đã bật tài khoản sẽ được nhắc trước 24 giờ và 2 giờ.`
           : `Bài mới: ${bg.nhan} — hạn ${khi}. Cô đang tắt nhắc tự động, nên các em tự nhớ hạn giúp cô.`,
@@ -1307,7 +1315,7 @@ export function taoBaiLuyenTuLoiChung(vai: VaiDemo, lopId: string, tenLoi: strin
 
   for (const emId of loi.em) {
     // Em đã có bài luyện cho đúng lỗi này thì không giao thêm bài thứ hai.
-    if (du.baiLuyen.some((b) => b.hocVienId === emId && b.viLoi.includes(tenLoi))) continue
+    if (du.baiLuyen.some((b) => b.hocVienId === emId && b.loi === tenLoi)) continue
 
     ghi(
       actorCuaVai(vai),
@@ -1321,6 +1329,7 @@ export function taoBaiLuyenTuLoiChung(vai: VaiDemo, lopId: string, tenLoi: strin
           hocVienId: emId,
           lopId,
           ten: `5 câu luyện: ${tenLoi}`,
+          loi: tenLoi,
           viLoi: `Lỗi "${tenLoi}" — cô đánh dấu trong bài em vừa nộp`,
           giaoBoi: du.vai.owner,
           // Dùng lại bộ câu mẫu: bản thật sinh câu theo lỗi qua `/api/ai/*`.
@@ -1470,9 +1479,35 @@ export function hoSoDayDu(vai: VaiDemo, hocVienId: string) {
     ownerId: hocVienId,
   })
 
+  /*
+   * Lỗi lặp SUY từ dấu cô đánh trong bài đã chấm của em, không lấy từ hồ sơ.
+   *
+   * Hỏi `review.view` từng bài — cùng câu hỏi màn Tiến độ của em hỏi, nên hai màn không thể
+   * ra hai con số. Trước đây ngăn này hiện ba dòng chữ viết sẵn trong hạt giống ("3 bài liên
+   * tiếp"), còn em đọc số đếm thật (4 bài); cô là người tin con số của mình, nên cô nhắc em
+   * bằng một con số sai.
+   */
+  const baiDaCham = du.baiNop
+    .filter((b) => b.hocVienId === hocVienId)
+    .map((b) => ({ bn: b, nx: du.nhanXet.find((n) => n.baiNopId === b.id) }))
+    .filter(
+      (x): x is { bn: typeof x.bn; nx: NonNullable<typeof x.nx> } =>
+        x.nx !== undefined &&
+        can(actor, 'review.view', {
+          type: 'review',
+          tenantId: du.tenant.id,
+          classId: du.baiGiao.find((g) => g.id === x.bn.baiGiaoId)?.lopId,
+          ownerId: hocVienId,
+        }),
+    )
+    .sort((a, b) => (b.bn.nopLuc ?? '').localeCompare(a.bn.nopLuc ?? ''))
+
+  const loiLap = gomLoiLap(baiDaCham.map((x) => ({ co: x.nx.co ?? [] })))
+
   const { ghiChu, ...conLai } = h
   return {
     ...conLai,
+    loiLap,
     ten: tk?.ten ?? hocVienId,
     mau: tk?.mau ?? 'off',
     baiGanDay,
@@ -1970,6 +2005,9 @@ export function baiCanCham(vai: VaiDemo): BaiCanCham[] {
         du.lop.find((l) => l.id === bg.lopId)?.ten,
         bg.nhan,
         `${bn.soTu} từ`,
+        // Thời gian viết chỉ hiện khi CÓ đo. Bài số hoá từ giấy không có, và ghi "0 phút"
+        // vào đó thì cô đọc thành "em viết vội", tức là một câu sai về học viên.
+        bn.giayViet === undefined ? null : `viết ${Math.max(1, Math.round(bn.giayViet / 60))} phút`,
         nopLucNoiSao(bn.nopLuc, bn.muon),
       ]
         .filter(Boolean)

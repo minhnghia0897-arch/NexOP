@@ -7,7 +7,7 @@
  * Đó không phải phong cách — `gradebook` mức `none` với vai học viên, nên một thành phần
  * "xếp hạng lớp" ở đây sẽ không có dữ liệu để vẽ.
  */
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import type { LoiDanhDau } from '@/lib/demo/du-lieu'
 
@@ -173,5 +173,57 @@ export function Chuoi({ ngay }: { ngay: { ten: string; co: boolean; homNay?: boo
         </i>
       ))}
     </div>
+  )
+}
+
+/** mm:ss — dùng cho cả đồng hồ luyện và đồng hồ viết. */
+export function dongHoDoc(giay: number): string {
+  return `${Math.floor(giay / 60)}:${String(giay % 60).padStart(2, '0')}`
+}
+
+/**
+ * Đồng hồ đếm lên từ lúc mở màn — chip `live` của bản mẫu.
+ *
+ * Đếm LÊN chứ không đếm ngược 40 phút như đồng hồ thi. Bản mẫu vẽ "40:00" nhưng đây là bài
+ * về nhà: đếm ngược tới 0 thì em đang viết dở bị một con số 00:00 nhìn vào mặt, mà không có
+ * gì xảy ra sau đó — hạn nộp là ngày mai, không phải 40 phút nữa. Số phút viết vẫn được ghi
+ * lại cho cô; nó là thông tin, không phải cái còi.
+ *
+ * Trả về số giây qua `doiGiay` để màn nộp ghi được vào bài — không nhấc đồng hồ lên thành
+ * state của cả màn, vì như thế mỗi giây là một lần vẽ lại toàn màn, kể cả ô textarea.
+ */
+export function DongHo({
+  nhan,
+  doiGiay,
+}: {
+  nhan?: string
+  doiGiay?: (giay: number) => void
+}) {
+  const [giay, datGiay] = useState(0)
+  const batDau = useRef(Date.now())
+  const bao = useRef(doiGiay)
+  bao.current = doiGiay
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      const g = Math.floor((Date.now() - batDau.current) / 1000)
+      datGiay(g)
+      bao.current?.(g)
+    }, 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  return (
+    <span className="flex items-center gap-2 font-display text-[12px] font-semibold text-text-2">
+      {nhan ? (
+        <span className="flex items-center gap-1.5">
+          <i aria-hidden className="h-1.5 w-1.5 rounded-full bg-st-green" />
+          {nhan}
+        </span>
+      ) : null}
+      <b aria-label={`Đã ${dongHoDoc(giay)}`} className="tabular-nums text-text">
+        {dongHoDoc(giay)}
+      </b>
+    </span>
   )
 }

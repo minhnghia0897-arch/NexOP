@@ -15,11 +15,28 @@ import { useEffect, useState } from 'react'
 
 import { luuGhiChuHanhVi } from '@/lib/demo/hanh-vi'
 import { hoSoDayDu } from '@/lib/demo/kho'
-import type { VaiDemo } from '@/lib/demo/du-lieu'
+import type { LoiLap, VaiDemo } from '@/lib/demo/du-lieu'
 
 import { Avatar, KhoiTrong, Nut } from './phan-tu'
 
-const SAC_LOI = { do: 'bg-st-red', cam: 'bg-st-orange', xanh: 'bg-st-green' } as const
+/**
+ * Màu chấm của một lỗi lặp — suy từ dữ liệu, không từ một trường `nang` viết tay.
+ *
+ * Đã dứt thì xanh; còn mắc ở bài gần nhất thì đỏ; còn lại cam. Trước đây mức nặng là một
+ * chữ cắm trong hạt giống ('do' | 'cam' | 'xanh') nên nó không đổi khi cô chấm thêm bài:
+ * một lỗi em đã dứt hai tháng vẫn đỏ trong hồ sơ.
+ */
+function sacLoi(l: LoiLap): string {
+  if (l.daDut) return 'bg-st-green'
+  return l.lienTiep > 0 ? 'bg-st-red' : 'bg-st-orange'
+}
+
+/** Dòng phụ: vì sao lỗi này đáng để cô nhắc — nói bằng số bài, không bằng chữ chung chung. */
+function yLoi(l: LoiLap): string {
+  if (l.daDut) return `Đã dứt — ${l.saoLien} bài gần nhất không bị đánh dấu lại`
+  if (l.lienTiep >= 2) return `${l.lienTiep} bài liên tiếp · “${l.trich}”`
+  return `${l.soBai}/${l.tongBai} bài đã chấm`
+}
 
 export function NganHoSo({
   hocVienId,
@@ -125,23 +142,23 @@ export function NganHoSo({
           ) : null}
 
           <h5 className="mb-2 font-display text-[12px] font-semibold text-text-2">Lỗi lặp</h5>
-          {(em.loiLap ?? []).length === 0 ? (
+          {em.loiLap.length === 0 ? (
             <p className="mb-4 text-[13px] text-text-2">
               {em.loiHayGap && em.loiHayGap !== '—'
-                ? em.loiHayGap
-                : 'Máy chưa đánh dấu lỗi lặp nào của em.'}
+                ? `Cô ghi: ${em.loiHayGap}. Chưa có bài nào của em được chấm để gộp lỗi.`
+                : 'Chưa có bài nào của em được chấm, nên chưa gộp được lỗi lặp.'}
             </p>
           ) : (
             <div className="mb-4">
-              {(em.loiLap ?? []).map((l) => (
+              {em.loiLap.map((l) => (
                 <div
                   key={l.ten}
                   className="flex items-start gap-3.5 border-t border-border-light py-3 first:border-t-0 first:pt-0"
                 >
-                  <i aria-hidden className={`mt-1.5 h-2.5 w-2.5 flex-none rounded-full ${SAC_LOI[l.nang]}`} />
+                  <i aria-hidden className={`mt-1.5 h-2.5 w-2.5 flex-none rounded-full ${sacLoi(l)}`} />
                   <div className="min-w-0">
                     <b className="block font-display font-semibold text-text">{l.ten}</b>
-                    <small className="text-[13px] leading-[19px] text-text-2">{l.y}</small>
+                    <small className="text-[13px] leading-[19px] text-text-2">{yLoi(l)}</small>
                   </div>
                 </div>
               ))}

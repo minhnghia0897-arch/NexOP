@@ -1292,12 +1292,27 @@ describe('bước 6: cả lớp sai chung ở đâu', () => {
     const l = loiChungCuaLop('owner', 'lop-65').find((x) => x.em.length >= 2)!
     const truoc = duLieu().baiLuyen.length
 
-    expect(taoBaiLuyenTuLoiChung('owner', 'lop-65', l.ten)).toBe(l.em.length)
-    expect(duLieu().baiLuyen).toHaveLength(truoc + l.em.length)
+    /*
+     * Trừ ra những em ĐÃ có bài luyện cho đúng lỗi này — hạt giống có một em như thế.
+     *
+     * Bản trước test này chốt đúng `l.em.length`, và nó xanh vì một lỗi thật: hàm dò trùng
+     * so chuỗi `viLoi.includes(tenLoi)`, mà `viLoi` là câu viết cho em đọc ("Lỗi 'people
+     * is'…") nên không chứa khoá lỗi ("hoà hợp chủ–vị") — không lần nào dò ra. Giờ bài luyện
+     * có khoá `loi` riêng, hàm dò đúng, và con số đúng nhỏ hơn.
+     */
+    const daCo = duLieu()
+      .baiLuyen.filter((b) => b.loi === l.ten)
+      .map((b) => b.hocVienId)
+    const canGiao = l.em.filter((id) => !daCo.includes(id))
+    expect(canGiao.length).toBeGreaterThan(0)
+    expect(daCo.length).toBeGreaterThan(0)
+
+    expect(taoBaiLuyenTuLoiChung('owner', 'lop-65', l.ten)).toBe(canGiao.length)
+    expect(duLieu().baiLuyen).toHaveLength(truoc + canGiao.length)
 
     // Và chỉ những em đó, không ai khác.
     const moi = duLieu().baiLuyen.slice(truoc)
-    expect(new Set(moi.map((b) => b.hocVienId))).toEqual(new Set(l.em))
+    expect(new Set(moi.map((b) => b.hocVienId))).toEqual(new Set(canGiao))
   })
 
   it('giao lại cùng lỗi thì KHÔNG giao bài thứ hai', () => {

@@ -29,6 +29,21 @@ export default function BaiCuaToi() {
   const daCham = ds.filter((b) => b.nhanXet !== null)
   const cho = ds.filter((b) => b.daNop && b.nhanXet === null)
   const moi = daCham[0] ?? null
+
+  /*
+   * Mũi ↑ của bản mẫu: band bài này cao hơn bài ĐƯỢC CHẤM liền trước.
+   *
+   * So với bài liền trước trong danh sách thì sai — bài liền trước có thể là bài đang chờ
+   * cô (band `null`), và một bài chưa chấm không phải là một mốc để so.
+   */
+  const len = new Set(
+    daCham
+      .filter((b, i) => {
+        const truoc = daCham[i + 1]
+        return truoc !== undefined && b.band! > truoc.band!
+      })
+      .map((b) => b.baiGiaoId),
+  )
   const luyen = baiLuyenCuaEm(EM).filter((b) => !b.ketQua)
 
   return (
@@ -127,7 +142,21 @@ export default function BaiCuaToi() {
                     <tr key={b.baiGiaoId} className="border-b border-border-light last:border-0">
                       <td className="py-2.5 pr-3 font-medium text-text">{b.nhan}</td>
                       <td className="py-2.5 pr-3 font-display font-semibold tabular-nums text-text">
-                        {b.band === null ? '—' : b.band.toFixed(1)}
+                        {b.band === null ? (
+                          '—'
+                        ) : (
+                          <>
+                            {b.band.toFixed(1)}
+                            {len.has(b.baiGiaoId) ? (
+                              // `role="img"` + nhãn: mũi tên một mình thì trình đọc màn hình
+                              // đọc ra "mũi tên lên" hoặc không đọc gì, cả hai đều không
+                              // nói được ý — mà ý ở đây là lời khen duy nhất trong bảng.
+                              <span role="img" aria-label="cao hơn bài trước" className="ml-1 text-st-green-deep">
+                                ↑
+                              </span>
+                            ) : null}
+                          </>
+                        )}
                       </td>
                       <td className="truncate py-2.5 pr-3 text-text-2">
                         {b.co.length > 0 ? (b.co[0]!.themY ?? b.co[0]!.loai) : '—'}

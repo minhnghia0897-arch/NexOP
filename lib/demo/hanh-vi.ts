@@ -93,9 +93,10 @@ export function nopBaiHanhVi(
   hocVienId: string,
   baiGiaoId: string,
   noiDung: string,
+  giayViet?: number,
 ): { loi?: string } {
   if (noiDung.trim().length === 0) return { loi: 'Em chưa viết gì.' }
-  return thu(() => nopBai(hocVienId, baiGiaoId, noiDung))
+  return thu(() => nopBai(hocVienId, baiGiaoId, noiDung, giayViet))
 }
 
 export function lamBaiLuyenHanhVi(

@@ -119,6 +119,20 @@ export interface BaiNop {
    * Bài tự luận không có trường này; bài trắc nghiệm thì `noiDung` rỗng.
    */
   traLoi?: Record<number, string>
+  /**
+   * Em ngồi viết bao lâu, tính bằng giây — đo từ lúc mở màn nộp tới lúc bấm nộp.
+   *
+   * Cô cần con số này để đọc bài đúng cách: 250 từ viết trong 6 phút và 250 từ viết trong
+   * 40 phút là hai bài khác nhau, dù band máy nháp ra có thể bằng nhau. Bản mẫu cũng nói
+   * đúng thế ở bước 1 sau khi nộp: "cô thấy ngay, kèm thời gian viết và số từ".
+   *
+   * Không bắt buộc: bài số hoá từ giấy thì không có thời gian nào để đo.
+   *
+   * Ứng với cột `submissions.duration_s` đã có từ migration 0007 — không thêm bảng, không
+   * thêm cột. Cột đó đứng đó từ đầu mà chưa màn nào ghi vào: đúng loại chỗ để lâu thành
+   * "schema có mà sản phẩm không có".
+   */
+  giayViet?: number
 }
 
 /**
@@ -149,7 +163,13 @@ export interface LoiDanhDau {
    * đếm "cả lớp sai chung ở đâu" cộng luôn lời khen vào số lỗi.
    */
   kieu?: 'loi' | 'khen'
-  /** Dòng nhỏ dưới cùng, ví dụ "Lỗi này lặp 3 bài liên tiếp". Đây là thứ cô cần nhất. */
+  /**
+   * Dòng nhỏ dưới cùng — vì sao chỗ này đáng sửa. Đây là thứ cô cần nhất.
+   *
+   * ĐỪNG cắm số bài vào đây ("lặp 3 bài liên tiếp"): số bài suy được từ chính các dấu này
+   * qua `gomLoiLap()`, và một con số viết tay sẽ nói ngược với con số suy ra ngay khi cô
+   * chấm thêm một bài.
+   */
   themY?: string
 }
 
@@ -273,11 +293,115 @@ export interface BaiLuyen {
   hocVienId: string
   lopId: string
   ten: string
+  /**
+   * Lỗi nào sinh ra bài luyện này — đúng khoá `LoiDanhDau.loai`.
+   *
+   * Tách khỏi `viLoi` vì `viLoi` là câu cho em ĐỌC, còn đây là thứ để NỐI: màn Tiến độ phải
+   * biết dòng lỗi nào đã có bài luyện. Dò bằng cách tìm chuỗi trong `viLoi` thì hỏng lặng
+   * lẽ — câu cho em đọc viết "hoà hợp chủ ngữ – động từ", còn khoá lỗi là "hoà hợp chủ–vị".
+   */
+  loi: string
   viLoi: string
   giaoBoi: string
   cau: CauLuyen[]
   /** Chỉ có sau khi em làm xong. Trước đó là null, và đó là thông tin thật. */
   ketQua?: { dung: number; luc: string }
+}
+
+/** Một lỗi lặp, gộp qua nhiều bài đã chấm của một học viên. */
+export interface LoiLap {
+  ten: string
+  nhom: string
+  /** Số bài đã chấm có lỗi này. */
+  soBai: number
+  /** Số bài đã chấm — mẫu số. */
+  tongBai: number
+  /** Số bài MỚI NHẤT liên tiếp còn mắc. 0 nghĩa là bài gần nhất đã sạch lỗi này. */
+  lienTiep: number
+  /** Số bài mới nhất liên tiếp KHÔNG mắc. */
+  saoLien: number
+  /** Không bị đánh dấu lại ở hai bài gần nhất — coi như đã dứt. */
+  daDut: boolean
+  /** Một đoạn cô gạch, để dòng phụ nói được lỗi trông như thế nào. */
+  trich: string
+}
+
+/**
+ * Gộp lỗi lặp từ các bài ĐÃ CHẤM của một em, mới nhất trước.
+ *
+ * Hàm thuần, và để ở đây chứ không ở `kho.ts` vì hai bên phải dùng CHUNG: ngăn hồ sơ của cô
+ * và màn Tiến độ của em vẽ cùng một khối. Trước đây cô đọc ba dòng chữ viết sẵn trong hồ sơ
+ * còn em đọc số suy ra từ dấu — hai màn nói hai con số về cùng một học viên, và cô là người
+ * tin con số của mình.
+ *
+ * Đếm theo **số bài**, không theo số lần: một bài mắc bốn lần vẫn là một bài. Số lần gạch
+ * phụ thuộc vào bài dài ngắn, nên "4 lần" không nói được lỗi này nặng hơn lỗi kia.
+ *
+ * Lời KHEN (`kieu: 'khen'`) không vào đây. Bài sạch lỗi VẪN vào mẫu số: "bài của em được
+ * đọc, không thấy lỗi này" là một điểm dữ liệu thật, khác hẳn "em chưa nộp".
+ */
+export function gomLoiLap(bai: { co: readonly LoiDanhDau[] }[]): LoiLap[] {
+  const tongBai = bai.length
+  if (tongBai === 0) return []
+
+  const theoLoi = new Map<string, { nhom: string; trich: string; o: number[] }>()
+  bai.forEach((b, i) => {
+    for (const c of b.co) {
+      if (c.kieu === 'khen') continue
+      const cu = theoLoi.get(c.loai) ?? { nhom: c.nhom, trich: c.trich, o: [] }
+      if (!cu.o.includes(i)) cu.o.push(i)
+      theoLoi.set(c.loai, cu)
+    }
+  })
+
+  const ket: LoiLap[] = [...theoLoi.entries()].map(([ten, v]) => {
+    let lienTiep = 0
+    while (v.o.includes(lienTiep)) lienTiep += 1
+    let saoLien = 0
+    while (saoLien < tongBai && !v.o.includes(saoLien)) saoLien += 1
+    return {
+      ten,
+      nhom: v.nhom,
+      soBai: v.o.length,
+      tongBai,
+      lienTiep,
+      saoLien,
+      // Hai bài gần nhất sạch thì coi là dứt. MỘT bài thì chưa: một bài sạch có thể chỉ là
+      // bài ngắn, hoặc đề không có chỗ để mắc lỗi đó.
+      daDut: saoLien >= 2,
+      trich: v.trich,
+    }
+  })
+
+  /*
+   * Ngưỡng của LOGIC §4.2: lỗi LẶP là lỗi ở **≥2 bài** đã chấm.
+   *
+   * Bỏ ngưỡng này thì khối "Lỗi đang kéo em lại" đầy lên bằng mấy lỗi mới thấy một lần —
+   * đúng ba dòng như bản mẫu, nhưng hai trong ba dòng chưa phải là thứ kéo em lại. Nới luật
+   * cho đủ chỗ trên màn là cách nhanh nhất để một màn đúng hình mà sai nghĩa; thay vào đó
+   * hạt giống phải kể được câu chuyện ba dòng ấy bằng lỗi lặp thật.
+   *
+   * Và "đã dứt" cũng phải từng LẶP mới dứt được: một lỗi thấy một lần rồi không thấy nữa thì
+   * không có gì để mừng, nó chỉ là một lỗi lẻ.
+   */
+  return ket.filter((l) => l.soBai >= 2).sort(xepLoiLap)
+}
+
+/**
+ * Còn mắc lên trước; trong mỗi nhóm thì lỗi ở nhiều bài hơn lên trước.
+ *
+ * Tách ra và xuất để test được TRỰC TIẾP. Với hạt giống hiện tại, bỏ hẳn khoá `daDut` mà thứ
+ * tự vẫn đúng — mấy lỗi cùng số bài tình cờ xếp theo tên ra đúng nhóm. Nên một test đi qua
+ * `gomLoiLap` không phân biệt được "luật còn đó" với "may mà đúng", và test không phân biệt
+ * được thì nó không canh gì cả.
+ */
+export function xepLoiLap(a: LoiLap, b: LoiLap): number {
+  return (
+    Number(a.daDut) - Number(b.daDut) ||
+    b.soBai - a.soBai ||
+    b.lienTiep - a.lienTiep ||
+    a.ten.localeCompare(b.ten, 'vi')
+  )
 }
 
 export interface CauLuyen {
@@ -306,6 +430,12 @@ export interface HoSoHocVien {
    * `diHocCuaEm()` / `diHocTrongLop()`, tính lại từ bảng `diemDanh` mỗi lần.
    */
   coTaiKhoan: boolean
+  /**
+   * Ghi tắt của CÔ về em, hiện ở cột hẹp trong bảng lớp — "Câu phức còn ít", "Nộp muộn".
+   *
+   * Không phải con số máy đếm, nên đừng viết `×N` vào đây: số bài mắc một lỗi suy được từ
+   * dấu cô đánh (`gomLoiLap`), và hai chỗ cùng đếm một thứ thì sớm muộn lệch nhau.
+   */
   loiHayGap: string
   hanHocPhi: string
   diem: Record<string, { band: number | null; muon?: boolean }>
@@ -319,8 +449,14 @@ export interface HoSoHocVien {
    * không phải lười", và nó chỉ có giá trị khi cô chắc chắn không ai khác đọc.
    */
   ghiChu?: string
-  /** Lỗi lặp máy theo dõi, kèm mức nặng — nguyên liệu cho ngăn hồ sơ. */
-  loiLap?: { ten: string; y: string; nang: 'do' | 'cam' | 'xanh' }[]
+  /*
+   * KHÔNG có `loiLap` ở đây nữa — cùng lý do đã bỏ `diHoc`.
+   *
+   * Trước là ba dòng chữ viết sẵn ("3 bài liên tiếp", "đã dứt từ tuần 5"), sao lại y bản
+   * mẫu. Rồi màn Tiến độ của em suy lỗi lặp từ dấu cô đánh trong bài, và ra 4 bài chứ không
+   * phải 3 — hai màn nói hai con số về cùng một học viên, mà con số của cô là con số không
+   * có gì đỡ bên dưới. Giờ cả hai bên gọi `gomLoiLap()`.
+   */
 }
 
 /**
@@ -543,6 +679,14 @@ export interface BaiDang {
   loai: 'post' | 'system'
   noiDung: string
   luc: string
+  /**
+   * Bài đăng nói về bài tập nào — để bảng tin gắn được chip đề và trạng thái nộp.
+   *
+   * Sự kiện `post.auto:assign` đã mang `bai_giao` từ đầu, nhưng DÒNG bài đăng thì không:
+   * bảng tin muốn biết đề nào thì phải dò tên bài trong câu chữ, và dò chữ thì hỏng ngay
+   * lần đầu cô đổi cách đặt tên bài.
+   */
+  baiGiaoId?: string
 }
 
 export interface DuLieuDemo {
@@ -1120,6 +1264,14 @@ export function duLieuBanDau(): DuLieuDemo {
     hocVienId: h.id,
     soTu: [268, 301, 254, 289, 312, 243, 276][i]!,
     nopLuc: luc(-1, [20, 21, 22, 20, 23, 21, 22][i]!),
+    /*
+     * Số phút em ngồi viết — bảy em viết bằng app nên đều đo được.
+     *
+     * Cô cần nó để đọc bài đúng cách: 289 từ trong 52 phút và 312 từ trong 19 phút là hai
+     * bài khác nhau, dù nháp band có thể bằng nhau. Chỗ duy nhất chồng bài "tối chủ nhật"
+     * nói được điều đó là dòng meta trên thẻ chấm.
+     */
+    giayViet: [34, 41, 28, 52, 19, 25, 36][i]! * 60,
     muon: i === 4,
     noiDung: BAI_MAU[i]!,
   }))
@@ -1128,7 +1280,7 @@ export function duLieuBanDau(): DuLieuDemo {
     nhapChoBai('bn-hv-01', { tr: 6.5, cc: 6.0, lr: 6.5, gra: 6.0 }, 0.91,
       [{ trich: 'the goverment', sua: 'the government', loai: 'chính tả', nhom: 'vocab' },
        { trich: 'people is', sua: 'people are', loai: 'hoà hợp chủ–vị', nhom: 'grammar',
-         themY: 'Lỗi này lặp 3 bài liên tiếp' },
+         themY: 'Lỗi này lặp qua nhiều bài liên tiếp của em' },
        /* Bài này thật sự mở đoạn bằng "First," rồi "Second," — cùng một lỗi với Quang Huy.
           Nhãn phải TRÙNG NHAU thì bước 6 mới gộp được; hai tên gần nghĩa cho hai bài cùng
           lỗi thì "cả lớp sai chung ở đâu" đếm ra hai lỗi lẻ, mỗi lỗi một em. */
@@ -1184,7 +1336,7 @@ export function duLieuBanDau(): DuLieuDemo {
          themY: 'Còn thiếu dấu phẩy trước "but" và "not too much" là văn nói' },
        { trich: 'In conclusion I agree', sua: 'In conclusion, I agree',
          loai: 'thiếu dấu phẩy sau liên từ', nhom: 'grammar',
-         themY: 'Lỗi này lặp 2 bài liên tiếp' }],
+         themY: 'Lỗi này lặp qua mấy bài gần đây' }],
       'Em bám sát đề và đủ 250 từ. Câu phức còn ít, chủ yếu là câu đơn nối bằng "and". Thử gộp hai câu ngắn thành một câu có mệnh đề quan hệ.',
       []),
     nhapChoBai('bn-hv-07', { tr: 7.0, cc: 6.5, lr: 7.0, gra: 7.0 }, 0.95,
@@ -1202,7 +1354,8 @@ export function duLieuBanDau(): DuLieuDemo {
     { id: 'bd-1', lopId: 'lop-65', tacGiaId: CO_THAO, loai: 'post',
       noiDung: 'Buổi tới cô chữa Writing Task 2 theo bài các em vừa nộp. Em nào chưa nộp thì nộp trước 21h mai nhé.', luc: luc(-1, 8) },
     { id: 'bd-2', lopId: 'lop-65', tacGiaId: null, loai: 'system',
-      noiDung: 'Bài mới: Cambridge 19 · Reading Test 1 — hạn nộp 23:00 ngày kia.', luc: luc(0, 7) },
+      noiDung: 'Bài mới: Cambridge 19 · Reading Test 1 — hạn nộp 23:00 ngày kia.',
+      baiGiaoId: 'bg-r1', luc: luc(0, 7) },
     // Câu hỏi chưa ai trả lời: đầu vào của màn "Việc của tôi" bên trợ giảng.
     { id: 'bd-3', lopId: 'lop-65', tacGiaId: 'hv-03', loai: 'post',
       noiDung: 'Cô ơi đề Education này em viết theo hướng "đồng ý một phần" có được không ạ?',
@@ -1216,13 +1369,8 @@ export function duLieuBanDau(): DuLieuDemo {
    */
   const hoSo: HoSoHocVien[] = [
     { id: 'hv-01', bandTb: 6.3, huong: 'up', coTaiKhoan: true,
-      loiHayGap: 'Hoà hợp chủ–vị ×3', hanHocPhi: '30/9', mucTieu: 6.5,
+      loiHayGap: 'Hoà hợp chủ–vị', hanHocPhi: '30/9', mucTieu: 6.5,
       ghiChu: 'Bố mẹ muốn em thi tháng 12. Hơi vội — nói chuyện lại sau Mock 2.',
-      loiLap: [
-        { ten: 'Hoà hợp chủ ngữ – động từ', y: '3 bài liên tiếp · đã giao bài luyện', nang: 'do' },
-        { ten: 'Mở đoạn kết quen tay', y: '2/3 bài gần nhất', nang: 'cam' },
-        { ten: 'Overview Task 1', y: 'đã dứt từ tuần 5 — không tái phạm', nang: 'xanh' },
-      ],
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 6.0 }, 'bg-t2tech': { band: 6.0 },
               'bg-t1bar': { band: 6.5 }, 'bg-w1': { band: null } } },
     /*
@@ -1242,7 +1390,7 @@ export function duLieuBanDau(): DuLieuDemo {
       diem: { 'bg-t1a': { band: 6.0 }, 'bg-mock1': { band: 6.5 }, 'bg-t2tech': { band: 7.0 },
               'bg-t1bar': { band: 7.0 }, 'bg-w1': { band: null } } },
     { id: 'hv-03', bandTb: 5.2, huong: 'down', coTaiKhoan: true,
-      loiHayGap: 'Liên kết máy móc ×4', hanHocPhi: '30/9',
+      loiHayGap: 'Liên kết máy móc', hanHocPhi: '30/9',
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 5.0 },
               'bg-t1bar': { band: 5.0 }, 'bg-w1': { band: null } } },
     { id: 'hv-04', bandTb: 6.1, huong: 'flat', coTaiKhoan: true,
@@ -1263,7 +1411,7 @@ export function duLieuBanDau(): DuLieuDemo {
       diem: { 'bg-t1a': { band: 6.5 }, 'bg-mock1': { band: 6.5 }, 'bg-t2tech': { band: 7.0 },
               'bg-t1bar': { band: 7.0 }, 'bg-w1': { band: null } } },
     { id: 'hv-08', bandTb: 5.5, huong: 'flat', coTaiKhoan: true,
-      loiHayGap: 'Bài ngắn ×2', hanHocPhi: '15/10',
+      loiHayGap: 'Bài viết còn ngắn', hanHocPhi: '15/10',
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 5.5 },
               'bg-t1bar': { band: 5.5 }, 'bg-w1': { band: null } } },
     { id: 'hv-09', bandTb: 4.9, huong: 'down', coTaiKhoan: true,
@@ -1271,7 +1419,7 @@ export function duLieuBanDau(): DuLieuDemo {
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.0 }, 'bg-t2tech': { band: 4.5 },
               'bg-t1bar': { band: 4.5 }, 'bg-w1': { band: null } } },
     { id: 'hv-10', bandTb: 5.6, huong: 'flat', coTaiKhoan: false,
-      loiHayGap: 'Bị động ×5', hanHocPhi: '30/9',
+      loiHayGap: 'Lạm dụng câu bị động', hanHocPhi: '30/9',
       diem: { 'bg-t1a': { band: 5.5 }, 'bg-mock1': { band: 5.5 }, 'bg-t2tech': { band: 5.5 },
               'bg-t1bar': { band: 6.0, muon: true }, 'bg-w1': { band: null } } },
   ]
@@ -1580,7 +1728,7 @@ export function duLieuBanDau(): DuLieuDemo {
    */
   const LOI_LAP: LoiDanhDau = {
     trich: 'people is often surprised', sua: 'people are often surprised',
-    loai: 'hoà hợp chủ–vị', nhom: 'grammar', themY: 'Lỗi này lặp 3 bài liên tiếp',
+    loai: 'hoà hợp chủ–vị', nhom: 'grammar', themY: 'Lỗi này lặp qua nhiều bài liên tiếp của em',
   }
 
   const LICH_SU_MINH_ANH: [string, number, string, boolean, string | null, number | null, LoiDanhDau[]][] = [
@@ -1596,14 +1744,23 @@ export function duLieuBanDau(): DuLieuDemo {
       true, 'system', 5.5,
       [LOI_LAP,
        { trich: 'Firstly, Secondly, Finally', sua: 'dùng liên kết đa dạng hơn',
-         loai: 'liên kết máy móc', nhom: 'structure' }]],
+         loai: 'liên kết máy móc', nhom: 'structure' },
+       /* Lần thứ hai của "lặp động từ" — và là lần CUỐI. Hai bài sau không còn, nên nó thành
+          dòng "Đã dứt" trong khối lỗi lặp. Đây là dòng duy nhất trong màn Tiến độ khen em
+          bằng dữ liệu, nên hạt giống phải có đúng một lỗi đi hết đường đó. */
+       { trich: 'make our life better, make people happy', sua: 'improve · bring',
+         loai: 'lặp động từ', nhom: 'vocab' }]],
     ['bg-t2tech', 6.0,
       'Lập luận của em có chiều. Hai chỗ hoà hợp chủ–vị lặp lại lần thứ hai rồi — cô giao cho em một bài luyện 5 phút, làm xong cô sẽ thấy trong hồ sơ.',
       true, 'system', 6.5,
       [LOI_LAP,
        { trich: 'the goverment', sua: 'the government', loai: 'chính tả', nhom: 'vocab' },
        { trich: 'Technology make our life easier', sua: 'Technology makes',
-         loai: 'hoà hợp chủ–vị', nhom: 'grammar', themY: 'Cùng loại lỗi, lần thứ hai' }]],
+         loai: 'hoà hợp chủ–vị', nhom: 'grammar', themY: 'Cùng loại lỗi, lần thứ hai' },
+       /* Lần đầu của "mở đoạn kết quen tay"; bài sau còn lặp lại, nên nó là lỗi lặp ĐANG
+          mắc — dòng cam ở giữa khối, giữa lỗi nặng nhất và lỗi đã dứt. */
+       { trich: 'In conclusion, I think technology', sua: 'To sum up,',
+         loai: 'mở đoạn kết quen tay', nhom: 'structure' }]],
     ['bg-t1bar', 6.5,
       'Bài này chắc tay nhất từ đầu khoá. Em giữ đúng cấu trúc này. Chỉ còn hoà hợp chủ–vị — dứt được lỗi đó là Grammar của em lên 6.0, và band chung lên theo.',
       false, 'system', 6.5,
@@ -1669,7 +1826,10 @@ export function duLieuBanDau(): DuLieuDemo {
       hocVienId: 'hv-01',
       lopId: 'lop-65',
       ten: '5 câu hoà hợp chủ ngữ – động từ',
-      viLoi: 'Lỗi "people is" lặp 3 bài liên tiếp — cô đánh dấu ở Mock 1, Task 2 Technology và bài vừa nộp',
+      loi: 'hoà hợp chủ–vị',
+      // Không cắm số bài vào đây: số bài mắc lỗi suy được từ dấu cô đánh (`loiCuaEm`), và
+      // một con số cắm sẵn sẽ nói ngược với con số suy ra ngay khi cô chấm thêm một bài.
+      viLoi: 'Lỗi "people is" — cô đánh dấu trong nhiều bài liên tiếp',
       giaoBoi: CO_THAO,
       cau: [
         {

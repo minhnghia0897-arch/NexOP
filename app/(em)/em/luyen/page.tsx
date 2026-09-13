@@ -11,9 +11,10 @@
  * và lỗi mới đó khó sửa hơn lỗi cũ.
  */
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { DauManEm, WrapEm } from '@/components/em/khung'
+import { DongHo, dongHoDoc } from '@/components/em/phan-tu'
 import { KhoiTrong, Nut } from '@/components/ung-dung/phan-tu'
 import { useKho } from '@/lib/demo/dung-kho'
 import { EM, baiLuyenCuaEm } from '@/lib/demo/em'
@@ -28,6 +29,8 @@ export default function Luyen() {
   const [dung, datDung] = useState(0)
   const [ketQua, datKetQua] = useState<number[]>([])
   const [xong, datXong] = useState(false)
+  const giay = useRef(0)
+  const [giayXong, datGiayXong] = useState(0)
 
   const bl = baiLuyenCuaEm(EM)[0]
 
@@ -56,6 +59,9 @@ export default function Luyen() {
     if (i + 1 >= bl!.cau.length) {
       // Ghi kết quả về hồ sơ — đi qua can(), nên bài của bạn khác thì hàm này ném lỗi.
       lamBaiLuyenHanhVi(EM, bl!.id, dung)
+      // Chốt thời gian ở đây: đồng hồ chạy tiếp sau khi xong thì con số dưới kết quả lớn dần
+      // trong lúc em đang đọc nó.
+      datGiayXong(giay.current)
       datXong(true)
       return
     }
@@ -64,6 +70,7 @@ export default function Luyen() {
   }
 
   function lamLai() {
+    datGiayXong(0)
     datI(0)
     datChon(null)
     datDung(0)
@@ -77,6 +84,9 @@ export default function Luyen() {
         ten={bl.ten}
         quayVe={{ href: '/em/hom-nay', ten: 'Hôm nay' }}
         phu={`Cô Thảo giao riêng · ${bl.viLoi} · chấm ngay từng câu`}
+        // Đồng hồ tháo đi khi xong: để lại thì nó vẫn đếm trong lúc em đọc kết quả, và con
+        // số trên đầu màn nói khác con số dưới kết quả.
+        phai={xong ? undefined : <DongHo doiGiay={(g) => (giay.current = g)} />}
       />
       <WrapEm>
         <div className="flex gap-1.5">
@@ -102,6 +112,7 @@ export default function Luyen() {
               {dung}/{bl.cau.length}
             </div>
             <p className="mt-2 text-text-2">
+              {giayXong > 0 ? `${dongHoDoc(giayXong)} · ` : ''}
               {dung >= bl.cau.length - 1
                 ? 'Cô sẽ thấy em đã dứt được lỗi này'
                 : 'Làm lại một lần nữa là chắc'}

@@ -21,7 +21,10 @@ import {
   baiTuLuanPhaiNop,
   diHocEm,
   hoSoCuaEm,
+  loiCuaEm,
   lopCuaEm,
+  nhanXetMoiNhat,
+  tienBoBand,
   tuanCuaEm,
 } from '@/lib/demo/em'
 import { duLieu } from '@/lib/demo/kho'
@@ -38,6 +41,14 @@ function tenGoi(ten?: string): string {
   if (!ten) return 'em'
   const phan = ten.trim().split(/\s+/)
   return phan.length >= 3 ? phan.slice(-2).join(' ') : phan[phan.length - 1]!
+}
+
+const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+
+/** "Thứ Bảy 6/9" — bản mẫu mở đầu bằng hôm nay là ngày nào, và đúng: em mở app để biết HÔM NAY. */
+function homNayLa(): string {
+  const d = new Date()
+  return `${THU[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`
 }
 
 function hanNoiSao(iso: string): string {
@@ -60,6 +71,9 @@ export default function HomNay() {
   const tuan = tuanCuaEm(EM)
   const luyen = baiLuyenCuaEm(EM).filter((b) => !b.ketQua)
   const daCham = baiCuaEm(EM).filter((b) => b.band !== null)
+  const tienBo = tienBoBand(EM)
+  const conMac = loiCuaEm(EM).filter((l) => !l.daDut)
+  const loiCo = nhanXetMoiNhat(EM)
 
   // Phần trăm chặng: từ band đầu khoá tới mục tiêu. Không có lịch sử thì không vẽ vòng đầy.
   const dau = daCham.length > 0 ? daCham[daCham.length - 1]!.band! : (ho?.bandTb ?? 0)
@@ -70,7 +84,7 @@ export default function HomNay() {
     <>
       <DauManEm
         ten={`Chào ${tenGoi(em?.ten)}`}
-        phu={`${lop?.ten ?? ''} · ${lop?.lich ?? ''} · ${
+        phu={`${homNayLa()} · ${lop?.lich ?? ''} · ${
           phaiNop.length > 0 ? `${phaiNop.length} bài cần nộp` : 'không còn bài nào phải nộp'
         }`}
       />
@@ -81,17 +95,24 @@ export default function HomNay() {
             <h2 className="font-display text-[18px] font-semibold text-text">
               Mục tiêu {MUC_TIEU.toFixed(1)} — em đã đi {phanTram}% chặng này
             </h2>
-            <p className="mt-1 text-[13px] text-text-2">
-              {ho?.loiHayGap && ho.loiHayGap !== '—'
-                ? `Cô Thảo đánh dấu: ${ho.loiHayGap}. Dứt được lỗi này là band chung lên theo.`
-                : 'Cô Thảo chưa đánh dấu lỗi lặp nào. Em giữ nhịp này.'}
+            <p className="mt-1 text-[13px] leading-[20px] text-text-2">
+              {/*
+                Bản mẫu để lời cô trong ngoặc kép ngay dưới mục tiêu. Bản trước em thay bằng
+                một câu máy sinh từ `loiHayGap` — đọc thì giống, nhưng đó là máy nói giọng
+                cô, đúng thứ CLAUDE.md cấm. Câu này là chữ cô đã GỬI, không phải nháp.
+              */}
+              {loiCo?.nhanXet
+                ? `Cô Thảo: “${loiCo.nhanXet.noiDung}”`
+                : 'Cô chưa gửi nhận xét nào cho em. Bài em vừa nộp đang chờ cô đọc.'}
             </p>
             <div className="mt-2.5 flex flex-wrap gap-4 text-[13px]">
               <div>
                 <b className="block font-display text-[18px] leading-tight text-text">
-                  {daCham.length}
+                  {tienBo ? `${tienBo.chenh >= 0 ? '+' : ''}${tienBo.chenh.toFixed(1)}` : '—'}
                 </b>
-                <small className="text-[12px] text-text-2">bài đã có nhận xét</small>
+                <small className="text-[12px] text-text-2">
+                  {tienBo ? `band sau ${tienBo.tuan} tuần` : 'chưa đủ hai bài để đo'}
+                </small>
               </div>
               <div>
                 <b className="block font-display text-[18px] leading-tight text-text">
@@ -101,9 +122,9 @@ export default function HomNay() {
               </div>
               <div>
                 <b className="block font-display text-[18px] leading-tight text-text">
-                  {luyen.length}
+                  {conMac.length}
                 </b>
-                <small className="text-[12px] text-text-2">bài luyện cô giao</small>
+                <small className="text-[12px] text-text-2">lỗi cần dứt điểm</small>
               </div>
             </div>
           </div>

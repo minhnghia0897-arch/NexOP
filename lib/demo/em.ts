@@ -11,7 +11,7 @@
  */
 import { can, type Actor } from '@/lib/auth/can'
 
-import type { BaiGiao, BaiLuyen, LoiDanhDau, NhanXet } from './du-lieu'
+import { gomLoiLap, type BaiGiao, type BaiLuyen, type LoiDanhDau, type LoiLap, type NhanXet } from './du-lieu'
 import { dangChay, diHocTrongLop, duLieu } from './kho'
 
 /**
@@ -250,4 +250,47 @@ export function bangTinCuaEm(hocVienId: string) {
   return du.baiDang
     .filter((b) => b.lopId === lop.id)
     .sort((a, b) => b.luc.localeCompare(a.luc))
+}
+
+/**
+ * Lỗi lặp của riêng em — khối "Lỗi đang kéo em lại" của `s-prog`.
+ *
+ * Bản mẫu có BA dòng: hai lỗi còn mắc và một lỗi "đã dứt". Bản trước em vẽ đúng một dòng,
+ * lấy từ chuỗi `hoSo.loiHayGap` — một chuỗi thì không bao giờ ra được ba dòng, và quan trọng
+ * hơn: nó không nói được lỗi nào ĐANG nặng lên, lỗi nào em đã dứt. Mà "em đã dứt được một
+ * lỗi" là dòng duy nhất trên màn này khen em bằng dữ liệu.
+ *
+ * Cách gộp nằm ở `gomLoiLap` — dùng CHUNG với ngăn hồ sơ của cô, nên hai màn không thể ra
+ * hai con số về cùng một em. Ở đây chỉ khác một chỗ: nguồn bài.
+ *
+ * Chỉ đọc `nhanXet` cô ĐÃ GỬI (qua `baiCuaEm`, đã lọc quyền từng bài). Nháp của máy là lớp
+ * 3, mức `none` với em: lỗi máy vừa đoán ra trong bài em nộp tối qua không được hiện ở đây
+ * trước khi cô đọc.
+ */
+export function loiCuaEm(hocVienId: string): LoiLap[] {
+  // `baiCuaEm` xếp mới nhất trước; chỉ lấy bài đã có nhận xét, vì bài chưa chấm không nói
+  // được gì về lỗi — em chưa nộp cũng không phải là em không mắc.
+  return gomLoiLap(
+    baiCuaEm(hocVienId)
+      .filter((b) => b.nhanXet !== null)
+      .map((b) => ({ co: b.co })),
+  )
+}
+
+/**
+ * Band đầu và band mới nhất, kèm số tuần giữa hai bài — ô "+0.5 band sau 8 tuần".
+ *
+ * `null` khi chưa đủ hai bài đã chấm: một bài thì không có "tiến bộ", và vẽ "+0.0" vào chỗ
+ * đó là nói với em rằng em đứng yên, trong khi sự thật là chưa đo được.
+ */
+export function tienBoBand(hocVienId: string): { chenh: number; tuan: number } | null {
+  const daCham = baiCuaEm(hocVienId).filter((b) => b.band !== null)
+  if (daCham.length < 2) return null
+  const moi = daCham[0]!
+  const cu = daCham[daCham.length - 1]!
+  const ms = new Date(moi.hanNop).getTime() - new Date(cu.hanNop).getTime()
+  return {
+    chenh: Math.round((moi.band! - cu.band!) * 10) / 10,
+    tuan: Math.max(1, Math.round(ms / (7 * 86_400_000))),
+  }
 }
