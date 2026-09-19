@@ -96,6 +96,25 @@ async function doiVai(vai) {
   if (ok.trim() !== nhan) throw new Error(`đổi vai thất bại: đang là ${ok}`)
 }
 
+/*
+ * Vai học viên KHÔNG đổi bằng nút được nữa: nút "Học viên" giờ mở app của em
+ * (components/ung-dung/khung.tsx) — đúng nghĩa của nó, vì em có app riêng.
+ *
+ * Nhưng bài kiểm bên dưới cần đúng trạng thái "màn của cô, mắt của em" — đó là chỗ `can()`
+ * phải từ chối, và giờ chỉ tới được bằng bản lưu. Bấm "Cô" một lần trước để kho ghi bản lưu.
+ */
+async function vaiEmTaiCho() {
+  await tr.locator('[aria-label="Đổi vai"] button', { hasText: 'Cô' }).click()
+  await tr.evaluate(() => {
+    const raw = localStorage.getItem('oblue-demo-v2')
+    if (!raw) throw new Error('kho chưa lưu — nút đổi vai phải ghi một lần trước')
+    const x = JSON.parse(raw)
+    x.vai = 'student'
+    localStorage.setItem('oblue-demo-v2', JSON.stringify(x))
+  })
+  await tr.reload({ waitUntil: 'networkidle' })
+}
+
 console.log('\n── Lưới thẻ lớp: nút Điểm danh ──')
 await moPhien()
 await tr.goto(`${URL_GOC}/lop-hoc/`, { waitUntil: 'networkidle' })
@@ -233,7 +252,7 @@ await kiem('trợ giảng LƯU ĐƯỢC, không bị chặn', async () => {
 console.log('\n── Học viên: không có đường vào điểm danh ──')
 await moPhien()
 await tr.goto(`${URL_GOC}/lop-hoc/`, { waitUntil: 'networkidle' })
-await doiVai('student')
+await vaiEmTaiCho()
 await tr.goto(`${URL_GOC}/lop-hoc/`, { waitUntil: 'networkidle' })
 
 await kiem('em KHÔNG có nút điểm danh bật', async () => {

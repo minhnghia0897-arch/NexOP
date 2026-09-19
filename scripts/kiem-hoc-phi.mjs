@@ -28,6 +28,24 @@ let tr
 async function moPhien(){const c=await tb.newContext();tr=await c.newPage();tr.on('pageerror',e=>loiTrang.push(String(e)));tr.on('console',m=>{if(m.type()==='error')loiTrang.push(m.text())})}
 async function doiVai(v){const n={owner:'Cô',assistant:'Trợ giảng',student:'Học viên'}[v];await tr.locator('[aria-label="Đổi vai"] button',{hasText:n}).click();const ok=await tr.locator('[aria-label="Đổi vai"] button[aria-pressed="true"]').textContent();if(ok.trim()!==n)throw new Error(`đổi vai thất bại: ${ok}`)}
 
+/*
+ * Vai học viên KHÔNG đổi bằng nút được nữa: nút "Học viên" giờ mở app của em
+ * (components/ung-dung/khung.tsx) — đúng nghĩa của nó, vì em có app riêng.
+ *
+ * Nhưng bài kiểm bên dưới cần đúng trạng thái "màn của cô, mắt của em" — đó là chỗ `can()`
+ * phải từ chối, và giờ chỉ tới được bằng bản lưu. Bấm "Cô" một lần trước để kho ghi bản lưu.
+ */
+async function vaiEmTaiCho(){
+  await tr.locator('[aria-label="Đổi vai"] button',{hasText:'Cô'}).click()
+  await tr.evaluate(()=>{
+    const raw = localStorage.getItem('oblue-demo-v2')
+    if (!raw) throw new Error('kho chưa lưu — nút đổi vai phải ghi một lần trước')
+    const x = JSON.parse(raw); x.vai = 'student'
+    localStorage.setItem('oblue-demo-v2', JSON.stringify(x))
+  })
+  await tr.reload({waitUntil:'networkidle'})
+}
+
 console.log('\n── Ba tin, ba chuyện khác nhau ──')
 await moPhien()
 await tr.goto(`${U}/hoc-phi/`,{waitUntil:'networkidle'})
@@ -106,7 +124,7 @@ await kiem('trợ giảng không thấy màn học phí, và màn nói RÕ vì s
 console.log('\n── Em: chỉ học phí của mình ──')
 await moPhien()
 await tr.goto(`${U}/hoc-phi/`,{waitUntil:'networkidle'})
-await doiVai('student')
+await vaiEmTaiCho()
 
 await kiem('em không thấy học phí của lớp', async () => {
   const t = await tr.locator('body').innerText()
