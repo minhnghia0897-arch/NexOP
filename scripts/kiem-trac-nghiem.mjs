@@ -43,6 +43,24 @@ async function doiVai(vai){
   const ok = await tr.locator('[aria-label="Đổi vai"] button[aria-pressed="true"]').textContent()
   if (ok.trim()!==nhan) throw new Error(`đổi vai thất bại: ${ok}`)
 }
+
+/*
+ * Vai học viên KHÔNG đổi bằng nút được nữa: nút "Học viên" giờ mở app của em
+ * (components/ung-dung/khung.tsx) — đúng nghĩa của nó, vì em có app riêng.
+ *
+ * Nhưng bài kiểm bên dưới cần đúng trạng thái "màn của cô, mắt của em" — đó là chỗ `can()`
+ * phải từ chối, và giờ chỉ tới được bằng bản lưu. Bấm "Cô" một lần trước để kho ghi bản lưu.
+ */
+async function vaiEmTaiCho(){
+  await tr.locator('[aria-label="Đổi vai"] button',{hasText:'Cô'}).click()
+  await tr.evaluate(()=>{
+    const raw = localStorage.getItem('oblue-demo-v2')
+    if (!raw) throw new Error('kho chưa lưu — nút đổi vai phải ghi một lần trước')
+    const x = JSON.parse(raw); x.vai = 'student'
+    localStorage.setItem('oblue-demo-v2', JSON.stringify(x))
+  })
+  await tr.reload({waitUntil:'networkidle'})
+}
 const moTn = async () => {
   await tr.goto(`${U}/cham-bai/`,{waitUntil:'networkidle'})
   await tr.locator('button',{hasText:'Trắc nghiệm'}).first().click()
@@ -139,7 +157,7 @@ await kiem('cô bấm chốt → 17 em nhận điểm, dòng đã chốt VẪN c
 console.log('\n── Em: điểm của mình, không thấy bảng cả lớp ──')
 await moPhien()
 await tr.goto(`${U}/cham-bai/`,{waitUntil:'networkidle'})
-await doiVai('student')
+await vaiEmTaiCho()
 
 await kiem('em KHÔNG thấy màn chấm bài', async () => {
   const t = await tr.locator('body').innerText()

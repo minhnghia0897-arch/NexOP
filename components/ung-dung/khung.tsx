@@ -13,6 +13,7 @@
  */
 import type { Route } from 'next'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { ReactNode } from 'react'
 
 import type { VaiDemo } from '@/lib/demo/du-lieu'
@@ -110,6 +111,22 @@ const NHAN_VAI: Record<VaiDemo, string> = {
 }
 
 function DoiVai({ vai }: { vai: VaiDemo }) {
+  const router = useRouter()
+
+  /*
+   * Cô và trợ giảng dùng CÙNG khung này, nên đổi giữa hai vai đó là đứng yên tại màn —
+   * đó chính là thứ demo bán: một màn, hai vai, hai thứ khác nhau.
+   *
+   * Học viên thì không: em có app riêng (`/em/*`). Đứng yên ở màn của cô mà đổi sang vai em
+   * thì người xem gặp một màn gần như trống rỗng — đúng về quyền, nhưng trông như chỗ hỏng,
+   * và đường vào app của em chỉ là một liên kết chữ nhỏ trong dải cam. Nút nói "Học viên"
+   * thì phải mở app của học viên.
+   */
+  function bam(v: VaiDemo): void {
+    doiVaiXem(v)
+    if (v === 'student') router.push('/em/hom-nay')
+  }
+
   return (
     <div
       role="group"
@@ -120,7 +137,7 @@ function DoiVai({ vai }: { vai: VaiDemo }) {
         <button
           key={v}
           type="button"
-          onClick={() => doiVaiXem(v)}
+          onClick={() => bam(v)}
           aria-pressed={vai === v}
           className={`rounded-pill px-3 py-1 font-display text-[12px] font-semibold transition-colors ${
             vai === v ? 'bg-surface text-text shadow-[var(--sh-s)]' : 'text-text-2 hover:text-text'

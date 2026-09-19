@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 
 import { Ico } from '@/components/ung-dung/khung'
+import { doiVaiXem } from '@/lib/demo/hanh-vi'
 
 export const MUC_EM = [
   { href: '/em/hom-nay', ten: 'Hôm nay', ngan: 'Hôm nay',
@@ -117,8 +118,16 @@ export function TopbarEm({ ten, chuoi }: { ten: string; chuoi: number }) {
             Chuỗi {chuoi} ngày
           </span>
         ) : null}
+        {/*
+          Về app của cô thì phải VỀ VAI CÔ.
+          Không đặt lại vai thì chuyến quay về hỏng lặng lẽ: màn của cô hiện ra nhưng mọi
+          câu đọc vẫn đi qua actor học viên, nên cô thấy một Tổng quan gần như trống và
+          không hiểu vì sao. Nút này là cửa duy nhất ra khỏi app của em, nên nó phải đóng
+          cả hai việc lại: đổi màn và đổi vai.
+        */}
         <Link
           href="/tong-quan"
+          onClick={() => doiVaiXem('owner')}
           className="font-display text-[12px] font-semibold text-text-2 hover:text-primary"
         >
           Về app của cô

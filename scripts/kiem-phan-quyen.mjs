@@ -187,6 +187,29 @@ await kiem('và mọi màn khác cũng mở được với bản lưu cũ đó',
   }
 })
 
+console.log('\n── Nút "Học viên" phải MỞ app của em, không chỉ đổi mắt ──')
+await moPhien()
+await tr.goto(`${U}/tong-quan/`,{waitUntil:'networkidle'})
+
+await kiem('bấm "Học viên" là sang app của em, không đứng lại ở màn của cô', async () => {
+  /* Lỗi đã xảy ra thật: nút chỉ gọi `doiVaiXem` nên vai đổi mà màn không đổi. Người xem
+     thấy Tổng quan của cô gần như trống và tưởng demo hỏng — đường vào app của em lúc đó
+     chỉ là một liên kết chữ nhỏ cuối dải cam. */
+  await doiVai('Học viên')
+  await tr.waitForURL(/\/em\/hom-nay/, { timeout: 5000 })
+  const h = await tr.locator('h1').first().innerText()
+  if (!/Chào/.test(h)) throw new Error(`vào app của em rồi nhưng đầu màn là "${h}"`)
+})
+
+await kiem('"Về app của cô" đưa về CẢ màn lẫn vai', async () => {
+  await tr.locator('a', { hasText: 'Về app của cô' }).click()
+  await tr.waitForURL(/\/tong-quan/, { timeout: 5000 })
+  /* Chỉ đổi màn mà giữ vai em thì Tổng quan hiện ra nhưng rỗng — hỏng lặng lẽ, khó đoán hơn
+     cả lỗi cũ. Nên kiểm bằng chính nút đang được chọn, không kiểm bằng chữ trên màn. */
+  const vai = await tr.locator('[aria-label="Đổi vai"] button[aria-pressed="true"]').textContent()
+  if (vai.trim() !== 'Cô') throw new Error(`về màn của cô nhưng vai vẫn là "${vai.trim()}"`)
+})
+
 await kiem('không có lỗi JavaScript nào trên mọi màn đã đi qua', async () => {
   if (loiTrang.length) throw new Error(loiTrang.slice(0,3).join(' | '))
 })
