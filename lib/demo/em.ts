@@ -12,7 +12,7 @@
 import { can, type Actor } from '@/lib/auth/can'
 
 import { gomLoiLap, type BaiGiao, type BaiLuyen, type LoiDanhDau, type LoiLap, type NhanXet } from './du-lieu'
-import { dangChay, diHocTrongLop, duLieu, phutLamBai } from './kho'
+import { cuaLamBai, dangChay, diHocTrongLop, duLieu, phutLamBai } from './kho'
 
 /**
  * Em đang đăng nhập trong bản demo.
@@ -88,6 +88,19 @@ export interface BaiTrongHoSo {
   nopLuc: string | null
   /** Số phút em ngồi làm, suy từ hai mốc. `null` khi không đo được. */
   phutLam: number | null
+  /**
+   * Em đã mở bài ra viết nhưng chưa nộp.
+   *
+   * "Chưa nộp" gộp hai trạng thái rất khác nhau: bài em chưa động tới, và bài em viết dở
+   * còn nằm trong máy. Em cần phân biệt — một cái là việc chưa bắt đầu, một cái là việc
+   * đang dở dang và sẽ mất nếu quên.
+   *
+   * Lấy từ `cuaLamBai()` chứ không tự suy lại từ `bn.nopLuc`: đó là chỗ DUY NHẤT định
+   * nghĩa "đang viết", và hai chỗ định nghĩa thì sớm muộn hai chỗ trả lời khác nhau.
+   */
+  dangViet: boolean
+  /** Số từ trong bản nháp. 0 khi em mở ra rồi chưa gõ chữ nào. */
+  soTuNhap: number
 }
 
 /**
@@ -138,6 +151,8 @@ export function baiCuaEm(hocVienId: string): BaiTrongHoSo[] {
       co: doc ? (nx?.co ?? []) : [],
       nopLuc: bn?.nopLuc ?? null,
       phutLam: bn ? phutLamBai(bn) : null,
+      dangViet: cuaLamBai(hocVienId, bg.id).dangViet,
+      soTuNhap: bn?.nopLuc ? 0 : (bn?.soTu ?? 0),
     })
   }
 

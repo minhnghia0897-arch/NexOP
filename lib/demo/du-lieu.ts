@@ -1246,8 +1246,11 @@ export function duLieuBanDau(): DuLieuDemo {
       cauHoi: CAU_HOI_NGU_PHAP() },
     { id: 'de-l1', ten: 'Cambridge 18 · Listening Test 2', kyNang: 'listening', trinhDo: 'B2',
       cachCham: 'auto', tinCayOcr: 0.71, cauHoi: CAU_HOI_READING },
+    /* 40 phút là thời lượng THẬT của Task 2 trong đề thi, không phải số ước chừng: em nhìn
+       con số này để quyết định tối nay có đủ giờ ngồi làm không. Đề nào cô chưa đặt thì màn
+       của em bỏ trống chỗ đó — đoán một con số còn tệ hơn không có. */
     { id: 'de-w3', ten: 'Cambridge 19 · Test 2 — Task 2 Education', kyNang: 'writing',
-      trinhDo: 'B2–C1', cachCham: 'draft', cauHoi: CAU_HOI_EDUCATION },
+      trinhDo: 'B2–C1', cachCham: 'draft', thoiGianPhut: 40, cauHoi: CAU_HOI_EDUCATION },
     ...DE_CHO_DUYET,
     ...khoDeCu(),
   ]

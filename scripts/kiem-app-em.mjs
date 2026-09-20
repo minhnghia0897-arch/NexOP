@@ -174,6 +174,40 @@ await kiem('gõ bài rồi TẢI LẠI TRANG — nháp vẫn còn', async () => 
   if (!/Đã lưu nháp/.test(t)) throw new Error('không nói là đã lưu')
 })
 
+/*
+ * Ba bài dưới đây phải đứng ở ĐÂY: em vừa gõ nháp và CHƯA nộp. Đẩy xuống sau bước nộp thì
+ * không còn bài nào "đang viết" để soi, và cả ba sẽ xanh giả vì không tìm thấy gì để so.
+ */
+await kiem('viết dở → Hôm nay đổi "Nộp bài" thành "Viết tiếp"', async () => {
+  await tr.goto(`${U}/em/hom-nay/`,{waitUntil:'networkidle'})
+  const nut = tr.locator('button', { hasText: /^Viết tiếp$/ })
+  if ((await nut.count()) === 0) throw new Error('vẫn còn là "Nộp bài" — em không biết mình viết dở')
+  const the = tr.locator('div.mt-3', { has: nut }).first()
+  const t = await the.innerText()
+  if (!/đã viết \d+ từ/.test(t)) throw new Error(`thẻ không nói số từ đã viết: ${t.replace(/\n/g,' | ')}`)
+})
+
+await kiem('thẻ bài nói thời lượng lấy từ đề của cô, không phải số cắm sẵn', async () => {
+  /* Tìm thẻ bằng TÊN ĐỀ, không bằng nút "Viết tiếp": bám vào nút thì bài kiểm này đỏ theo
+     mỗi khi bài trên hỏng, và một bài chỉ đỏ theo bài khác thì không chứng minh được gì. */
+  const the = tr.locator('div.mt-3', { hasText: 'Task 2 Education' }).first()
+  const t = await the.innerText()
+  /* Soi trong THẺ chứ không soi cả trang: "40 phút" ở chỗ khác trên màn cũng khớp, và khi đó
+     bài kiểm xanh mà thẻ vẫn trống. Số phải trùng `thoiGianPhut` của đề Task 2. */
+  if (!/\b40 phút\b/.test(t)) throw new Error(`thẻ không nói thời lượng: ${t.replace(/\n/g,' | ')}`)
+})
+
+await kiem('Bài của tôi: bài viết dở mang nhãn "Đang viết", không phải "Chưa nộp"', async () => {
+  await tr.goto(`${U}/em/bai-cua-toi/`,{waitUntil:'networkidle'})
+  await tr.locator('button',{hasText:'Tất cả'}).first().click()
+  const dong = tr.locator('tr', { hasText: 'Đang viết' }).first()
+  if ((await dong.count()) === 0) throw new Error('không dòng nào mang nhãn Đang viết')
+  const t = await dong.innerText()
+  if (!/nháp \d+ từ/.test(t)) throw new Error(`dòng không nói số từ nháp: ${t.replace(/\n/g,' | ')}`)
+  if (!/viết tiếp/.test(t)) throw new Error('không có đường quay lại bài đang viết')
+  await tr.goto(`${U}/em/nop-bai/`,{waitUntil:'networkidle'})
+})
+
 await kiem('nộp bài → xác nhận có số từ, thời gian viết và khoảng cách tới hạn', async () => {
   await tr.locator('textarea').first().fill('word '.repeat(260))
   await tr.waitForTimeout(1200)
