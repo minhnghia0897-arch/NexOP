@@ -35,6 +35,7 @@ export default function BaiCuaToi() {
   const ds = baiCuaEm(EM)
   const daCham = ds.filter((b) => b.nhanXet !== null)
   const cho = ds.filter((b) => b.daNop && b.nhanXet === null)
+  const dangViet = ds.filter((b) => b.dangViet)
   const moi = daCham[0] ?? null
 
   /*
@@ -57,7 +58,15 @@ export default function BaiCuaToi() {
     <>
       <DauManEm
         ten="Bài của tôi"
-        phu={`${ds.filter((b) => b.daNop).length} bài đã nộp · ${daCham.length} đã có nhận xét · ${cho.length} đang chờ cô`}
+        phu={[
+          `${ds.filter((b) => b.daNop).length} bài đã nộp`,
+          `${daCham.length} đã có nhận xét`,
+          `${cho.length} đang chờ cô`,
+          // Chỉ nói khi có: "0 bài đang viết" là một dòng chữ không giúp gì.
+          dangViet.length > 0 ? `${dangViet.length} đang viết dở` : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
       />
       {/* Dải tab nằm trong cùng cột với đầu màn và nội dung — xem ghi chú ở DauManEm. */}
       <div className="mx-auto max-w-[760px]">
@@ -157,6 +166,15 @@ export default function BaiCuaToi() {
                             nộp {gio(b.nopLuc)}
                             {b.phutLam === null ? '' : ` · viết ${b.phutLam} phút`} · đã chốt
                           </small>
+                        ) : b.dangViet ? (
+                          // Bản nháp còn nguyên trong máy. Nói số từ ra để em biết mình đã
+                          // đi tới đâu, và để đường quay lại bài nằm ngay cạnh con số đó.
+                          <small className="block text-[12px] font-normal text-text-3">
+                            {b.soTuNhap > 0 ? `nháp ${b.soTuNhap} từ` : 'đã mở, chưa viết'} ·{' '}
+                            <Link href="/em/nop-bai" className="font-medium text-primary underline">
+                              viết tiếp
+                            </Link>
+                          </small>
                         ) : null}
                       </td>
                       <td className="py-2.5 pr-3 font-display font-semibold tabular-nums text-text">
@@ -180,7 +198,9 @@ export default function BaiCuaToi() {
                         {b.co.length > 0 ? (b.co[0]!.themY ?? b.co[0]!.loai) : '—'}
                       </td>
                       <td className="py-2.5">
-                        {!b.daNop ? (
+                        {b.dangViet ? (
+                          <Nhan mau="orange">Đang viết</Nhan>
+                        ) : !b.daNop ? (
                           <Nhan mau="red">Chưa nộp</Nhan>
                         ) : b.nhanXet ? (
                           <Nhan mau="green">Đã nhận xét</Nhan>

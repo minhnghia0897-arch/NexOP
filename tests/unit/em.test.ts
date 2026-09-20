@@ -229,6 +229,60 @@ describe('bài luyện nối với lỗi bằng khoá, không bằng chuỗi', (
   })
 })
 
+describe('viết dở là một trạng thái, không gộp vào "chưa nộp"', () => {
+  /*
+   * "Chưa nộp" gộp hai việc rất khác nhau: bài em chưa động tới, và bài em viết 180 chữ rồi
+   * đóng máy. Bản nháp vẫn nằm nguyên trong kho — chỉ là không màn nào của em nói ra, nên em
+   * tưởng phải viết lại từ đầu.
+   */
+  it('mở bài rồi gõ dở → dangViet bật, và soTuNhap là số từ thật của bản nháp', () => {
+    const bg = duLieu().baiGiao.find((g) => g.id === 'bg-w2')!
+    const truoc = baiCuaEm(EM).find((b) => b.baiGiaoId === bg.id)!
+    expect(truoc.dangViet).toBe(false)
+    expect(truoc.daNop).toBe(false)
+
+    moBaiLam(EM, bg.id)
+    luuNhapBai(EM, bg.id, 'Technology makes our life easier and faster')
+
+    const nay = baiCuaEm(EM).find((b) => b.baiGiaoId === bg.id)!
+    expect(nay.dangViet).toBe(true)
+    // Đếm từ thật, không phải độ dài chuỗi: 7 từ.
+    expect(nay.soTuNhap).toBe(7)
+    // Và vẫn CHƯA nộp — hai câu hỏi khác nhau, không cái nào thay cái nào.
+    expect(nay.daNop).toBe(false)
+  })
+
+  it('nộp xong thì hết "đang viết", và số từ nháp về 0', () => {
+    const bg = duLieu().baiGiao.find((g) => g.id === 'bg-w2')!
+    moBaiLam(EM, bg.id)
+    luuNhapBai(EM, bg.id, 'mot hai ba')
+    nopBai(EM, bg.id, 'x '.repeat(260))
+
+    const sau = baiCuaEm(EM).find((b) => b.baiGiaoId === bg.id)!
+    expect(sau.daNop).toBe(true)
+    /*
+     * Chỗ này là cái bẫy: dòng bài nộp vẫn còn `soTu` sau khi nộp. Nếu `soTuNhap` đọc thẳng
+     * `bn.soTu` thì bài ĐÃ NỘP vẫn khoe "nháp 260 từ · viết tiếp" — một đường dẫn tới màn
+     * mà `cuaLamBai` sẽ từ chối.
+     */
+    expect(sau.dangViet).toBe(false)
+    expect(sau.soTuNhap).toBe(0)
+  })
+
+  it('"đang viết" đọc từ cuaLamBai, không phải một luật thứ hai', () => {
+    /*
+     * Hai chỗ tự định nghĩa "đang viết" thì sớm muộn hai chỗ trả lời khác nhau — và chỗ sai
+     * sẽ là chỗ em nhìn, vì chỗ kia có test. Nên câu trả lời phải TRÙNG, từng bài một.
+     */
+    const bg = duLieu().baiGiao.find((g) => g.id === 'bg-w2')!
+    moBaiLam(EM, bg.id)
+
+    for (const b of baiCuaEm(EM)) {
+      expect(b.dangViet).toBe(cuaLamBai(EM, b.baiGiaoId).dangViet)
+    }
+  })
+})
+
 describe('thời gian làm bài suy từ hai mốc, không tin lời khai', () => {
   it('mở bài rồi nộp → thời gian là hiệu của hai mốc, và cô đọc được trên thẻ chấm', () => {
     const bg = duLieu().baiGiao.find((g) => g.id === 'bg-w2')!

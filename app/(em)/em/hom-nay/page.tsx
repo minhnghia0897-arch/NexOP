@@ -70,7 +70,41 @@ export default function HomNay() {
   const nopDuoc = new Set(baiTuLuanPhaiNop(EM).map((g) => g.id))
   const tuan = tuanCuaEm(EM)
   const luyen = baiLuyenCuaEm(EM).filter((b) => !b.ketQua)
-  const daCham = baiCuaEm(EM).filter((b) => b.band !== null)
+  const mocBai = baiCuaEm(EM)
+  const daCham = mocBai.filter((b) => b.band !== null)
+
+  /*
+   * Bài em đang viết dở — và đó là một VIỆC KHÁC với bài chưa động tới.
+   *
+   * Em mở bài lúc 11 giờ đêm, viết 180 chữ, đóng máy. Hôm sau app nói "Nộp Task 2 · còn 2
+   * ngày" thì em không biết mình đã viết tới đâu, và nghĩ là phải bắt đầu lại từ đầu. Bản
+   * nháp vẫn còn nguyên trong máy — chỉ là không màn nào nói ra.
+   */
+  const dangViet = new Set(mocBai.filter((b) => b.dangViet).map((b) => b.baiGiaoId))
+  const soTuNhap = new Map(mocBai.map((b) => [b.baiGiaoId, b.soTuNhap]))
+
+  const viecGi = (id: string): string =>
+    dangViet.has(id) ? 'Viết tiếp' : nopDuoc.has(id) ? 'Nộp' : 'Làm'
+
+  /**
+   * Dòng phụ của thẻ việc: em đã viết tới đâu · còn bao lâu · bài này tốn bao nhiêu phút.
+   *
+   * Thời lượng lấy từ `de.thoiGianPhut` — cô đặt lúc số hoá đề, không phải con số cắm sẵn.
+   * Đề nào cô chưa đặt thì bỏ trống, không đoán: một con số đoán sai còn tệ hơn không có,
+   * vì em dựa vào đó để quyết định tối nay có đủ thời gian làm hay không.
+   */
+  function dongPhu(bg: (typeof phaiNop)[number]): string {
+    const de = du.de.find((d) => d.id === bg.deId)
+    const tu = soTuNhap.get(bg.id) ?? 0
+    return [
+      dangViet.has(bg.id) ? (tu > 0 ? `đã viết ${tu} từ` : 'đã mở, chưa viết chữ nào') : null,
+      hanNoiSao(bg.hanNop),
+      de?.thoiGianPhut ? `${de.thoiGianPhut} phút` : null,
+      de?.ten,
+    ]
+      .filter(Boolean)
+      .join(' · ')
+  }
   const tienBo = tienBoBand(EM)
   const conMac = loiCuaEm(EM).filter((l) => !l.daDut)
   const loiCo = nhanXetMoiNhat(EM)
@@ -135,12 +169,12 @@ export default function HomNay() {
             key={bg.id}
             mau="orange"
             gap
-            ten={`${nopDuoc.has(bg.id) ? 'Nộp' : 'Làm'} ${bg.nhan}`}
-            phu={`${hanNoiSao(bg.hanNop)} · ${du.de.find((d) => d.id === bg.deId)?.ten ?? ''}`}
+            ten={`${viecGi(bg.id)} ${bg.nhan}`}
+            phu={dongPhu(bg)}
             nut={
               nopDuoc.has(bg.id) ? (
                 <Link href="/em/nop-bai">
-                  <Nut kieu="chinh">Nộp bài</Nut>
+                  <Nut kieu="chinh">{dangViet.has(bg.id) ? 'Viết tiếp' : 'Nộp bài'}</Nut>
                 </Link>
               ) : (
                 // Trắc nghiệm làm trên lớp ở bản demo. Nút tắt nói đúng sự thật; nút bật
