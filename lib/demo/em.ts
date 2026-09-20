@@ -12,7 +12,7 @@
 import { can, type Actor } from '@/lib/auth/can'
 
 import { gomLoiLap, type BaiGiao, type BaiLuyen, type LoiDanhDau, type LoiLap, type NhanXet } from './du-lieu'
-import { cuaLamBai, dangChay, diHocTrongLop, duLieu, phutLamBai } from './kho'
+import { buoiDaDiemDanh, cuaLamBai, dangChay, diHocTrongLop, duLieu, phutLamBai } from './kho'
 
 /**
  * Em đang đăng nhập trong bản demo.
@@ -421,4 +421,73 @@ export function soTuCuaEm(hocVienId: string): TheSoTu[] {
    */
   const bac = (t: TheSoTu): number => (t.taiPham ? 0 : t.daNhoLuc ? 2 : 1)
   return [...the.values()].sort((a, b) => bac(a) - bac(b) || b.ngay.localeCompare(a.ngay))
+}
+
+export interface ChangCuaLop {
+  buoiDaQua: number
+  tongBuoi: number
+  /** Chặng lớp đang đi. `null` khi lộ trình chưa chia chặng. */
+  dangO: { tu: number; den: number; noiDung: string } | null
+  /** Chặng kế tiếp — để em biết sắp tới học gì, không phải học bằng đề nào. */
+  changToi: string | null
+}
+
+/**
+ * Lớp của em đang đi tới đâu trên lộ trình.
+ *
+ * Cô chốt 2026-09-20: em ĐƯỢC thấy chặng. Nhưng `path` vẫn là `none` với em — lộ trình là
+ * tài sản của cô, là thứ để mở lớp thứ năm mà không soạn lại. Nên đây là một object KHÁC
+ * (`path_progress`), và nó chỉ mang bốn con số/chuỗi dưới đây.
+ *
+ * Thứ hàm này cố ý KHÔNG trả về, dù đang cầm cả `LoTrinh` trong tay:
+ *   · `buoi[].deId` — đề sắp giao. Biết trước đề là hỏng cả việc giao bài.
+ *   · `buoi[].baiVeNha` và `chang[].baiVeNha` — cách cô soạn.
+ *   · `chang[].kho` — "chặng học viên tụt nhiều nhất" là nhận định của cô về CÁC EM KHÁC.
+ *
+ * Trả cả object rồi để giao diện tự lọc thì dữ liệu vẫn đi tới trình duyệt của em, và ai mở
+ * công cụ nhà phát triển cũng đọc được. Cắt ở đây, không cắt ở chỗ vẽ.
+ */
+export function changCuaLop(nguoiXem: string, lopId: string): ChangCuaLop | null {
+  const du = duLieu()
+
+  /*
+   * Hàm nhận HAI id, và đó là chỗ quan trọng — cùng bài học `diHocEm` đã ghi ở trên.
+   *
+   * Bản đầu chỉ nhận `hocVienId` rồi tự tìm lớp của chính em đó. Cửa `can()` khi ấy luôn
+   * khớp, vì lớp đem đi hỏi chính là lớp của người hỏi: kiểm quyền thành thủ tục. Đột biến
+   * "bỏ hẳn cửa" chạy qua 501 bài test mà không bài nào đỏ.
+   *
+   * Tách người XEM khỏi LỚP được xem thì `changCuaLop('hv-01', 'lop-55')` phải trả `null`,
+   * và câu đó kiểm được.
+   */
+  if (
+    !can(actorEm(nguoiXem), 'path_progress.view', {
+      type: 'path_progress',
+      tenantId: du.tenant.id,
+      classId: lopId,
+    })
+  ) {
+    return null
+  }
+
+  const lop = du.lop.find((l) => l.id === lopId)
+  if (!lop) return null
+
+  const lt = du.loTrinh.find((x) => x.dangDung.includes(lop.id))
+  if (!lt) return null
+
+  /* Dùng lại `buoiDaDiemDanh` của kho chứ không tự lọc `diemDanh`: nó đã khử trùng theo
+     `buoiNo` rồi. Tự đếm ở đây là viết luật thứ hai, và luật thứ hai sẽ đếm số DÒNG — sai
+     ngay lần đầu cô ghi lại điểm danh một buổi cũ. Mảng đã xếp mới nhất trước. */
+  const buoiDaQua = buoiDaDiemDanh(lop.id)[0]?.buoiNo ?? 0
+
+  const dangO = lt.chang.find((c) => buoiDaQua >= c.tu && buoiDaQua <= c.den) ?? null
+  const toi = lt.chang.find((c) => c.tu > buoiDaQua) ?? null
+
+  return {
+    buoiDaQua,
+    tongBuoi: lt.soBuoi,
+    dangO: dangO ? { tu: dangO.tu, den: dangO.den, noiDung: dangO.noiDung } : null,
+    changToi: toi ? toi.noiDung : null,
+  }
 }

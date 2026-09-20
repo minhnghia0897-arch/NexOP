@@ -9,11 +9,16 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { can } from '@/lib/auth/can'
+
 import {
   EM,
   baiCuaEm,
   baiLuyenCuaEm,
+  actorEm,
+  changCuaLop,
   loiCuaEm,
+  lopCuaEm,
   soTuCuaEm,
   tienBoBand,
 } from '@/lib/demo/em'
@@ -282,6 +287,75 @@ describe('viết dở là một trạng thái, không gộp vào "chưa nộp"',
     for (const b of baiCuaEm(EM)) {
       expect(b.dangViet).toBe(cuaLamBai(EM, b.baiGiaoId).dangViet)
     }
+  })
+})
+
+describe('em thấy CHẶNG của lớp, không thấy lộ trình của cô', () => {
+  it('em đọc được chặng lớp đang đi, suy từ buổi đã điểm danh', () => {
+    const c = changCuaLop(EM, lopCuaEm(EM)!.id)!
+    expect(c).not.toBeNull()
+
+    const lop = duLieu().lop.find((l) => l.hocVienIds.includes(EM))!
+    const lt = duLieu().loTrinh.find((x) => x.dangDung.includes(lop.id))!
+    const buoiLonNhat = duLieu()
+      .diemDanh.filter((d) => d.lopId === lop.id)
+      .reduce((m, d) => Math.max(m, d.buoiNo), 0)
+
+    expect(c.buoiDaQua).toBe(buoiLonNhat)
+
+    /* Cô ghi LẠI điểm danh một buổi cũ = thêm một DÒNG, không phải thêm một buổi. Đếm số
+       dòng thì con số nhảy, và em đọc "lớp đang ở buổi 13/48" cho một lớp mới đi 12 buổi. */
+    const cu = duLieu().diemDanh.find((d) => d.lopId === lop.id)!
+    duLieu().diemDanh.push({ ...cu, id: `${cu.id}-ghi-lai` })
+    expect(changCuaLop(EM, lop.id)!.buoiDaQua).toBe(buoiLonNhat)
+    expect(c.tongBuoi).toBe(lt.soBuoi)
+    // Chặng phải THẬT SỰ chứa buổi đó, không phải chặng đầu tiên cho có.
+    expect(c.dangO!.tu).toBeLessThanOrEqual(c.buoiDaQua)
+    expect(c.dangO!.den).toBeGreaterThanOrEqual(c.buoiDaQua)
+  })
+
+  it('KHÔNG rò đề sắp giao, bài về nhà, hay chặng "học viên tụt nhiều nhất"', () => {
+    /*
+     * Chỗ này quan trọng hơn cả việc em đọc được chặng: hàm đang cầm cả `LoTrinh` trong tay.
+     * Trả cả object rồi để giao diện tự lọc thì dữ liệu vẫn tới trình duyệt của em — ai mở
+     * công cụ nhà phát triển cũng đọc được, và `chang[].kho` là nhận định của cô về CÁC EM
+     * KHÁC.
+     */
+    const c = changCuaLop(EM, lopCuaEm(EM)!.id)!
+    const phang = JSON.stringify(c)
+
+    const lop = duLieu().lop.find((l) => l.hocVienIds.includes(EM))!
+    const lt = duLieu().loTrinh.find((x) => x.dangDung.includes(lop.id))!
+
+    for (const b of lt.buoi) {
+      if (b.deId) expect(phang).not.toContain(b.deId)
+      if (b.baiVeNha) expect(phang).not.toContain(b.baiVeNha)
+    }
+    for (const ch of lt.chang) {
+      if (ch.baiVeNha) expect(phang).not.toContain(ch.baiVeNha)
+      if (ch.kiemTra) expect(phang).not.toContain(ch.kiemTra)
+    }
+    expect(Object.keys(c.dangO!).sort()).toEqual(['den', 'noiDung', 'tu'])
+  })
+
+  it('`path` vẫn đóng với em — chặng là object KHÁC, không phải cửa sau vào lộ trình', () => {
+    const em = actorEm(EM)
+    const o = { tenantId: duLieu().tenant.id, classId: lopCuaEm(EM)!.id }
+    expect(can(em, 'path.view', { type: 'path', ...o })).toBe(false)
+    expect(can(em, 'path_progress.view', { type: 'path_progress', ...o })).toBe(true)
+    // Và em chỉ ĐỌC: chặng không phải thứ em sửa.
+    expect(can(em, 'path_progress.update', { type: 'path_progress', ...o })).toBe(false)
+  })
+
+  it('em KHÔNG đọc được chặng của lớp mình không học', () => {
+    /*
+     * Bài này là lý do hàm nhận hai id. Với một id, cửa `can()` luôn khớp — đột biến "bỏ hẳn
+     * cửa" từng chạy qua cả 501 bài test mà không bài nào đỏ.
+     */
+    const lopKhac = duLieu().lop.find((l) => !l.hocVienIds.includes(EM))!
+    expect(changCuaLop(EM, lopKhac.id)).toBeNull()
+    // Và cô thì đọc được lớp đó — chứng minh `null` ở trên là do QUYỀN, không phải do thiếu dữ liệu.
+    expect(lopKhac.id).not.toBe(lopCuaEm(EM)!.id)
   })
 })
 

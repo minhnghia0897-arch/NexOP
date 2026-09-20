@@ -32,7 +32,7 @@ function actor(overrides: Partial<Actor> = {}): Actor {
 }
 
 describe('ma trận quyền', () => {
-  it('permissions.json phủ đủ 20 object × 5 vai', () => {
+  it('permissions.json phủ đủ 21 object × 5 vai', () => {
     /*
      * Con số này là một cái chốt, không phải một con số trang trí. Hai lần nó bắt được lỗi
      * thật, cả hai lần là một object THIẾU HẲN dòng trong ma trận:
@@ -44,7 +44,7 @@ describe('ma trận quyền', () => {
      *     nổi tên của chính mình. Trợ giảng ở mức `profile: read` bị chặn, mà `profile` lại là
      *     hồ sơ NĂNG LỰC — hai thứ khác nhau bị gộp làm một chữ.
      */
-    expect(OBJECT_TYPES).toHaveLength(20)
+    expect(OBJECT_TYPES).toHaveLength(21)
     for (const type of OBJECT_TYPES) {
       for (const role of ROLES) {
         expect(DEFAULTS[type]?.[role], `${type}.${role}`).toBeDefined()
@@ -186,11 +186,14 @@ describe('học viên không thấy dữ liệu của học viên khác', () => 
    * `class`/`assignment` ở mức `read`: đề bài và lịch lớp là của cả lớp, không của em nào.
    * `account` ở mức `read_own`: tên bạn cùng lớp, hiện đúng một chỗ — bảng tin lớp. Em sửa
    * thì chỉ sửa hồ sơ của chính mình.
+   * `path_progress` ở mức `read`: lớp đang ở chặng nào. Là số liệu của LỚP, không của em nào
+   * — và cố ý tách khỏi `path` (vẫn `none` với em) để em thấy chặng mà không thấy nội dung
+   * cô soạn hay đề sắp giao.
    *
    * Danh sách trắng này là chỗ đắt nhất trong file: thêm một object vào đây là mở một đường
    * cho em đọc đồ của bạn, nên nó phải là một dòng người ta thấy khi đọc diff.
    */
-  const DOC_DUOC_CUA_NGUOI_KHAC = new Set(['class', 'assignment', 'account'])
+  const DOC_DUOC_CUA_NGUOI_KHAC = new Set(['class', 'assignment', 'account', 'path_progress'])
 
   it('không object nào lọt ngoài danh sách trắng', () => {
     const em = actor({ role: 'student', accountId: EM, classIds: [CLASS] })
@@ -206,7 +209,7 @@ describe('học viên không thấy dữ liệu của học viên khác', () => 
   it('danh sách trắng không có object nào mang DỮ LIỆU của một em cụ thể', () => {
     /* Tên thì được; band, bài nộp, học phí, nháp của máy thì không. Chốt bằng tên object để
        một lần nới danh sách trắng sang `submission` là đỏ ngay ở đây. */
-    for (const nhay of ['submission', 'review', 'draft', 'fee', 'gradebook', 'profile']) {
+    for (const nhay of ['submission', 'review', 'draft', 'fee', 'gradebook', 'profile', 'path']) {
       expect(DOC_DUOC_CUA_NGUOI_KHAC.has(nhay), nhay).toBe(false)
     }
   })

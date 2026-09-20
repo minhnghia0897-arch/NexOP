@@ -106,6 +106,7 @@ test (`can.test.ts` chốt `OBJECT_TYPES` có đúng 20 dòng × 5 vai).
 | `fee` | `full` | `none` | `own` | `own` | `propose` | 🔒 trần cứng |
 | `rubric` | `full` | `none` | `none` | `none` | `auto` | 🔒 trần cứng |
 | `path` | `full` | `none` | `none` | `none` | `none` |  |
+| `path_progress` | `full` | `read` | `read` | `none` | `auto` | em thấy lớp đang ở chặng nào — KHÔNG thấy nội dung soạn hay đề sắp giao (`DECISIONS.md` 2026-09-20) |
 | `export` | `full` | `none` | `own` | `none` | `none` | 🔒 trần cứng |
 | `events` | `full(class)` | `own` | `own` | `none` | `none` |  |
 
@@ -219,6 +220,9 @@ Chi tiết vòng đời và bất biến: `docs/LOGIC.md` §1.3.
 ---
 
 ## §G — Còn chờ cô chốt
+
+> **Đã chốt 2026-09-20:** em THẤY chặng của lớp — thêm object `path_progress` ở bảng trên.
+> Bốn câu về quyền trợ giảng bên dưới vẫn đang chờ.
 
 | # | Câu hỏi | Em nghiêng về |
 |---|---|---|

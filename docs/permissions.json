@@ -160,6 +160,16 @@
       "parent": "none",
       "system": "none"
     },
+    "path_progress": {
+      "owner": "full",
+      "assistant": "read",
+      "student": "read",
+      "parent": "none",
+      "system": "auto",
+      "notes": {
+        "student": "em thấy lớp đang ở chặng nào — KHÔNG thấy nội dung soạn hay đề sắp giao"
+      }
+    },
     "export": {
       "owner": "full",
       "assistant": "none",

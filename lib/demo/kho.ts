@@ -1494,7 +1494,14 @@ export function ghiDiemDanh(
  * đếm đi qua, nên nó là chỗ rẻ nhất để giữ bất biến "một buổi đếm một lần" — kể cả khi một
  * bản lưu cũ, hay một lần nhập dữ liệu tay, để lại hai dòng cùng buổi.
  */
-function buoiDaDiemDanh(lopId: string): import('./du-lieu').DiemDanh[] {
+/**
+ * Các buổi lớp đã điểm danh, mới nhất trước — **một buổi một dòng**.
+ *
+ * Khử trùng theo `buoiNo`: cô ghi lại điểm danh một buổi cũ là THÊM dòng, không phải thêm
+ * buổi. Xuất ra ngoài vì `changCuaLop` (app của em) cũng cần đúng luật này — và hai chỗ tự
+ * đếm thì một chỗ sẽ đếm số dòng.
+ */
+export function buoiDaDiemDanh(lopId: string): import('./du-lieu').DiemDanh[] {
   const theoBuoi = new Map<number, import('./du-lieu').DiemDanh>()
   for (const d of duLieu().diemDanh) {
     if (d.lopId === lopId) theoBuoi.set(d.buoiNo, d)
