@@ -2502,3 +2502,36 @@ export function baiCanCham(vai: VaiDemo): BaiCanCham[] {
     (a, b) => b.ganCo.length - a.ganCo.length || a.hocVien.ten.localeCompare(b.hocVien.ten, 'vi'),
   )
 }
+
+/**
+ * Em đánh dấu một thẻ Sổ từ: "chưa nhớ" hay "đã nhớ".
+ *
+ * KHÔNG cần dòng quyền mới — `practice_set` đã là mức `own` với vai học viên, và sổ từ của em
+ * đúng là một bộ luyện của riêng em. Thêm object mới chỉ để đếm thẻ là làm ma trận quyền dài
+ * ra mà không thêm một câu trả lời nào.
+ *
+ * Ghi CẢ hai chiều, kể cả "chưa nhớ": lịch sử ôn chỉ có nghĩa khi nó ghi cả lần không thuộc.
+ * Chỉ ghi lần nhớ thì cô đọc hồ sơ và thấy một em chưa bao giờ quên gì.
+ */
+export function danhDauThe(hocVienId: string, khoa: string, nho: boolean): void {
+  const du = duLieu()
+  const lop = du.lop.find((l) => l.hocVienIds.includes(hocVienId))
+  if (!lop) throw new Error('Em không ở lớp nào')
+
+  ghi(
+    actorEm(hocVienId, lop.id),
+    'practice_set.update',
+    {
+      type: 'practice_set',
+      id: `sotu-${hocVienId}`,
+      tenantId: du.tenant.id,
+      classId: lop.id,
+      ownerId: hocVienId,
+    },
+    { the: khoa, nho },
+    [du.vai.owner, hocVienId],
+    (d) => {
+      d.danhGiaThe.push({ hocVienId, khoa, nho, luc: new Date().toISOString() })
+    },
+  )
+}

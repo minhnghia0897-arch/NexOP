@@ -20,11 +20,11 @@ Cái gì chỉ để giữ chân em trên nền tảng thì OBLUE không cần �
 
 | Thứ | Ở OBLUE | Vì sao |
 |---|---|---|
-| **Giấy nhớ từ vựng** (panel phải, Chưa nhớ / Đã nhớ) | ✅ **Lấy, và nắn cho mạnh hơn** | Xem §1 — OBLUE có nguồn từ tốt hơn hẳn một danh sách 100 từ |
+| **Giấy nhớ từ vựng** (panel phải, Chưa nhớ / Đã nhớ) | ✅ **Đã dựng** — Sổ từ của em | Xem §1 — OBLUE có nguồn từ tốt hơn hẳn một danh sách 100 từ |
 | Thời lượng trên thẻ đề (20′, 60′) | ✅ Lấy | Em biết phải dành bao lâu trước khi mở bài. Dữ liệu đã có |
 | Lọc "Chưa làm / Đã làm" | ✅ Lấy, gọn | Thành "Chưa nộp · Đang viết · Chờ cô · Đã nhận xét" ở *Bài của tôi* |
 | **Lịch sử** | ✅ Đã có | Dựng ở PR #31 |
-| **Lộ trình học** | ⚠️ Cần cô chốt | Xem §4 — `path` hiện là `none` với em |
+| **Lộ trình học** | ✅ Chốt: CÓ | Xem §4 · `DECISIONS.md` 2026-09-20 |
 | "Nghe và chép" (dictation) | ⛔ Ngoài phạm vi | OBLUE đang là Writing. Thêm kỹ năng là một sản phẩm khác |
 | "Đánh giá năng lực" (test xếp lớp) | ⛔ Không | Ở OBLUE **cô** đánh giá. Máy chấm điểm xếp lớp là máy nói thay cô |
 | Tab kỹ năng kèm số đề (Reading · 532 đề) | ⛔ Không | Em không có ngân hàng đề. Em chỉ thấy bài cô giao — **cố ý** |
@@ -101,7 +101,7 @@ Khen em bằng dữ liệu của em, không bằng dữ liệu của bạn.
 
 ---
 
-## §4 · Cô cần chốt: em có thấy LỘ TRÌNH không?
+## §4 · ~~Cô cần chốt~~ · **CHỐT 2026-09-20: CÓ** — em thấy lộ trình
 
 IELTS Mate có mục "Lộ trình học". OBLUE có lộ trình, nhưng `path` là **`none`** với mọi vai ngoài cô —
 lộ trình là tài sản của cô, là thứ để mở lớp thứ 5 mà không soạn lại.

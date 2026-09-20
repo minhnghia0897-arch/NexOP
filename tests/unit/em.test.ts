@@ -14,6 +14,7 @@ import {
   baiCuaEm,
   baiLuyenCuaEm,
   loiCuaEm,
+  soTuCuaEm,
   tienBoBand,
 } from '@/lib/demo/em'
 import {
@@ -27,6 +28,7 @@ import {
   DaChotKhongSua,
   baiCanCham,
   cuaLamBai,
+  danhDauThe,
   datLai,
   giaoBai,
   duLieu,
@@ -280,6 +282,101 @@ describe('viết dở là một trạng thái, không gộp vào "chưa nộp"',
     for (const b of baiCuaEm(EM)) {
       expect(b.dangViet).toBe(cuaLamBai(EM, b.baiGiaoId).dangViet)
     }
+  })
+})
+
+describe('Sổ từ: thẻ làm từ chỗ cô gạch, không phải từ điển chung', () => {
+  it('mọi thẻ đều trỏ về một dấu CÓ THẬT trong nhận xét cô đã gửi', () => {
+    /*
+     * Luật số một của màn này: thẻ chỉ chứa chữ CÔ ĐÃ VIẾT. Một thẻ máy bịa nằm lẫn giữa thẻ
+     * của cô thì em không phân biệt được — mà toàn bộ giá trị nằm ở chỗ "cô đã mất công sửa
+     * chính câu này cho em".
+     */
+    const dauCuaCo = new Map<string, string>()
+    for (const b of baiCuaEm(EM)) {
+      for (const l of b.nhanXet?.co ?? []) dauCuaCo.set(l.trich, l.sua)
+    }
+
+    const the = soTuCuaEm(EM)
+    expect(the.length).toBeGreaterThan(0)
+    for (const t of the) {
+      expect(dauCuaCo.has(t.trich)).toBe(true)
+      expect(t.sua).toBe(dauCuaCo.get(t.trich))
+    }
+  })
+
+  it('lời khen KHÔNG thành thẻ — đó không phải chỗ để sửa', () => {
+    const khen = baiCuaEm(EM)
+      .flatMap((b) => b.co)
+      .filter((l) => l.kieu === 'khen')
+      .map((l) => l.trich)
+
+    const khoa = soTuCuaEm(EM).map((t) => t.khoa)
+    for (const k of khen) expect(khoa).not.toContain(k)
+  })
+
+  it('thẻ KHÔNG tự bịa lời giải thích: `y` là `themY` của cô, hoặc null', () => {
+    const themYCuaCo = new Map<string, string | undefined>()
+    for (const b of baiCuaEm(EM)) {
+      for (const l of b.nhanXet?.co ?? []) themYCuaCo.set(l.trich, l.themY)
+    }
+    for (const t of soTuCuaEm(EM)) {
+      expect(t.y).toBe(themYCuaCo.get(t.trich) ?? null)
+    }
+  })
+
+  it('em không đọc được thẻ của bạn — sổ từ đi theo bài của chính em', () => {
+    const cuaEmKhac = soTuCuaEm('hv-02')
+    const khoaCuaEm = new Set(soTuCuaEm(EM).map((t) => t.khoa))
+    for (const t of cuaEmKhac) expect(khoaCuaEm.has(t.khoa)).toBe(false)
+  })
+})
+
+describe('Sổ từ: thẻ tái phạm quay lại, và nói rõ vì sao', () => {
+  it('hạt giống có đúng một thẻ tái phạm, và nó trỏ về bài cô gạch LẠI', () => {
+    const lai = soTuCuaEm(EM).filter((t) => t.taiPham)
+    expect(lai).toHaveLength(1)
+
+    const t = lai[0]!
+    expect(t.daNhoLuc).not.toBeNull()
+    // Bài gạch lại phải đứng SAU lúc em nói đã nhớ. Ngược lại là một câu chuyện vô nghĩa.
+    expect(t.taiPham!.ngay > t.daNhoLuc!).toBe(true)
+
+    // Và bài đó phải thật sự chứa đúng LOẠI lỗi ấy.
+    const bai = baiCuaEm(EM).find((b) => b.nhan === t.taiPham!.bai)!
+    expect(bai.co.some((l) => l.loai === t.loai)).toBe(true)
+  })
+
+  it('đánh "đã nhớ" HÔM NAY thì thẻ không tái phạm — cô chưa gạch lại lần nào sau đó', () => {
+    /*
+     * Bẫy: nếu chỉ hỏi "cô có gạch loại lỗi này không" mà KHÔNG so mốc thời gian, thì thẻ vừa
+     * đánh đã nhớ lập tức quay lại — vì lỗi đó dĩ nhiên có trong bài cũ. Em sẽ gặp một app cãi
+     * lại mình ngay giây sau khi mình vừa trả lời.
+     */
+    const t = soTuCuaEm(EM).find((x) => !x.taiPham && !x.daNhoLuc)!
+    danhDauThe(EM, t.khoa, true)
+
+    const sau = soTuCuaEm(EM).find((x) => x.khoa === t.khoa)!
+    expect(sau.daNhoLuc).not.toBeNull()
+    expect(sau.taiPham).toBeNull()
+  })
+
+  it('thẻ tái phạm xếp lên đầu, thẻ đã nhớ xuống cuối', () => {
+    const bac = soTuCuaEm(EM).map((t) => (t.taiPham ? 0 : t.daNhoLuc ? 2 : 1))
+    expect([...bac].sort((a, b) => a - b)).toEqual(bac)
+  })
+
+  it('"chưa nhớ" cũng được ghi — lịch sử ôn chỉ có nghĩa khi ghi cả lần không thuộc', () => {
+    const t = soTuCuaEm(EM)[0]!
+    danhDauThe(EM, t.khoa, false)
+
+    const e = nhatKy().find(
+      (x) => x.action === 'practice_set.update' && x.payload.the === t.khoa,
+    )
+    expect(e).toBeDefined()
+    expect(e!.payload.nho).toBe(false)
+    // Và em vẫn KHÔNG bị tính là đã nhớ.
+    expect(soTuCuaEm(EM).find((x) => x.khoa === t.khoa)!.daNhoLuc).toBeNull()
   })
 })
 

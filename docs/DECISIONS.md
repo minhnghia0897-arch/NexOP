@@ -606,3 +606,76 @@ tại. Hai tình huống, hai câu.
 Hai bài kiểm khác đỏ vì chính bài kiểm sai: một cái bỏ chữ "của" khi khớp chuỗi, một cái bắt
 chuỗi "cả lớp" trong đúng câu nói "KHÔNG giao cả lớp". Cùng họ với lỗi `getByText` khớp chuỗi
 con — lần thứ ba, nên lần này kiểm bằng SỐ (số em đã giao < sĩ số) thay vì bằng chữ.
+
+---
+
+# 2026-09-20 · Năm câu cô chốt sau khi soi IELTS Mate
+
+Năm câu này treo từ `Y-TUONG-IELTS-MATE.md` và hai lượt soi giao diện IELTS Mate. Cô chốt cả
+năm trong một lượt. Ghi ở đây để chúng thôi là câu hỏi mở — và để lần sau có ai hỏi "vì sao
+thi thử là bảng riêng" thì có câu trả lời, không phải đoán lại.
+
+## 1 · Sổ từ của em — **làm**
+
+Thẻ ôn làm từ chính chỗ cô gạch trong bài của em (`LoiDanhDau.trich` → `.sua`), không phải
+danh sách từ chung. Không cần dòng quyền mới: dấu đi theo `review`, mức `own` của em.
+
+Luật quan trọng nhất của màn này: **thẻ chỉ chứa chữ CÔ ĐÃ VIẾT.** Không cho máy sinh thêm từ
+"liên quan" — một thẻ máy bịa nằm lẫn giữa thẻ của cô thì em không phân biệt được, và toàn bộ
+giá trị của sổ từ nằm ở chỗ "đây là chỗ cô đã mất công sửa cho chính em".
+
+## 2 · Thi thử — **bảng riêng · hết giờ máy tự nộp · KHÔNG bán**
+
+Ba quyết định trong một câu, và cả ba đều khác đề xuất ban đầu của tôi (tôi nghiêng về cờ trên
+`BaiGiao`, và nghiêng về việc bán gói thi thử).
+
+**Bảng riêng, không phải cờ.** Bài giao và kỳ thi trông giống nhau nhưng khác năm luật: một
+lượt duy nhất · hết giờ là đóng · nháp không mở lại được · quá giờ là hết cửa · L/R máy cho
+điểm ngay. Nhồi năm luật đó vào `BaiGiao` bằng một cờ thì mọi câu đọc `BaiGiao` phải nhớ hỏi
+thêm "mà cái này có phải kỳ thi không", và chỗ nào quên là chỗ đó cho em mở lại bài thi.
+
+**Hết giờ máy tự nộp.** Không phạm luật 2: luật cấm máy *gửi cho học viên*, không cấm máy đóng
+sổ. `submission.auto_submit` là sự kiện hệ thống, ghi vào `events` trước khi có hiệu lực, và là
+một `LuatMay` cô bật/tắt được — giống `chot-mcq`.
+
+**Không bán.** Thi thử là việc trong lớp, không phải món hàng. Quyết định này xoá luôn phần
+"gói thi thử có cô chấm" tôi đã phác trong hai lượt trước — và nó làm nhẹ đi rất nhiều: không
+màn giá, không chia doanh thu, không phải trả lời "em trả tiền rồi thì cô phải chấm trong bao
+lâu".
+
+**Vẫn đứng: không gọi là "giống thi thật 100%".** Không ứng dụng nào không giám sát mà gọi là
+thi thật được. Cái làm được và làm tử tế: một lượt · đồng hồ phía máy chủ · ghi nhật ký rời tab
+như sự thật để cô đọc. Không chặn, không kết tội, không chụp màn hình em.
+
+## 3 · Bài mẫu cô chọn — **ghi tên** (cần sửa một luật cứng, xem dưới)
+
+Cô đọc 14 bài tối chủ nhật, thấy một bài làm tốt đúng chỗ cả lớp đang sai, bấm một nút để nó
+thành mẫu cho lớp — **có tên em viết bài đó**.
+
+Chỗ này đụng luật cứng trong `CLAUDE.md`: *"Học viên chỉ thấy dữ liệu của mình."* Một bài mẫu
+ghi tên là dữ liệu của em khác đem cho em xem. Nên việc này **không dựng được nếu không sửa
+luật đó**, và sửa luật là việc của cô, không phải của tôi. Câu hẹp nhất đủ dùng:
+
+> Học viên chỉ thấy dữ liệu của mình — trừ bài cô chọn làm mẫu cho lớp, và chỉ khi em viết bài
+> đó đã đồng ý.
+
+Hai điều kiện, thiếu một là không đăng: **cô chọn** (hành vi biên tập, không phải máy) và **em
+đồng ý** (hỏi trước, không mặc định đồng ý). Và bài mẫu là một BẢN SAO chụp lúc đăng, không
+phải liên kết sống tới dòng bài nộp — giống cách `NhanXet.co` sao lại chỗ cô đánh dấu thay vì
+trỏ về nháp. Em rút đồng ý thì gỡ bản sao, bài nộp gốc không đổi.
+
+## 4 · Em thấy lộ trình — **có**
+
+Em thấy mình đang ở chặng nào: *"Lớp đang ở buổi 30/48 · chặng 3: luận điểm & phản biện"*.
+Không lộ cách cô soạn, không lộ đề sắp giao.
+
+Cần một dòng mới trong `permissions.json` — `path` vẫn là `none` với em (lộ trình là tài sản
+của cô), nhưng **tiến độ trên lộ trình** là một object khác: em đọc được chặng, không đọc được
+nội dung soạn.
+
+## 5 · Em xin luyện lỗi — **có, mở chiều ngược lại**
+
+Hiện `taoBaiLuyenTuLoiChung()` chỉ chạy một chiều: cô thấy lỗi chung → giao cho đúng những em
+mắc. Nay mở chiều em → cô, và mở đúng cách: em bấm "cho em luyện lỗi này" thì sinh **đề xuất**
+trong hộp của cô ("3 em xin luyện *hoà hợp chủ–vị*"), cô bấm một lần là giao. Máy nháp, cô gửi
+— em xin cũng không phải là em tự giao bài cho mình.
