@@ -256,6 +256,25 @@ await kiem('thẻ chấm của cô hiện "viết N phút" cho bài em vừa n�
   if (!/viết \d+ phút/.test(t)) throw new Error('cô không thấy thời gian viết')
 })
 
+await moPhien()
+await tr.goto(`${U}/em/tien-do/`,{waitUntil:'networkidle'})
+
+await kiem('Tiến độ nói lớp đang ở chặng nào, và nói bằng SỐ buổi', async () => {
+  const t = await tr.locator('body').innerText()
+  if (!/Lớp đang đi tới đâu/.test(t)) throw new Error('không có khối chặng')
+  if (!/Buổi \d+\/\d+ của lộ trình/.test(t)) throw new Error('không nói buổi mấy trên mấy')
+  if (!/chặng buổi \d+–\d+/.test(t)) throw new Error('không nói chặng nào')
+})
+
+await kiem('em KHÔNG thấy đề sắp giao hay bài về nhà cô soạn', async () => {
+  /* Khối chặng cầm cả `LoTrinh` ở phía sau. Rò một mã đề ra màn của em là hỏng cả việc giao
+     bài — em biết trước đề thì bài giao tuần sau mất nghĩa. */
+  const t = await tr.locator('body').innerText()
+  for (const cam of ['de-w3', 'de-ocr-r2', 'baiVeNha', 'Chặng khó nhất']) {
+    if (t.includes(cam)) throw new Error(`rò "${cam}" ra màn của em`)
+  }
+})
+
 console.log('\n── Sổ từ của em (s-vocab) ──')
 await moPhien()
 await tr.goto(`${U}/em/luyen-them/`,{waitUntil:'networkidle'})

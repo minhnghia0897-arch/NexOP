@@ -13,13 +13,23 @@ import { DauManEm, WrapEm } from '@/components/em/khung'
 import { Cot, Tieu } from '@/components/em/phan-tu'
 import { Khoi, KhoiTrong, Nhan, Nut } from '@/components/ung-dung/phan-tu'
 import { useKho } from '@/lib/demo/dung-kho'
-import { EM, baiCuaEm, baiLuyenCuaEm, hoSoCuaEm, loiCuaEm } from '@/lib/demo/em'
+import {
+  EM,
+  baiCuaEm,
+  baiLuyenCuaEm,
+  changCuaLop,
+  hoSoCuaEm,
+  loiCuaEm,
+  lopCuaEm,
+} from '@/lib/demo/em'
 
 const MUC_TIEU = 6.5
 
 export default function TienDo() {
   useKho()
   const ho = hoSoCuaEm(EM)
+  const lop = lopCuaEm(EM)
+  const chang = lop ? changCuaLop(EM, lop.id) : null
   const daCham = baiCuaEm(EM)
     .filter((b) => b.band !== null)
     .reverse()
@@ -164,6 +174,36 @@ export default function TienDo() {
             )}
           </Khoi>
         </div>
+
+        {/*
+          Lớp đang đi tới đâu — cô chốt 2026-09-20 là em ĐƯỢC thấy chặng.
+          Đọc qua `changCuaLop`, tức là qua `path_progress.view`. `path` vẫn `none` với em,
+          nên em thấy TÊN chặng mà không thấy đề sắp giao hay cách cô soạn.
+        */}
+        {chang ? (
+          <div className="mt-5">
+            <Khoi
+              ten="Lớp đang đi tới đâu"
+              phu={`Buổi ${chang.buoiDaQua}/${chang.tongBuoi} của lộ trình cô soạn cho lớp`}
+            >
+              {chang.dangO ? (
+                <p className="text-[14px] leading-[22px] text-text">
+                  Lớp đang ở <b className="font-display font-semibold">chặng buổi {chang.dangO.tu}–{chang.dangO.den}</b>:{' '}
+                  {chang.dangO.noiDung}
+                </p>
+              ) : (
+                <p className="text-[14px] leading-[22px] text-text-2">
+                  Lộ trình của lớp chưa chia chặng.
+                </p>
+              )}
+              {chang.changToi ? (
+                <p className="mt-2 text-[13px] leading-[20px] text-text-2">
+                  Chặng tới: {chang.changToi}
+                </p>
+              ) : null}
+            </Khoi>
+          </div>
+        ) : null}
 
       </WrapEm>
     </>
