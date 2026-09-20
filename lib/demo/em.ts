@@ -317,3 +317,108 @@ export function tienBoBand(hocVienId: string): { chenh: number; tuan: number } |
     tuan: Math.max(1, Math.round(ms / (7 * 86_400_000))),
   }
 }
+
+export interface TheSoTu {
+  /** `trich` của chỗ cô gạch — một thẻ là một câu CHÍNH EM đã viết sai. */
+  khoa: string
+  /** Mặt trước: nguyên văn em viết. */
+  trich: string
+  /** Mặt sau: nguyên văn cô sửa. */
+  sua: string
+  loai: string
+  /** Bài nào, gửi ngày nào — để em biết thẻ này từ đâu ra. */
+  tuBai: string
+  ngay: string
+  /** Lời cô viết thêm cho chỗ này. Không có thì thôi — máy KHÔNG bịa lời giải thích. */
+  y: string | null
+  /** Em đã đánh "đã nhớ" lúc nào. `null` là chưa đánh bao giờ. */
+  daNhoLuc: string | null
+  /**
+   * Thẻ quay lại vì cô gạch LẠI đúng loại lỗi này, sau lúc em nói đã nhớ.
+   *
+   * Đây là thứ một danh sách 100 từ không làm được: nó biết em đã hứa gì, và biết lời hứa
+   * đó có giữ được không — bằng chữ của cô, không bằng bài tự kiểm của máy.
+   */
+  taiPham: { bai: string; ngay: string } | null
+}
+
+/**
+ * Sổ từ của em — thẻ ôn làm từ chính chỗ cô gạch trong bài của em.
+ *
+ * Ba luật của màn này, và cả ba đều là luật chứ không phải lựa chọn giao diện:
+ *
+ * 1. **Thẻ chỉ chứa chữ CÔ ĐÃ VIẾT.** Không sinh thêm từ "liên quan", không tự viết lời giải
+ *    thích. Một thẻ máy bịa nằm lẫn giữa thẻ của cô thì em không phân biệt được, mà toàn bộ
+ *    giá trị nằm ở chỗ "đây là chỗ cô đã mất công sửa cho chính em".
+ * 2. **Mọi chỗ cô gạch đều thành thẻ** — không đoán chỗ nào "đáng làm thẻ". Đoán thì có chỗ
+ *    bị bỏ mà không ai biết; và `sua` của cô dù là câu thay hay lời dặn thì đều là chữ thật.
+ *    Lời khen (`kieu === 'khen'`) thì không: đó không phải chỗ để sửa.
+ * 3. **Không đọc bài của ai khác.** `baiCuaEm` đã đi qua `can()` với actor học viên thật.
+ */
+export function soTuCuaEm(hocVienId: string): TheSoTu[] {
+  const bai = baiCuaEm(hocVienId).filter((b) => b.nhanXet !== null)
+  const danhGia = duLieu().danhGiaThe.filter((d) => d.hocVienId === hocVienId)
+
+  /*
+   * Lời hứa GẦN NHẤT, không phải lần nhớ gần nhất.
+   *
+   * Lọc `nho === true` rồi lấy mốc mới nhất thì "chưa nhớ" không xoá được lời hứa cũ: em bấm
+   * "chưa nhớ" xong thẻ vẫn nói "em đánh đã nhớ ngày 30/8" và vẫn tính là tái phạm. Em vừa
+   * thành thật nhận là chưa thuộc, và app lấy đúng câu đó làm bằng chứng buộc tội em.
+   *
+   * Nên: lấy đánh giá mới nhất, và chỉ tính là lời hứa khi đánh giá ấy là "đã nhớ".
+   */
+  const nhoLuc = (khoa: string): string | null => {
+    const cua = danhGia.filter((d) => d.khoa === khoa)
+    if (cua.length === 0) return null
+    const moiNhat = cua.reduce((a, b) => (a.luc > b.luc ? a : b))
+    return moiNhat.nho ? moiNhat.luc : null
+  }
+
+  const the = new Map<string, TheSoTu>()
+
+  for (const b of bai) {
+    const guiLuc = b.nhanXet!.guiLuc
+    for (const l of b.co) {
+      if (l.kieu === 'khen') continue
+      // `baiCuaEm` xếp mới nhất trước, nên lần gặp ĐẦU tiên là lần cô gạch gần đây nhất.
+      if (the.has(l.trich)) continue
+      the.set(l.trich, {
+        khoa: l.trich,
+        trich: l.trich,
+        sua: l.sua,
+        loai: l.loai,
+        tuBai: b.nhan,
+        ngay: guiLuc,
+        y: l.themY ?? null,
+        daNhoLuc: nhoLuc(l.trich),
+        taiPham: null,
+      })
+    }
+  }
+
+  /*
+   * Thẻ tái phạm: em nói "đã nhớ" lúc T, sau T cô vẫn gạch lại ĐÚNG LOẠI lỗi đó.
+   *
+   * So theo LOẠI chứ không theo câu: em không viết lại y nguyên một câu sai, em mắc lại cùng
+   * một lỗi ở câu khác. So theo câu thì thẻ gần như không bao giờ quay lại, và luật thành ra
+   * một luật chỉ đúng trên giấy.
+   */
+  for (const t of the.values()) {
+    if (!t.daNhoLuc) continue
+    for (const b of bai) {
+      const guiLuc = b.nhanXet!.guiLuc
+      if (guiLuc <= t.daNhoLuc) continue
+      if (!b.co.some((l) => l.kieu !== 'khen' && l.loai === t.loai)) continue
+      t.taiPham = { bai: b.nhan, ngay: guiLuc }
+      break
+    }
+  }
+
+  /*
+   * Thứ tự ôn: tái phạm trước (em đã hứa mà chưa giữ được), rồi thẻ chưa đánh dấu, rồi thẻ
+   * đã nhớ. Trong cùng bậc thì mới nhất trước — chỗ cô vừa sửa là chỗ còn nóng.
+   */
+  const bac = (t: TheSoTu): number => (t.taiPham ? 0 : t.daNhoLuc ? 2 : 1)
+  return [...the.values()].sort((a, b) => bac(a) - bac(b) || b.ngay.localeCompare(a.ngay))
+}

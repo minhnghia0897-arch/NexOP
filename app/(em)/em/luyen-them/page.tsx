@@ -11,9 +11,10 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { DauManEm, WrapEm } from '@/components/em/khung'
-import { Nut } from '@/components/ung-dung/phan-tu'
+import { SoTu } from '@/components/em/so-tu'
+import { Khoi, Nut } from '@/components/ung-dung/phan-tu'
 import { useKho } from '@/lib/demo/dung-kho'
-import { EM, baiLuyenCuaEm } from '@/lib/demo/em'
+import { EM, baiLuyenCuaEm, soTuCuaEm } from '@/lib/demo/em'
 
 function Goi({
   ten,
@@ -55,6 +56,8 @@ export default function LuyenThem() {
   useKho()
   const luyen = baiLuyenCuaEm(EM)
   const chuaLam = luyen.filter((b) => !b.ketQua)
+  const the = soTuCuaEm(EM)
+  const taiPham = the.filter((t) => t.taiPham).length
 
   return (
     <>
@@ -63,6 +66,26 @@ export default function LuyenThem() {
         phu="Bài luyện cô Thảo soạn hoặc duyệt — chấm ngay, theo đúng cách cô chấm"
       />
       <WrapEm>
+        {/*
+          Sổ từ đứng TRƯỚC các gói: đây là thứ miễn phí, làm từ bài của chính em, và là việc
+          đáng làm nhất trên màn này. Để nó dưới bốn thẻ bán hàng thì màn thành quầy hàng có
+          kèm một món miễn phí ở cuối.
+        */}
+        <div className="mb-5">
+          <Khoi
+            ten="Sổ từ của em"
+            phu={
+              the.length === 0
+                ? 'Thẻ làm từ chỗ cô gạch trong bài của em.'
+                : `${the.length} thẻ, làm từ chỗ cô gạch trong bài của em${
+                    taiPham > 0 ? ` · ${taiPham} thẻ tái phạm quay lại` : ''
+                  }`
+            }
+          >
+            <SoTu the={the} emId={EM} />
+          </Khoi>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Goi
             noiBat

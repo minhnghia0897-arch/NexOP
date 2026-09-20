@@ -24,6 +24,7 @@ import {
   loiCuaEm,
   lopCuaEm,
   nhanXetMoiNhat,
+  soTuCuaEm,
   tienBoBand,
   tuanCuaEm,
 } from '@/lib/demo/em'
@@ -81,6 +82,8 @@ export default function HomNay() {
    * nháp vẫn còn nguyên trong máy — chỉ là không màn nào nói ra.
    */
   const dangViet = new Set(mocBai.filter((b) => b.dangViet).map((b) => b.baiGiaoId))
+  const the = soTuCuaEm(EM)
+  const theTaiPham = the.filter((t) => t.taiPham).length
   const soTuNhap = new Map(mocBai.map((b) => [b.baiGiaoId, b.soTuNhap]))
 
   const viecGi = (id: string): string =>
@@ -184,6 +187,26 @@ export default function HomNay() {
             }
           />
         ))}
+
+        {/*
+          Thẻ Sổ từ đứng ngay dưới bài phải nộp: 2 phút, và là việc duy nhất trên màn này làm
+          từ chỗ cô đã sửa cho chính em. Số thẻ và số tái phạm đều SUY từ dấu của cô — không
+          có bài nào chấm thì không có thẻ nào, và thẻ không hiện ra.
+        */}
+        {the.length > 0 ? (
+          <Viec
+            mau="purple"
+            ten={`Sổ từ của em — ${the.length} thẻ cần ôn`}
+            phu={`Chỗ cô gạch trong bài của em · 2 phút${
+              theTaiPham > 0 ? ` · có ${theTaiPham} thẻ tái phạm quay lại` : ''
+            }`}
+            nut={
+              <Link href="/em/luyen-them">
+                <Nut kieu="chinh">Ôn ngay</Nut>
+              </Link>
+            }
+          />
+        ) : null}
 
         {luyen.map((bl) => (
           <Viec

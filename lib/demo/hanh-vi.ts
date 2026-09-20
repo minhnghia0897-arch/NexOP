@@ -21,6 +21,7 @@ import {
   dienDapAnThieu,
   deXuatChoCo,
   duyetNhanDe,
+  danhDauThe,
   doiVai,
   duyetBaiGiao,
   duyetCaCumTinHocPhi,
@@ -262,4 +263,9 @@ export function boGiongChamHanhVi(dong: string): { loi?: string } {
 
 export function luuGhiChuHanhVi(hocVienId: string, ghiChu: string): { loi?: string } {
   return thu(() => luuGhiChu(vaiHienTai(), hocVienId, ghiChu))
+}
+
+/** Em đánh dấu một thẻ Sổ từ. Ghi cả hai chiều — xem `danhDauThe`. */
+export function danhDauTheHanhVi(hocVienId: string, khoa: string, nho: boolean): { loi?: string } {
+  return thu(() => danhDauThe(hocVienId, khoa, nho))
 }

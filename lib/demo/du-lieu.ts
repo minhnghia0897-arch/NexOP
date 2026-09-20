@@ -652,6 +652,21 @@ export interface DeXuat {
  * `giongCham` là những câu bản mẫu gọi là "Cách cô hay nhận xét", rút từ bài cô đã chấm. Cô
  * bỏ được từng dòng — dòng nào máy rút sai thì cô xoá, và nháp sau không dùng cách đó nữa.
  */
+/**
+ * Em đã tự đánh giá một thẻ Sổ từ — "chưa nhớ" hay "đã nhớ".
+ *
+ * Đây là LỚP 1 (sự thật, chỉ thêm): em bấm nút, và cái bấm đó là một sự kiện có thật. Không
+ * phải suy luận của máy, nên không tính lại được — chỉ thêm dòng mới.
+ *
+ * `khoa` là `trich` của chỗ cô gạch: một thẻ = một câu em đã viết sai, không phải một "từ".
+ */
+export interface DanhGiaThe {
+  hocVienId: string
+  khoa: string
+  nho: boolean
+  luc: string
+}
+
 export interface Rubric {
   tieuChi: { ma: 'tr' | 'cc' | 'lr' | 'gra'; ten: string; trongSo: number }[]
   giongCham: string[]
@@ -730,6 +745,7 @@ export interface DuLieuDemo {
   loTrinh: LoTrinh[]
   hocPhi: HocPhi[]
   baiLuyen: BaiLuyen[]
+  danhGiaThe: DanhGiaThe[]
   diemDanh: DiemDanh[]
   deXuat: DeXuat[]
   rubric: Rubric
@@ -1801,7 +1817,15 @@ export function duLieuBanDau(): DuLieuDemo {
     ['bg-t1bar', 6.5,
       'Bài này chắc tay nhất từ đầu khoá. Em giữ đúng cấu trúc này. Chỉ còn hoà hợp chủ–vị — dứt được lỗi đó là Grammar của em lên 6.0, và band chung lên theo.',
       false, 'system', 6.5,
-      [{ trich: 'A range of subjects are offered', sua: 'is offered',
+      [/*
+         Một lời KHEN trong bài mới nhất của em.
+         Hạt giống trước đó không có lời khen nào cho hv-01, nên bài kiểm "lời khen không
+         thành thẻ Sổ từ" xanh mà rỗng: nó loại một tập trống. Đây là chỗ hỏng đáng sợ nhất
+         của màn Sổ từ — thẻ lật ra là một câu cô KHEN em, nằm dưới nhãn "em viết sai".
+       */
+       { trich: 'This trend is likely to continue.', sua: 'câu kết mạnh — giữ cách viết này',
+         loai: 'điểm mạnh', nhom: 'structure', kieu: 'khen' },
+       { trich: 'A range of subjects are offered', sua: 'is offered',
          loai: 'hoà hợp chủ–vị', nhom: 'grammar',
          themY: 'Lần thứ ba — cô giao bài luyện 5 phút ở mục Luyện thêm' },
        { trich: 'In conclusion, I think that', sua: 'To conclude,',
@@ -1986,6 +2010,43 @@ export function duLieuBanDau(): DuLieuDemo {
   ]
 
   /*
+   * Một dòng "đã nhớ" có sẵn — để thẻ TÁI PHẠM có thật, không phải chữ vẽ sẵn.
+   *
+   * Em đánh "đã nhớ" câu này ngày 25/8. Nhận xét bài Task 1 — Bar chart gửi ngày 1/9 lại có
+   * đúng loại lỗi đó ("hoà hợp chủ–vị"). Sau MỐC em nói đã nhớ mà cô vẫn gạch lại → thẻ quay
+   * về. Cả câu giải thích trên thẻ suy từ hai mốc này, không có chữ nào cắm sẵn.
+   *
+   * Bỏ dòng này đi thì màn Sổ từ vẫn chạy — chỉ là không có thẻ tái phạm nào, đúng như dữ
+   * liệu nói. Đó là điều một bài kiểm phải phân biệt được.
+   */
+  const danhGiaThe: DanhGiaThe[] = [
+    {
+      hocVienId: 'hv-01',
+      khoa: 'people is often surprised',
+      nho: true,
+      /*
+       * Mốc suy từ chính nhận xét mới nhất CỦA EM, không cắm một ngày cố định: cắm ngày thì
+       * hôm nay chạy đúng, ba tuần nữa mốc trôi qua mọi nhận xét và thẻ tái phạm lặng lẽ
+       * biến mất.
+       *
+       * Phải lọc theo bài nộp của em: lần đầu em lấy `max` trên CẢ mảng `nhanXet` và trúng
+       * phải bản nháp trợ giảng của em khác (gửi 2 ngày trước), nên mốc nhảy lên sau mọi
+       * nhận xét của hv-01 và không còn bài nào "gạch lại sau đó".
+       */
+      luc: new Date(
+        Math.max(
+          ...nhanXet
+            .filter((n) =>
+              baiNop.some((b) => b.id === n.baiNopId && b.hocVienId === 'hv-01'),
+            )
+            .map((n) => new Date(n.guiLuc).getTime()),
+        ) -
+          2 * NGAY,
+      ).toISOString(),
+    },
+  ]
+
+  /*
    * Trả về BẢN SAO SÂU, không phải đối tượng gốc.
    *
    * Các hằng ở đầu file (`DE_CHO_DUYET`, `CAU_HOI_*`, `HOC_VIEN`…) là đối tượng dùng chung.
@@ -2013,6 +2074,7 @@ export function duLieuBanDau(): DuLieuDemo {
     loTrinh,
     hocPhi,
     baiLuyen,
+    danhGiaThe,
     diemDanh,
     deXuat,
     rubric,

@@ -256,6 +256,69 @@ await kiem('thẻ chấm của cô hiện "viết N phút" cho bài em vừa n�
   if (!/viết \d+ phút/.test(t)) throw new Error('cô không thấy thời gian viết')
 })
 
+console.log('\n── Sổ từ của em (s-vocab) ──')
+await moPhien()
+await tr.goto(`${U}/em/luyen-them/`,{waitUntil:'networkidle'})
+
+await kiem('thẻ đầu là câu CHÍNH EM viết, và chưa lộ chữ cô sửa', async () => {
+  const truoc = await tr.locator('s').first().innerText()
+  if (!truoc.trim()) throw new Error('mặt trước trống')
+  /* Nút "Đã nhớ" chỉ hiện SAU khi lật — lộ đáp án trước khi em nghĩ thì thẻ hết tác dụng. */
+  if (await tr.locator('button', { hasText: /^Đã nhớ$/ }).count()) {
+    throw new Error('lộ đáp án trước khi bấm xem')
+  }
+})
+
+await kiem('lật thẻ → hiện chữ CÔ SỬA, rồi "Đã nhớ" sang thẻ sau', async () => {
+  const dem = async () => (await tr.locator('text=/^thẻ \\d+\\/\\d+$/').first().innerText())
+  const t1 = await dem()
+  await tr.locator('button', { hasText: 'Xem cô sửa thế nào' }).click()
+  const sua = await tr.locator('.border-st-green').first().innerText()
+  if (!sua.trim()) throw new Error('không hiện chữ cô sửa')
+  await tr.locator('button', { hasText: /^Đã nhớ$/ }).click()
+  if ((await dem()) === t1) throw new Error('không sang thẻ mới')
+})
+
+/*
+ * Context MỚI, và đây là bẫy số 1 ở đầu file gặp lại lần nữa: bài trên vừa bấm "Đã nhớ" lên
+ * đúng thẻ tái phạm (nó xếp đầu bộ), nên lời hứa của em được làm mới và thẻ thôi tái phạm.
+ * Đó là hành vi ĐÚNG — nhưng nó xoá mất thứ bài kiểm này cần soi.
+ */
+await moPhien()
+await kiem('thẻ TÁI PHẠM nói rõ em hứa lúc nào và cô gạch lại ở bài nào', async () => {
+  await tr.goto(`${U}/em/luyen-them/`,{waitUntil:'networkidle'})
+  const t = await tr.locator('body').innerText()
+  if (!/Thẻ này quay lại/.test(t)) throw new Error('không có thẻ tái phạm nào')
+  if (!/Em đánh .đã nhớ. ngày \d+\/\d+/.test(t)) throw new Error('không nói em hứa lúc nào')
+  if (!/cô gạch lại đúng lỗi/.test(t)) throw new Error('không nói vì sao quay lại')
+})
+
+await kiem('Hôm nay có thẻ nhắc Sổ từ, và số thẻ khớp màn Luyện thêm', async () => {
+  const oLuyen = (await tr.locator('body').innerText()).match(/(\d+) thẻ, làm từ chỗ cô gạch/)
+  if (!oLuyen) throw new Error('đầu khối Sổ từ không nói số thẻ')
+
+  await tr.goto(`${U}/em/hom-nay/`,{waitUntil:'networkidle'})
+  const oNay = (await tr.locator('body').innerText()).match(/Sổ từ của em — (\d+) thẻ cần ôn/)
+  if (!oNay) throw new Error('Hôm nay không có thẻ nhắc Sổ từ')
+  /* Hai màn đọc cùng một hàm thuần; lệch số nghĩa là một trong hai đang tự đếm lấy. */
+  if (oNay[1] !== oLuyen[1]) throw new Error(`Hôm nay nói ${oNay[1]} thẻ, Luyện thêm nói ${oLuyen[1]}`)
+})
+
+await moPhien()
+await kiem('thẻ KHÔNG chứa lời khen của cô', async () => {
+  /* Cô khen "câu kết mạnh — giữ cách viết này" trong bài mới nhất. Một lời khen lật ra dưới
+     nhãn "em viết sai" là chỗ hỏng tệ nhất màn này có thể có. */
+  await tr.goto(`${U}/em/luyen-them/`,{waitUntil:'networkidle'})
+  for (let k = 0; k < 12; k++) {
+    const t = await tr.locator('body').innerText()
+    if (/giữ cách viết này/.test(t)) throw new Error('lời khen của cô nằm trong bộ thẻ')
+    const xem = tr.locator('button', { hasText: 'Xem cô sửa thế nào' })
+    if (!(await xem.count())) break
+    await xem.click()
+    await tr.locator('button', { hasText: /^Chưa nhớ$/ }).click()
+  }
+})
+
 await kiem('ngăn hồ sơ của cô hiện ĐÚNG danh sách lỗi em thấy, không phải chữ viết sẵn', async () => {
   await tr.goto(`${U}/hoc-vien/`,{waitUntil:'networkidle'})
   await tr.getByText('Nguyễn Minh Anh', { exact: true }).first().click()
